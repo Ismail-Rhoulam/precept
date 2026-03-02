@@ -19,7 +19,7 @@ class ServiceLevelAgreement(TenantMixin, TimestampMixin):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     holiday_list = models.ForeignKey(
-        "settings.HolidayList",
+        "crm_settings.HolidayList",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

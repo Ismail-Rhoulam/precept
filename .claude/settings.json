@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x /opt/frappe_docker/precept/nginx/init-letsencrypt.sh)"
+    ]
+  }
+}

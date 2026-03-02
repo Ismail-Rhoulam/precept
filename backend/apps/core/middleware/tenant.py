@@ -64,7 +64,24 @@ class TenantMiddleware:
 
                 raw_token = auth_header.split(" ", 1)[1]
                 validated = UntypedToken(raw_token)
-                return validated.payload.get("company_id")
+
+                # Try company_id from JWT claim first
+                company_id = validated.payload.get("company_id")
+                if company_id:
+                    return company_id
+
+                # If JWT has no company_id, look up the user's current company
+                # (handles tokens issued before company was assigned)
+                user_id = validated.payload.get("user_id")
+                if user_id:
+                    from apps.core.models import User
+
+                    try:
+                        return User.objects.values_list(
+                            "company_id", flat=True
+                        ).get(pk=user_id)
+                    except User.DoesNotExist:
+                        pass
             except Exception:
                 return None
 

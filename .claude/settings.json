@@ -21,7 +21,8 @@
       "Bash(curl -s -H \"Host: precept.online\" -H \"X-Forwarded-Proto: https\" -H \"Content-Type: application/json\" -X POST http://127.0.0.1:8000/api/auth/login -d '{\"\"email\"\":\"\"ismail.rhoulam@precept.online\"\",\"\"password\"\":\"\"test123\"\"}')",
       "Bash(docker compose -f docker-compose.prod.yml up -d backend)",
       "Bash(docker compose -f docker-compose.prod.yml logs --tail=5 backend)",
-      "Bash(docker compose -f docker-compose.prod.yml exec backend python manage.py shell -c \":*)"
+      "Bash(docker compose -f docker-compose.prod.yml exec backend python manage.py shell -c \":*)",
+      "Bash(docker compose -f docker-compose.prod.yml logs --tail=3 backend)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

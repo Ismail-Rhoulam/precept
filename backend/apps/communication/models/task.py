@@ -44,7 +44,7 @@ class Task(TenantMixin, TimestampMixin):
     reference = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = '"precept"."crm_task"'
+        db_table = "crm_tasks"
         ordering = ["-created_at"]
 
     def __str__(self):

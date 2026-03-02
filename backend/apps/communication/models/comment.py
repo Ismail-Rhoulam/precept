@@ -22,7 +22,7 @@ class Comment(TenantMixin, TimestampMixin):
     reference = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = '"precept"."crm_comment"'
+        db_table = "crm_comments"
         ordering = ["-created_at"]
 
     def __str__(self):

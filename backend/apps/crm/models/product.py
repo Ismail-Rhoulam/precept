@@ -12,7 +12,7 @@ class Product(TenantMixin, TimestampMixin):
     disabled = models.BooleanField(default=False)
 
     class Meta:
-        db_table = '"precept"."crm_product"'
+        db_table = "crm_products"
         unique_together = ("company", "product_code")
 
     def __str__(self):

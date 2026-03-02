@@ -32,7 +32,7 @@ class Organization(TenantMixin, TimestampMixin):
     address = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_organization"'
+        db_table = "crm_organizations"
         unique_together = ("company", "organization_name")
 
     def __str__(self):

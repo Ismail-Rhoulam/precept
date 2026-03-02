@@ -13,7 +13,7 @@ class TwilioSettings(TenantMixin):
     record_calls = models.BooleanField(default=False)
 
     class Meta:
-        db_table = '"precept"."integration_twilio_settings"'
+        db_table = "integration_twilio_settings"
 
     def __str__(self):
         return f"TwilioSettings (company={self.company_id})"

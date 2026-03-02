@@ -36,7 +36,7 @@ class Notification(TenantMixin, TimestampMixin):
     reference_object_id = models.PositiveIntegerField(null=True)
 
     class Meta:
-        db_table = '"precept"."crm_notification"'
+        db_table = "crm_notifications"
         ordering = ["-created_at"]
 
     def __str__(self):

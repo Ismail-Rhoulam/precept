@@ -17,7 +17,7 @@ class Note(TenantMixin, TimestampMixin):
     reference = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = '"precept"."crm_note"'
+        db_table = "crm_notes"
         ordering = ["-created_at"]
 
     def __str__(self):

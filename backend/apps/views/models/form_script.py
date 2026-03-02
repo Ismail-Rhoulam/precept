@@ -17,7 +17,7 @@ class FormScript(TenantMixin, TimestampMixin):
     script = models.TextField(blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_form_script"'
+        db_table = "crm_form_scripts"
 
     def __str__(self):
         return f"{self.name} ({self.dt}/{self.view})"

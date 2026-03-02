@@ -64,7 +64,7 @@ class CallLog(TenantMixin, TimestampMixin):
     reference = GenericForeignKey("content_type", "object_id")
 
     class Meta:
-        db_table = '"precept"."crm_call_log"'
+        db_table = "crm_call_logs"
         ordering = ["-start_time"]
 
     def __str__(self):

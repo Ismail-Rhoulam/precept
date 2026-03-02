@@ -33,7 +33,7 @@ class TelephonyAgent(TenantMixin):
     )
 
     class Meta:
-        db_table = '"precept"."integration_telephony_agent"'
+        db_table = "integration_telephony_agents"
 
     def __str__(self):
         return f"TelephonyAgent ({self.user_id})"

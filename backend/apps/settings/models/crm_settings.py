@@ -13,7 +13,7 @@ class CRMSettings(TenantMixin):
     default_all_day_event_end_time = models.TimeField(null=True, blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_settings"'
+        db_table = "crm_settings"
 
     def __str__(self):
         return self.brand_name or "CRM Settings"

@@ -41,7 +41,7 @@ class ViewSettings(TenantMixin, TimestampMixin):
     kanban_fields = models.JSONField(default=list, blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_view_settings"'
+        db_table = "crm_view_settings"
 
     def __str__(self):
         return f"{self.label} ({self.entity_type})"

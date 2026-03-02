@@ -7,7 +7,7 @@ class LeadSource(TenantMixin):
     source_name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = '"precept"."crm_lead_source"'
+        db_table = "crm_lead_sources"
         unique_together = ("company", "source_name")
 
     def __str__(self):
@@ -18,7 +18,7 @@ class Industry(TenantMixin):
     industry_name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = '"precept"."crm_industry"'
+        db_table = "crm_industries"
         unique_together = ("company", "industry_name")
 
     def __str__(self):
@@ -36,7 +36,7 @@ class Territory(TenantMixin):
     )
 
     class Meta:
-        db_table = '"precept"."crm_territory"'
+        db_table = "crm_territories"
         unique_together = ("company", "territory_name")
 
     def __str__(self):

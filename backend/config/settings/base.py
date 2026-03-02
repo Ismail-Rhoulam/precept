@@ -94,7 +94,7 @@ DATABASES = {
         "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         "OPTIONS": {
-            "options": "-c search_path=precept,public",
+            "options": "-c search_path=precept,infra,public",
         },
     },
     "infra": {
@@ -105,7 +105,7 @@ DATABASES = {
         "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         "OPTIONS": {
-            "options": "-c search_path=infra,public",
+            "options": "-c search_path=infra,precept,public",
         },
     },
 }

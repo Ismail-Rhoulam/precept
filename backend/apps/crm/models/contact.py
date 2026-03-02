@@ -17,7 +17,7 @@ class Contact(TenantMixin, TimestampMixin):
     image = models.ImageField(upload_to="contacts/", blank=True, null=True)
 
     class Meta:
-        db_table = '"precept"."crm_contact"'
+        db_table = "crm_contacts"
 
     def __str__(self):
         return self.full_name or self.first_name

@@ -26,7 +26,7 @@ class ServiceLevelAgreement(TenantMixin, TimestampMixin):
     )
 
     class Meta:
-        db_table = '"precept"."crm_sla"'
+        db_table = "crm_slas"
         unique_together = ("company", "sla_name")
 
     def __str__(self):
@@ -43,7 +43,7 @@ class SLAPriority(models.Model):
     response_time = models.DurationField()
 
     class Meta:
-        db_table = '"precept"."crm_sla_priority"'
+        db_table = "crm_sla_priorities"
 
     def __str__(self):
         return f"{self.sla} - {self.priority}"
@@ -60,7 +60,7 @@ class ServiceDay(models.Model):
     end_time = models.TimeField()
 
     class Meta:
-        db_table = '"precept"."crm_service_day"'
+        db_table = "crm_service_days"
 
     def __str__(self):
         return f"{self.day}: {self.start_time} - {self.end_time}"

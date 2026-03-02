@@ -20,7 +20,7 @@ class StatusChangeLog(TimestampMixin):
     )
 
     class Meta:
-        db_table = '"precept"."crm_status_change_log"'
+        db_table = "crm_status_change_logs"
         ordering = ["-created_at"]
 
     def __str__(self):

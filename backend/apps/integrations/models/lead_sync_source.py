@@ -30,7 +30,7 @@ class LeadSyncSource(TenantMixin, TimestampMixin):
     )
 
     class Meta:
-        db_table = '"precept"."integration_lead_sync_source"'
+        db_table = "integration_lead_sync_sources"
 
     def __str__(self):
         return self.name

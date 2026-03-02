@@ -14,7 +14,7 @@ class FieldsLayout(TenantMixin, TimestampMixin):
     layout = models.JSONField(default=list)  # tabs > sections > columns > fields
 
     class Meta:
-        db_table = '"precept"."crm_fields_layout"'
+        db_table = "crm_fields_layouts"
         unique_together = [("company", "dt", "type")]
 
     def __str__(self):

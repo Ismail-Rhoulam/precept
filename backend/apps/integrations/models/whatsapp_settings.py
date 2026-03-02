@@ -14,7 +14,7 @@ class WhatsAppSettings(TenantMixin):
     app_secret = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = '"precept"."integration_whatsapp_settings"'
+        db_table = "integration_whatsapp_settings"
 
     def __str__(self):
         return f"WhatsAppSettings (company={self.company_id})"
@@ -51,7 +51,7 @@ class WhatsAppMessage(TenantMixin, TimestampMixin):
     reference = GenericForeignKey("content_type_fk", "object_id")
 
     class Meta:
-        db_table = '"precept"."integration_whatsapp_message"'
+        db_table = "integration_whatsapp_messages"
         ordering = ["-created_at"]
 
     def __str__(self):

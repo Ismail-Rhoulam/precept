@@ -12,7 +12,7 @@ class Company(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = '"precept"."company"'
+        db_table = "core_companies"
         verbose_name_plural = "companies"
 
     def __str__(self):

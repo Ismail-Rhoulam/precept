@@ -31,7 +31,7 @@ class Event(TenantMixin, TimestampMixin):
     )
 
     class Meta:
-        db_table = '"precept"."crm_event"'
+        db_table = "crm_events"
         ordering = ["starts_on"]
 
     def __str__(self):
@@ -61,7 +61,7 @@ class EventParticipant(TenantMixin):
     )
 
     class Meta:
-        db_table = '"precept"."crm_event_participant"'
+        db_table = "crm_event_participants"
 
     def __str__(self):
         return f"{self.email} – {self.attending}"

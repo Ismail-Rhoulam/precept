@@ -13,7 +13,7 @@ class ExotelSettings(TenantMixin):
     record_calls = models.BooleanField(default=False)
 
     class Meta:
-        db_table = '"precept"."integration_exotel_settings"'
+        db_table = "integration_exotel_settings"
 
     def __str__(self):
         return f"ExotelSettings (company={self.company_id})"

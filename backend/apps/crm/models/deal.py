@@ -140,7 +140,7 @@ class Deal(TenantMixin, TimestampMixin, NamingSeriesMixin):
     lost_notes = models.TextField(blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_deal"'
+        db_table = "crm_deals"
         ordering = ["-updated_at"]
 
     def __str__(self):
@@ -157,7 +157,7 @@ class DealContact(models.Model):
     is_primary = models.BooleanField(default=False)
 
     class Meta:
-        db_table = '"precept"."crm_deal_contact"'
+        db_table = "crm_deal_contacts"
         unique_together = ("deal", "contact")
 
     def __str__(self):
@@ -184,7 +184,7 @@ class DealProduct(models.Model):
     net_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
 
     class Meta:
-        db_table = '"precept"."crm_deal_product"'
+        db_table = "crm_deal_products"
 
     def __str__(self):
         return self.product_name

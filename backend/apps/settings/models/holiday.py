@@ -7,7 +7,7 @@ class HolidayList(TenantMixin):
     list_name = models.CharField(max_length=255)
 
     class Meta:
-        db_table = '"precept"."crm_holiday_list"'
+        db_table = "crm_holiday_lists"
 
     def __str__(self):
         return self.list_name
@@ -21,7 +21,7 @@ class Holiday(models.Model):
     description = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_holiday"'
+        db_table = "crm_holidays"
 
     def __str__(self):
         return f"{self.date} - {self.description}"

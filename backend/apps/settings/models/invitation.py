@@ -26,7 +26,7 @@ class Invitation(TenantMixin, TimestampMixin):
     expires_at = models.DateTimeField()
 
     class Meta:
-        db_table = '"precept"."crm_invitation"'
+        db_table = "crm_invitations"
 
     def __str__(self):
         return f"Invitation for {self.email} ({self.status})"

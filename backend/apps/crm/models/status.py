@@ -18,7 +18,7 @@ class LeadStatus(TenantMixin):
     position = models.IntegerField(default=1)
 
     class Meta:
-        db_table = '"precept"."crm_lead_status"'
+        db_table = "crm_lead_statuses"
         unique_together = ("company", "lead_status")
         ordering = ["position"]
 
@@ -42,7 +42,7 @@ class DealStatus(TenantMixin):
     probability = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     class Meta:
-        db_table = '"precept"."crm_deal_status"'
+        db_table = "crm_deal_statuses"
         unique_together = ("company", "deal_status")
         ordering = ["position"]
 
@@ -54,7 +54,7 @@ class CommunicationStatus(TenantMixin):
     status = models.CharField(max_length=100)
 
     class Meta:
-        db_table = '"precept"."crm_communication_status"'
+        db_table = "crm_communication_statuses"
         unique_together = ("company", "status")
 
     def __str__(self):
@@ -65,7 +65,7 @@ class LostReason(TenantMixin):
     reason = models.CharField(max_length=255)
 
     class Meta:
-        db_table = '"precept"."crm_lost_reason"'
+        db_table = "crm_lost_reasons"
         unique_together = ("company", "reason")
 
     def __str__(self):

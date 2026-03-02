@@ -107,7 +107,7 @@ class Lead(TenantMixin, TimestampMixin, NamingSeriesMixin):
     lost_notes = models.TextField(blank=True)
 
     class Meta:
-        db_table = '"precept"."crm_lead"'
+        db_table = "crm_leads"
         ordering = ["-updated_at"]
         indexes = [
             models.Index(fields=["company", "status"]),
@@ -151,7 +151,7 @@ class LeadProduct(models.Model):
     net_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
 
     class Meta:
-        db_table = '"precept"."crm_lead_product"'
+        db_table = "crm_lead_products"
 
     def __str__(self):
         return self.product_name

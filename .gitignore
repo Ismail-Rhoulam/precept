@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Frappe
+*.pyc
+.frappe-bench/
+site_config.json
+private/files/
+public/files/
+bench-repo/
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Local development
+.env
+.env.local
+*.db
+*.sqlite
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build/Dist
+dist/
+build/
+*.egg-info/

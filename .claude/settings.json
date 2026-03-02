@@ -4,7 +4,8 @@
       "Bash(chmod +x /opt/frappe_docker/precept/nginx/init-letsencrypt.sh)",
       "Read(//etc/nginx/sites-available/**)",
       "Bash(find apps/*/migrations -name \"0*.py\" -type f)",
-      "Bash(find /opt/frappe_docker/precept/backend/apps/*/migrations -type f -name \"*.py\" ! -name \"__init__.py\")"
+      "Bash(find /opt/frappe_docker/precept/backend/apps/*/migrations -type f -name \"*.py\" ! -name \"__init__.py\")",
+      "Bash(docker compose -f docker-compose.prod.yml build backend)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

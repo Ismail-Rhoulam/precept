@@ -21,7 +21,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -49,7 +49,7 @@ services:
       sh -c "python manage.py create_schemas &&
              python manage.py migrate --database=infra &&
              python manage.py migrate --database=default &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2"
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 2"
     ports:
       - "8000:8000"
     volumes:
@@ -75,7 +75,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/2
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
-    command: celery -A config worker -l info --concurrency=4
+    command: celery -A config worker -l info --concurrency=2
     depends_on:
       postgres:
         condition: service_healthy

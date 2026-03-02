@@ -44,7 +44,7 @@ export default function TasksPage() {
   const [status, setStatus] = useState("Todo")
   const [dueDate, setDueDate] = useState("")
 
-  const tasks = Array.isArray(data) ? data : data?.tasks || data?.items || []
+  const tasks = Array.isArray(data) ? data : data?.results || []
 
   // Client-side search filter
   const filteredTasks = searchQuery

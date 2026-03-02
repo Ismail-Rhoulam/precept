@@ -30,7 +30,7 @@ export default function NotesPage() {
   const updateNote = useUpdateNote()
   const deleteNote = useDeleteNote()
 
-  const notes: Note[] = Array.isArray(data) ? data : data?.notes || data?.items || []
+  const notes: Note[] = Array.isArray(data) ? data : data?.results || []
 
   // Client-side search filter
   const filteredNotes = searchQuery

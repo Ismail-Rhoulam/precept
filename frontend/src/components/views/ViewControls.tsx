@@ -610,7 +610,7 @@ interface ViewListItemProps {
   onTogglePublic: () => void
   onDuplicate: () => void
   onDelete: () => void
-  actionMenuRef: React.RefObject<HTMLDivElement | null>
+  actionMenuRef: React.RefObject<HTMLDivElement>
 }
 
 function ViewListItem({

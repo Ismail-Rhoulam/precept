@@ -39,7 +39,7 @@ export default function CallLogsPage() {
     page_size: pageSize,
   })
 
-  const callLogs: CallLog[] = Array.isArray(data) ? data : data?.call_logs || data?.items || []
+  const callLogs: CallLog[] = Array.isArray(data) ? data : data?.results || []
 
   return (
     <div>

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chmod +x /opt/frappe_docker/precept/nginx/init-letsencrypt.sh)"
+      "Bash(chmod +x /opt/frappe_docker/precept/nginx/init-letsencrypt.sh)",
+      "Read(//etc/nginx/sites-available/**)"
+    ],
+    "additionalDirectories": [
+      "/etc/nginx/sites-available"
     ]
   }
 }

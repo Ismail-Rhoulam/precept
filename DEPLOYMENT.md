@@ -3,21 +3,27 @@
 ## Architecture
 
 ```
-Internet → nginx (:80/:443)
-              ├─ /api/, /admin/  → backend:8000  (gunicorn)
-              ├─ /ws/            → channels:8001  (daphne, WebSocket)
-              ├─ /static/        → served directly from volume
-              ├─ /media/         → served directly from volume
-              └─ /               → frontend:3000  (next start)
-           certbot (auto-renews SSL certs)
-           postgres, redis, celery-worker, celery-beat (internal only)
+Internet → nginx (server-level, :80/:443 with SSL)
+              ├─ /api/, /admin/  → 127.0.0.1:8000  (gunicorn)
+              ├─ /ws/            → 127.0.0.1:8001  (daphne, WebSocket)
+              └─ /               → 127.0.0.1:3000  (next start)
+
+Docker services (docker-compose.prod.yml):
+  ├─ backend      :8000  — Django + gunicorn (runs migrations on startup)
+  ├─ channels     :8001  — Django Channels + daphne (WebSocket)
+  ├─ frontend     :3000  — Next.js standalone
+  ├─ celery-worker       — background task processing
+  ├─ celery-beat         — scheduled tasks
+  ├─ postgres            — PostgreSQL 16 (internal only)
+  └─ redis               — Redis 7 with AOF persistence (internal only)
 ```
 
-Only **nginx** is exposed to the internet (ports 80 and 443). All other services communicate on an internal Docker network (`precept-net`).
+Nginx runs on the host server (not in Docker) and handles SSL termination via Let's Encrypt. Docker services expose ports 8000, 8001, and 3000 to the host.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed
+- Nginx installed on the server with SSL configured for `precept.online`
 - Domain `precept.online` pointing to the server's IP
 - Ports 80 and 443 open on the firewall
 
@@ -55,44 +61,42 @@ The frontend URLs (`NEXT_PUBLIC_*`) are baked into the Next.js build at image bu
 make prod-build
 ```
 
-This builds three images using multi-stage Dockerfiles:
+This builds images using multi-stage Dockerfiles:
 
 - **backend** (`backend/Dockerfile.prod`): Python 3.12 slim, production deps only, static files collected, runs gunicorn
 - **frontend** (`frontend/Dockerfile.prod`): Node 20 alpine, Next.js standalone build, runs `node server.js`
-- Other services use official images (postgres, redis, nginx, certbot)
+- Other services use official images (postgres, redis)
 
-### 2. Obtain SSL certificate (first time only)
-
-```bash
-CERTBOT_EMAIL=you@example.com sudo -E ./nginx/init-letsencrypt.sh
-```
-
-This script:
-1. Creates a temporary self-signed certificate so nginx can start
-2. Starts nginx to serve the ACME challenge
-3. Requests a real certificate from Let's Encrypt
-4. Reloads nginx with the valid certificate
-
-### 3. Start all services
+### 2. Start all services
 
 ```bash
 make prod-up
 ```
 
-### 4. Verify
+### 3. Verify
 
 ```bash
 make prod-logs
 ```
 
-Check that all 9 services are running and healthy:
-- `postgres`, `redis` — infrastructure
-- `backend` — runs migrations on startup, then gunicorn
+Check that all 7 services are running:
+- `postgres`, `redis` — infrastructure (internal, no host ports)
+- `backend` — runs migrations on startup, then gunicorn (:8000)
 - `celery-worker`, `celery-beat` — background task processing
-- `channels` — WebSocket via daphne
-- `frontend` — Next.js standalone server
-- `nginx` — reverse proxy with SSL
-- `certbot` — auto-renews certificates every 12 hours
+- `channels` — WebSocket via daphne (:8001)
+- `frontend` — Next.js standalone server (:3000)
+
+### 4. Nginx (server-level)
+
+The nginx config is at `/etc/nginx/sites-available/precept`. It proxies:
+
+- `/api/`, `/admin/` → `127.0.0.1:8000` (backend)
+- `/ws/` → `127.0.0.1:8001` (channels, WebSocket upgrade)
+- `/` → `127.0.0.1:3000` (frontend)
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
 
 ## Makefile Targets
 
@@ -113,18 +117,15 @@ Check that all 9 services are running and healthy:
 ├── frontend/
 │   ├── Dockerfile          # Development image
 │   └── Dockerfile.prod     # Production multi-stage image (standalone)
-├── nginx/
-│   ├── nginx.conf          # Reverse proxy config (SSL, WebSocket, static)
-│   └── init-letsencrypt.sh # First-time SSL certificate setup
 ├── docker-compose.yml      # Development stack
 ├── docker-compose.prod.yml # Production stack
 ├── .env                    # Environment variables (not committed)
 └── .env.example            # Template for .env
 ```
 
-## SSL Certificate Renewal
-
-The `certbot` container automatically attempts renewal every 12 hours. Certificates are stored in the `certbot_conf` Docker volume and shared read-only with nginx.
+Server-managed (outside repo):
+- `/etc/nginx/sites-available/precept` — nginx reverse proxy config
+- `/etc/letsencrypt/live/precept.online/` — SSL certificates (Certbot)
 
 ## Volumes
 
@@ -132,10 +133,8 @@ The `certbot` container automatically attempts renewal every 12 hours. Certifica
 |--------|---------|
 | `postgres_data` | PostgreSQL database files |
 | `redis_data` | Redis append-only persistence |
-| `static_files` | Django collected static files (shared with nginx) |
-| `media_files` | User-uploaded media (shared with nginx) |
-| `certbot_conf` | SSL certificates from Let's Encrypt |
-| `certbot_www` | ACME challenge files for certificate verification |
+| `static_files` | Django collected static files |
+| `media_files` | User-uploaded media |
 
 ## Security Notes
 
@@ -143,4 +142,5 @@ The `certbot` container automatically attempts renewal every 12 hours. Certifica
 - `SECURE_PROXY_SSL_HEADER` is configured so Django trusts nginx's `X-Forwarded-Proto` header
 - Nginx adds security headers: `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Strict-Transport-Security`
 - Backend and frontend containers run as non-root users
-- No service except nginx exposes ports to the host
+- Only backend (:8000), channels (:8001), and frontend (:3000) expose ports to the host
+- Postgres and Redis are internal to the Docker network only

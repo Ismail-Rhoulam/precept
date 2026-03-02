@@ -74,21 +74,6 @@ def list_leads(
 
 
 # ---------------------------------------------------------------------------
-# Detail
-# ---------------------------------------------------------------------------
-
-@router.get("/{lead_id}", response=LeadOut)
-def get_lead(request, lead_id: int):
-    lead = get_object_or_404(
-        Lead.objects.select_related(
-            "status", "lead_owner", "source", "industry", "territory",
-        ),
-        pk=lead_id,
-    )
-    return lead
-
-
-# ---------------------------------------------------------------------------
 # Create
 # ---------------------------------------------------------------------------
 
@@ -106,47 +91,6 @@ def create_lead(request, payload: LeadCreate):
 
 
 # ---------------------------------------------------------------------------
-# Update
-# ---------------------------------------------------------------------------
-
-@router.patch("/{lead_id}", response=LeadOut)
-def update_lead(request, lead_id: int, payload: LeadUpdate):
-    lead = get_object_or_404(
-        Lead.objects.select_related("status"), pk=lead_id
-    )
-    old_status = lead.status.lead_status if lead.status else ""
-
-    data = payload.dict(exclude_unset=True)
-    for attr, value in data.items():
-        setattr(lead, attr, value)
-    lead.modified_by = request.auth
-    lead.save()
-
-    # Re-fetch to get the potentially updated status FK
-    lead = Lead.objects.select_related(
-        "status", "lead_owner", "source", "industry", "territory",
-    ).get(pk=lead.pk)
-    new_status = lead.status.lead_status if lead.status else ""
-    if old_status != new_status:
-        log_status_change(lead, old_status, new_status, request.auth)
-
-    broadcast_crm_update("lead_updated", "lead", lead.id)
-    return lead
-
-
-# ---------------------------------------------------------------------------
-# Delete
-# ---------------------------------------------------------------------------
-
-@router.delete("/{lead_id}", response={204: None})
-def delete_lead(request, lead_id: int):
-    lead = get_object_or_404(Lead, pk=lead_id)
-    lead.delete()
-    broadcast_crm_update("lead_deleted", "lead", lead_id)
-    return 204, None
-
-
-# ---------------------------------------------------------------------------
 # Bulk Delete
 # ---------------------------------------------------------------------------
 
@@ -157,7 +101,7 @@ def bulk_delete_leads(request, ids: List[int]):
 
 
 # ---------------------------------------------------------------------------
-# Kanban
+# Kanban  (must be before /{lead_id} to avoid route conflict)
 # ---------------------------------------------------------------------------
 
 @router.get("/kanban", response=Dict[str, Any])
@@ -220,7 +164,7 @@ def kanban_leads(
 
 
 # ---------------------------------------------------------------------------
-# Group By
+# Group By  (must be before /{lead_id} to avoid route conflict)
 # ---------------------------------------------------------------------------
 
 @router.get("/group-by", response=Dict[str, Any])
@@ -286,6 +230,62 @@ def group_by_leads(
         "page": page,
         "page_size": page_size,
     }
+
+
+# ---------------------------------------------------------------------------
+# Detail
+# ---------------------------------------------------------------------------
+
+@router.get("/{lead_id}", response=LeadOut)
+def get_lead(request, lead_id: int):
+    lead = get_object_or_404(
+        Lead.objects.select_related(
+            "status", "lead_owner", "source", "industry", "territory",
+        ),
+        pk=lead_id,
+    )
+    return lead
+
+
+# ---------------------------------------------------------------------------
+# Update
+# ---------------------------------------------------------------------------
+
+@router.patch("/{lead_id}", response=LeadOut)
+def update_lead(request, lead_id: int, payload: LeadUpdate):
+    lead = get_object_or_404(
+        Lead.objects.select_related("status"), pk=lead_id
+    )
+    old_status = lead.status.lead_status if lead.status else ""
+
+    data = payload.dict(exclude_unset=True)
+    for attr, value in data.items():
+        setattr(lead, attr, value)
+    lead.modified_by = request.auth
+    lead.save()
+
+    # Re-fetch to get the potentially updated status FK
+    lead = Lead.objects.select_related(
+        "status", "lead_owner", "source", "industry", "territory",
+    ).get(pk=lead.pk)
+    new_status = lead.status.lead_status if lead.status else ""
+    if old_status != new_status:
+        log_status_change(lead, old_status, new_status, request.auth)
+
+    broadcast_crm_update("lead_updated", "lead", lead.id)
+    return lead
+
+
+# ---------------------------------------------------------------------------
+# Delete
+# ---------------------------------------------------------------------------
+
+@router.delete("/{lead_id}", response={204: None})
+def delete_lead(request, lead_id: int):
+    lead = get_object_or_404(Lead, pk=lead_id)
+    lead.delete()
+    broadcast_crm_update("lead_deleted", "lead", lead_id)
+    return 204, None
 
 
 # ---------------------------------------------------------------------------

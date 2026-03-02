@@ -22,11 +22,19 @@
       "Bash(docker compose -f docker-compose.prod.yml up -d backend)",
       "Bash(docker compose -f docker-compose.prod.yml logs --tail=5 backend)",
       "Bash(docker compose -f docker-compose.prod.yml exec backend python manage.py shell -c \":*)",
-      "Bash(docker compose -f docker-compose.prod.yml logs --tail=3 backend)"
+      "Bash(docker compose -f docker-compose.prod.yml logs --tail=3 backend)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyNTMxODc0LCJpYXQiOjE3NzI0ODg2NzQsImp0aSI6ImNhZDYwYzNjMzZmNTRlYTc4ZWYyZjJjNTY5NzhkNWY4IiwidXNlcl9pZCI6MSwiY29tcGFueV9pZCI6MX0.87W7ThLrOWMhB_4ALAg_ShWO-wPIE7Wo3ZroNdNgrPQ\")",
+      "Bash(bash /tmp/e2e_test.sh \"$TOKEN\")",
+      "Bash(python3 -c \":*)",
+      "Bash(/tmp/e2e_test_v2.sh:*)",
+      "Bash(chmod +x /tmp/e2e_test_v2.sh)",
+      "Bash(/tmp/e2e_final.sh:*)",
+      "Bash(chmod +x /tmp/e2e_final.sh)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",
-      "/opt/frappe_docker/precept/backend"
+      "/opt/frappe_docker/precept/backend",
+      "/tmp"
     ]
   }
 }

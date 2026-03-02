@@ -68,21 +68,6 @@ def list_deals(
 
 
 # ---------------------------------------------------------------------------
-# Detail
-# ---------------------------------------------------------------------------
-
-@router.get("/{deal_id}", response=DealOut)
-def get_deal(request, deal_id: int):
-    deal = get_object_or_404(
-        Deal.objects.select_related(
-            "status", "deal_owner", "source", "organization",
-        ),
-        pk=deal_id,
-    )
-    return deal
-
-
-# ---------------------------------------------------------------------------
 # Create
 # ---------------------------------------------------------------------------
 
@@ -100,47 +85,6 @@ def create_deal(request, payload: DealCreate):
 
 
 # ---------------------------------------------------------------------------
-# Update
-# ---------------------------------------------------------------------------
-
-@router.patch("/{deal_id}", response=DealOut)
-def update_deal(request, deal_id: int, payload: DealUpdate):
-    deal = get_object_or_404(
-        Deal.objects.select_related("status"), pk=deal_id
-    )
-    old_status = deal.status.deal_status if deal.status else ""
-
-    data = payload.dict(exclude_unset=True)
-    for attr, value in data.items():
-        setattr(deal, attr, value)
-    deal.modified_by = request.auth
-    deal.save()
-
-    # Re-fetch to get the potentially updated status FK
-    deal = Deal.objects.select_related(
-        "status", "deal_owner", "source", "organization",
-    ).get(pk=deal.pk)
-    new_status = deal.status.deal_status if deal.status else ""
-    if old_status != new_status:
-        log_status_change(deal, old_status, new_status, request.auth)
-
-    broadcast_crm_update("deal_updated", "deal", deal.id)
-    return deal
-
-
-# ---------------------------------------------------------------------------
-# Delete
-# ---------------------------------------------------------------------------
-
-@router.delete("/{deal_id}", response={204: None})
-def delete_deal(request, deal_id: int):
-    deal = get_object_or_404(Deal, pk=deal_id)
-    deal.delete()
-    broadcast_crm_update("deal_deleted", "deal", deal_id)
-    return 204, None
-
-
-# ---------------------------------------------------------------------------
 # Bulk Delete
 # ---------------------------------------------------------------------------
 
@@ -151,7 +95,7 @@ def bulk_delete_deals(request, ids: List[int]):
 
 
 # ---------------------------------------------------------------------------
-# Kanban
+# Kanban  (must be before /{deal_id} to avoid route conflict)
 # ---------------------------------------------------------------------------
 
 @router.get("/kanban", response=Dict[str, Any])
@@ -214,7 +158,7 @@ def kanban_deals(
 
 
 # ---------------------------------------------------------------------------
-# Group By
+# Group By  (must be before /{deal_id} to avoid route conflict)
 # ---------------------------------------------------------------------------
 
 @router.get("/group-by", response=Dict[str, Any])
@@ -282,6 +226,62 @@ def group_by_deals(
         "page": page,
         "page_size": page_size,
     }
+
+
+# ---------------------------------------------------------------------------
+# Detail
+# ---------------------------------------------------------------------------
+
+@router.get("/{deal_id}", response=DealOut)
+def get_deal(request, deal_id: int):
+    deal = get_object_or_404(
+        Deal.objects.select_related(
+            "status", "deal_owner", "source", "organization",
+        ),
+        pk=deal_id,
+    )
+    return deal
+
+
+# ---------------------------------------------------------------------------
+# Update
+# ---------------------------------------------------------------------------
+
+@router.patch("/{deal_id}", response=DealOut)
+def update_deal(request, deal_id: int, payload: DealUpdate):
+    deal = get_object_or_404(
+        Deal.objects.select_related("status"), pk=deal_id
+    )
+    old_status = deal.status.deal_status if deal.status else ""
+
+    data = payload.dict(exclude_unset=True)
+    for attr, value in data.items():
+        setattr(deal, attr, value)
+    deal.modified_by = request.auth
+    deal.save()
+
+    # Re-fetch to get the potentially updated status FK
+    deal = Deal.objects.select_related(
+        "status", "deal_owner", "source", "organization",
+    ).get(pk=deal.pk)
+    new_status = deal.status.deal_status if deal.status else ""
+    if old_status != new_status:
+        log_status_change(deal, old_status, new_status, request.auth)
+
+    broadcast_crm_update("deal_updated", "deal", deal.id)
+    return deal
+
+
+# ---------------------------------------------------------------------------
+# Delete
+# ---------------------------------------------------------------------------
+
+@router.delete("/{deal_id}", response={204: None})
+def delete_deal(request, deal_id: int):
+    deal = get_object_or_404(Deal, pk=deal_id)
+    deal.delete()
+    broadcast_crm_update("deal_deleted", "deal", deal_id)
+    return 204, None
 
 
 # ---------------------------------------------------------------------------

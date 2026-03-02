@@ -6,6 +6,7 @@ from django.db.models import (
     Avg,
     Count,
     F,
+    FloatField,
     Sum,
     Value,
 )
@@ -137,7 +138,7 @@ def get_average_deal_value(from_date: date, to_date: date) -> NumberCardData:
     ).exclude(status__type="Lost")
 
     current = qs.aggregate(
-        avg=Coalesce(Avg("deal_value"), 0.0),
+        avg=Coalesce(Avg("deal_value"), 0.0, output_field=FloatField()),
     )["avg"]
     current = float(current)
 
@@ -148,7 +149,7 @@ def get_average_deal_value(from_date: date, to_date: date) -> NumberCardData:
             created_at__date__lte=prev_to,
         )
         .exclude(status__type="Lost")
-        .aggregate(avg=Coalesce(Avg("deal_value"), 0.0))["avg"]
+        .aggregate(avg=Coalesce(Avg("deal_value"), 0.0, output_field=FloatField()))["avg"]
     )
     previous = float(previous)
 
@@ -168,7 +169,7 @@ def get_average_won_deal_value(from_date: date, to_date: date) -> NumberCardData
             status__type="Won",
             closed_date__gte=from_date,
             closed_date__lte=to_date,
-        ).aggregate(avg=Coalesce(Avg("deal_value"), 0.0))["avg"]
+        ).aggregate(avg=Coalesce(Avg("deal_value"), 0.0, output_field=FloatField()))["avg"]
     )
 
     prev_from, prev_to = _previous_period(from_date, to_date)
@@ -177,7 +178,7 @@ def get_average_won_deal_value(from_date: date, to_date: date) -> NumberCardData
             status__type="Won",
             closed_date__gte=prev_from,
             closed_date__lte=prev_to,
-        ).aggregate(avg=Coalesce(Avg("deal_value"), 0.0))["avg"]
+        ).aggregate(avg=Coalesce(Avg("deal_value"), 0.0, output_field=FloatField()))["avg"]
     )
 
     return NumberCardData(
@@ -196,7 +197,7 @@ def get_total_deal_value(from_date: date, to_date: date) -> NumberCardData:
             status__type="Won",
             closed_date__gte=from_date,
             closed_date__lte=to_date,
-        ).aggregate(total=Coalesce(Sum("deal_value"), 0.0))["total"]
+        ).aggregate(total=Coalesce(Sum("deal_value"), 0.0, output_field=FloatField()))["total"]
     )
 
     prev_from, prev_to = _previous_period(from_date, to_date)
@@ -205,7 +206,7 @@ def get_total_deal_value(from_date: date, to_date: date) -> NumberCardData:
             status__type="Won",
             closed_date__gte=prev_from,
             closed_date__lte=prev_to,
-        ).aggregate(total=Coalesce(Sum("deal_value"), 0.0))["total"]
+        ).aggregate(total=Coalesce(Sum("deal_value"), 0.0, output_field=FloatField()))["total"]
     )
 
     return NumberCardData(
@@ -416,7 +417,7 @@ def get_deals_by_territory(from_date: date, to_date: date) -> List[ChartDataPoin
         .values(label=F("territory__territory_name"))
         .annotate(
             value=Count("id"),
-            value2=Coalesce(Sum("deal_value"), 0.0),
+            value2=Coalesce(Sum("deal_value"), 0.0, output_field=FloatField()),
         )
         .order_by("-value")
     )
@@ -448,7 +449,7 @@ def get_deals_by_salesperson(from_date: date, to_date: date) -> List[ChartDataPo
         .values("owner_name")
         .annotate(
             value=Count("id"),
-            value2=Coalesce(Sum("deal_value"), 0.0),
+            value2=Coalesce(Sum("deal_value"), 0.0, output_field=FloatField()),
         )
         .order_by("-value")
     )
@@ -580,6 +581,7 @@ def get_forecasted_revenue(from_date: date, to_date: date) -> List[ForecastPoint
             total=Coalesce(
                 Sum(F("expected_deal_value") * F("probability") / 100),
                 0.0,
+                output_field=FloatField(),
             ),
         )
         .order_by("month")
@@ -598,7 +600,7 @@ def get_forecasted_revenue(from_date: date, to_date: date) -> List[ForecastPoint
         )
         .annotate(month=TruncMonth("closed_date"))
         .values("month")
-        .annotate(total=Coalesce(Sum("deal_value"), 0.0))
+        .annotate(total=Coalesce(Sum("deal_value"), 0.0, output_field=FloatField()))
         .order_by("month")
     )
     actual_map: Dict[str, float] = {

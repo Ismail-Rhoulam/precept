@@ -1,10 +1,20 @@
+from typing import List
+
 from django.contrib.auth import authenticate
+from django.utils.text import slugify
 from ninja import Router
 from ninja.errors import HttpError
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
-from apps.core.api.schemas import LoginIn, RegisterIn, TokenOut, UserOut
+from apps.core.api.schemas import (
+    CompanyIn,
+    CompanyOut,
+    LoginIn,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+)
 from apps.core.models import Company, User
 from apps.core.api import data_import, translations
 
@@ -70,6 +80,7 @@ def me(request):
         first_name=user.first_name,
         last_name=user.last_name,
         role=user.role,
+        is_superuser=user.is_superuser,
         company_id=user.company_id,
         company_name=user.company.name if user.company else None,
         avatar=user.avatar.url if user.avatar else None,
@@ -96,6 +107,75 @@ def refresh_token(request, refresh: str):
     return TokenOut(
         access=str(new_refresh.access_token),
         refresh=str(new_refresh),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Company management (superuser only)
+# ---------------------------------------------------------------------------
+
+
+def _require_superuser(user):
+    if not user.is_superuser:
+        raise HttpError(403, "Superuser access required.")
+
+
+@router.get("/companies/", response=List[CompanyOut], auth=JWTAuth())
+def list_companies(request):
+    """List all companies. Superuser only."""
+    _require_superuser(request.auth)
+    return Company.objects.all()
+
+
+@router.post("/companies/", response={201: TokenOut}, auth=JWTAuth())
+def create_company(request, payload: CompanyIn):
+    """Create a new company and assign it to the current user if they have none."""
+    _require_superuser(request.auth)
+
+    slug = slugify(payload.name)
+    if Company.objects.filter(slug=slug).exists():
+        raise HttpError(409, "A company with this name already exists.")
+
+    company = Company.objects.create(name=payload.name, slug=slug, is_active=True)
+
+    user = request.auth
+    if not user.company_id:
+        user.company = company
+        user.role = "admin"
+        user.save(update_fields=["company", "role"])
+
+    # Return new tokens with company_id
+    refresh = RefreshToken.for_user(user)
+    refresh["company_id"] = company.pk
+    refresh.access_token["company_id"] = company.pk
+
+    return 201, TokenOut(
+        access=str(refresh.access_token),
+        refresh=str(refresh),
+    )
+
+
+@router.post("/companies/{company_id}/switch/", response=TokenOut, auth=JWTAuth())
+def switch_company(request, company_id: int):
+    """Switch the current superuser to a different company."""
+    _require_superuser(request.auth)
+
+    try:
+        company = Company.objects.get(pk=company_id, is_active=True)
+    except Company.DoesNotExist:
+        raise HttpError(404, "Company not found or inactive.")
+
+    user = request.auth
+    user.company = company
+    user.save(update_fields=["company"])
+
+    refresh = RefreshToken.for_user(user)
+    refresh["company_id"] = company.pk
+    refresh.access_token["company_id"] = company.pk
+
+    return TokenOut(
+        access=str(refresh.access_token),
+        refresh=str(refresh),
     )
 
 

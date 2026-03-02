@@ -1,9 +1,15 @@
 from ninja import Router
+from ninja.errors import HttpError
 
 from apps.integrations.api.schemas import CRMSettingsOut, CRMSettingsUpdate
 from apps.settings.models import CRMSettings
 
 router = Router()
+
+
+def _require_company(request):
+    if not request.company:
+        raise HttpError(400, "No company assigned. Create or switch to a company first.")
 
 
 # ---------------------------------------------------------------------------
@@ -14,6 +20,7 @@ router = Router()
 @router.get("/", response=CRMSettingsOut)
 def get_crm_settings(request):
     """Get CRM settings for the current tenant. Creates if not exists."""
+    _require_company(request)
     settings, _ = CRMSettings.objects.get_or_create(
         company=request.company,
     )
@@ -23,6 +30,7 @@ def get_crm_settings(request):
 @router.patch("/", response=CRMSettingsOut)
 def update_crm_settings(request, payload: CRMSettingsUpdate):
     """Update CRM settings for the current tenant."""
+    _require_company(request)
     settings, _ = CRMSettings.objects.get_or_create(
         company=request.company,
     )

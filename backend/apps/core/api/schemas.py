@@ -27,9 +27,21 @@ class UserOut(Schema):
     first_name: str
     last_name: str
     role: str
+    is_superuser: bool = False
     company_id: Optional[int] = None
     company_name: Optional[str] = None
     avatar: Optional[str] = None
+
+
+class CompanyIn(Schema):
+    name: str
+
+
+class CompanyOut(Schema):
+    id: int
+    name: str
+    slug: str
+    is_active: bool
 
 
 # ---------------------------------------------------------------------------

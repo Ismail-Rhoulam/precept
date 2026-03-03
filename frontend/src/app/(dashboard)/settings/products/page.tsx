@@ -23,6 +23,28 @@ import {
   useDeleteProduct,
 } from "@/hooks/useProducts"
 import type { Product, ProductCreate, ProductUpdate } from "@/types/product"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -68,53 +90,38 @@ function EditModal({ product, onClose }: EditModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Edit Product</h3>
-          <button
-            onClick={onClose}
-            disabled={updateProduct.isPending}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Product</DialogTitle>
+        </DialogHeader>
 
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Code
-            </label>
-            <input
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Product Code</Label>
+            <Input
               type="text"
               value={form.product_code || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, product_code: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Product Name</Label>
+            <Input
               type="text"
               value={form.product_name || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, product_name: e.target.value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Standard Rate
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Standard Rate</Label>
+            <Input
               type="number"
               min="0"
               step="0.01"
@@ -125,34 +132,31 @@ function EditModal({ product, onClose }: EditModalProps) {
                   standard_rate: parseFloat(e.target.value) || 0,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
               value={form.description || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="resize-none"
             />
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Status</label>
+            <Label>Status</Label>
             <button
               type="button"
               onClick={() =>
                 setForm((prev) => ({ ...prev, disabled: !prev.disabled }))
               }
               className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                form.disabled ? "bg-gray-300" : "bg-green-500"
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                form.disabled ? "bg-muted-foreground/30" : "bg-green-500"
               )}
             >
               <span
@@ -162,36 +166,30 @@ function EditModal({ product, onClose }: EditModalProps) {
                 )}
               />
             </button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               {form.disabled ? "Disabled" : "Active"}
             </span>
           </div>
 
           {errorMessage && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">{errorMessage}</p>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
-          <button
+        <DialogFooter>
+          <Button
+            variant="outline"
             onClick={onClose}
             disabled={updateProduct.isPending}
-            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={updateProduct.isPending}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-              updateProduct.isPending
-                ? "bg-primary/60 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            )}
           >
             {updateProduct.isPending ? (
               <>
@@ -204,10 +202,10 @@ function EditModal({ product, onClose }: EditModalProps) {
                 Save Changes
               </>
             )}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -296,20 +294,17 @@ export default function ProductsSettingsPage() {
         <div className="flex items-center gap-3">
           <Package className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold">Products</h1>
+            <p className="text-sm text-muted-foreground">
               Manage your product catalog
             </p>
           </div>
         </div>
         {!showCreateForm && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={() => setShowCreateForm(true)}>
             <Plus className="h-4 w-4" />
             Add Product
-          </button>
+          </Button>
         )}
       </div>
 
@@ -317,178 +312,162 @@ export default function ProductsSettingsPage() {
       <div className="mb-4">
         <form onSubmit={handleSearch} className="flex items-center gap-2">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search products..."
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="pl-9"
             />
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
+          <Button type="submit" variant="outline">
             Search
-          </button>
+          </Button>
           {search && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 setSearch("")
                 setSearchInput("")
                 setPage(1)
               }}
-              className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               Clear
-            </button>
+            </Button>
           )}
         </form>
       </div>
 
       {/* Inline Create Form */}
       {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">
-            New Product
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                Product Code
-              </label>
-              <input
-                type="text"
-                value={createForm.product_code}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    product_code: e.target.value,
-                  }))
-                }
-                placeholder="e.g. PROD-001"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                autoFocus
-              />
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold mb-3">
+              New Product
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Product Code
+                </Label>
+                <Input
+                  type="text"
+                  value={createForm.product_code}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      product_code: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g. PROD-001"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Product Name
+                </Label>
+                <Input
+                  type="text"
+                  value={createForm.product_name}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      product_name: e.target.value,
+                    }))
+                  }
+                  placeholder="Product name"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Standard Rate
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={createForm.standard_rate}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      standard_rate: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Description
+                </Label>
+                <Input
+                  type="text"
+                  value={createForm.description || ""}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Brief description"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                Product Name
-              </label>
-              <input
-                type="text"
-                value={createForm.product_name}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    product_name: e.target.value,
-                  }))
-                }
-                placeholder="Product name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                Standard Rate
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={createForm.standard_rate}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    standard_rate: parseFloat(e.target.value) || 0,
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                Description
-              </label>
-              <input
-                type="text"
-                value={createForm.description || ""}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Brief description"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-          </div>
 
-          {createProduct.isError && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-700">
-                {createProduct.error instanceof Error
-                  ? createProduct.error.message
-                  : "Failed to create product."}
-              </p>
-            </div>
-          )}
+            {createProduct.isError && (
+              <Alert variant="destructive" className="mt-3">
+                <AlertDescription>
+                  {createProduct.error instanceof Error
+                    ? createProduct.error.message
+                    : "Failed to create product."}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          <div className="flex items-center gap-2 justify-end mt-4">
-            <button
-              onClick={resetCreateForm}
-              className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreate}
-              disabled={
-                !createForm.product_code.trim() ||
-                !createForm.product_name.trim() ||
-                createProduct.isPending
-              }
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                !createForm.product_code.trim() ||
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <Button variant="outline" onClick={resetCreateForm}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={
+                  !createForm.product_code.trim() ||
                   !createForm.product_name.trim() ||
                   createProduct.isPending
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-primary text-white hover:bg-primary/90"
-              )}
-            >
-              {createProduct.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
-              {createProduct.isPending ? "Creating..." : "Create Product"}
-            </button>
-          </div>
-        </div>
+                }
+              >
+                {createProduct.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {createProduct.isPending ? "Creating..." : "Create Product"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Product Table */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
               Loading products...
             </span>
           </div>
         ) : isError ? (
           <div className="py-16 text-center">
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-sm text-red-600">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="text-sm text-destructive">
               Failed to load products. Please try again.
             </p>
           </div>
         ) : products.length === 0 ? (
           <div className="py-16 text-center">
-            <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">
+            <Inbox className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
               {search
                 ? "No products match your search."
                 : "No products yet. Add your first product."}
@@ -496,145 +475,145 @@ export default function ProductsSettingsPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Product Code
-                    </th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Product Name
-                    </th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Standard Rate
-                    </th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Description
-                    </th>
-                    <th className="text-center px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Status
-                    </th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                      Created
-                    </th>
-                    <th className="w-24 px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs text-center">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono text-gray-700 text-xs">
-                        {product.product_code}
-                      </td>
-                      <td className="px-4 py-3 text-gray-900 font-medium">
-                        {product.product_name}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-700">
-                        {formatCurrency(product.standard_rate)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[200px]">
-                        {truncate(product.description, 50)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleToggleDisabled(product)}
-                          disabled={updateProduct.isPending}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    Product Code
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    Product Name
+                  </TableHead>
+                  <TableHead className="text-right text-xs uppercase tracking-wider">
+                    Standard Rate
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    Description
+                  </TableHead>
+                  <TableHead className="text-center text-xs uppercase tracking-wider">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">
+                    Created
+                  </TableHead>
+                  <TableHead className="w-24 text-center text-xs uppercase tracking-wider">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-mono text-xs">
+                      {product.product_code}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {product.product_name}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(product.standard_rate)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground max-w-[200px]">
+                      {truncate(product.description, 50)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <button
+                        onClick={() => handleToggleDisabled(product)}
+                        disabled={updateProduct.isPending}
+                      >
+                        <Badge
+                          variant={product.disabled ? "secondary" : "default"}
                           className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer",
+                            "cursor-pointer",
                             product.disabled
-                              ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              ? "bg-muted text-muted-foreground hover:bg-muted/80"
                               : "bg-green-100 text-green-800 hover:bg-green-200"
                           )}
-                          title={
-                            product.disabled
-                              ? "Click to enable"
-                              : "Click to disable"
-                          }
                         >
                           {product.disabled ? "Disabled" : "Active"}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {format(new Date(product.created_at), "MMM d, yyyy")}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => setEditingProduct(product)}
-                            className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="Edit product"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product)}
-                            disabled={deleteProduct.isPending}
-                            className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                            title="Delete product"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </Badge>
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {format(new Date(product.created_at), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditingProduct(product)}
+                          title="Edit product"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(product)}
+                          disabled={deleteProduct.isPending}
+                          title="Delete product"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-                <p className="text-sm text-gray-500">
+              <div className="px-4 py-3 border-t flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
                   Showing {(page - 1) * pageSize + 1} to{" "}
                   {Math.min(page * pageSize, total)} of {total} products
                 </p>
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Previous
-                  </button>
-                  <span className="text-sm text-gray-600">
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
                     Page {page} of {totalPages}
                   </span>
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() =>
                       setPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={page === totalPages}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                     <ChevronRight className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
           </>
         )}
-      </div>
+      </Card>
 
       {/* Error display for mutations */}
       {(updateProduct.isError || deleteProduct.isError) && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>
             {updateProduct.error instanceof Error
               ? updateProduct.error.message
               : deleteProduct.error instanceof Error
                 ? deleteProduct.error.message
                 : "An error occurred."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Edit Modal */}

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import type { ChartDataPoint } from "@/types/dashboard"
 
 const DEFAULT_COLORS = [
@@ -59,14 +60,16 @@ export default function BarChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        </div>
-        <div className="flex items-center justify-center h-64 text-sm text-gray-400">
-          No data available
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -97,11 +100,11 @@ export default function BarChart({
 
   if (horizontal) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        </div>
-        <div className="p-5 space-y-3">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {data.map((item, index) => {
             const percentage = (item.value / maxValue) * 100
             const color = item.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]
@@ -114,14 +117,14 @@ export default function BarChart({
                 onMouseLeave={handleMouseLeave}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-600 truncate max-w-[60%]">
+                  <span className="text-xs font-medium text-muted-foreground truncate max-w-[60%]">
                     {item.label}
                   </span>
-                  <span className="text-xs font-semibold text-gray-900">
+                  <span className="text-xs font-semibold">
                     {formatValue(item.value)}
                   </span>
                 </div>
-                <div className="h-6 bg-gray-100 rounded overflow-hidden">
+                <div className="h-6 bg-muted rounded overflow-hidden">
                   <div
                     className="h-full rounded transition-all duration-500 ease-out group-hover:opacity-80"
                     style={{
@@ -133,26 +136,26 @@ export default function BarChart({
               </div>
             )
           })}
-        </div>
-        {tooltip.visible && (
-          <div
-            className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg pointer-events-none"
-            style={{
-              left: tooltip.x,
-              top: tooltip.y,
-              transform: "translate(-50%, -100%)",
-            }}
-          >
-            <div className="font-medium">{tooltip.label}</div>
-            <div>{formatValue(tooltip.value)}</div>
-            {tooltip.value2 != null && (
-              <div className="text-gray-300">
-                Secondary: {formatValue(tooltip.value2)}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          {tooltip.visible && (
+            <div
+              className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg pointer-events-none"
+              style={{
+                left: tooltip.x,
+                top: tooltip.y,
+                transform: "translate(-50%, -100%)",
+              }}
+            >
+              <div className="font-medium">{tooltip.label}</div>
+              <div>{formatValue(tooltip.value)}</div>
+              {tooltip.value2 != null && (
+                <div className="text-gray-300">
+                  Secondary: {formatValue(tooltip.value2)}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     )
   }
 
@@ -160,16 +163,16 @@ export default function BarChart({
   const barWidth = Math.max(12, Math.min(48, 280 / data.length))
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-      </div>
-      <div className="p-5 relative">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="relative">
         {/* Y-axis labels */}
         <div className="flex h-56">
           <div className="flex flex-col justify-between pr-2 text-right w-12 shrink-0">
             {[4, 3, 2, 1, 0].map((i) => (
-              <span key={i} className="text-[10px] text-gray-400">
+              <span key={i} className="text-[10px] text-muted-foreground">
                 {formatValue(Math.round((maxValue / 4) * i))}
               </span>
             ))}
@@ -181,7 +184,7 @@ export default function BarChart({
             {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="absolute left-0 right-0 border-t border-gray-100"
+                className="absolute left-0 right-0 border-t border-muted"
                 style={{ top: `${(i / 4) * 100}%` }}
               />
             ))}
@@ -233,7 +236,7 @@ export default function BarChart({
             {data.map((item) => (
               <span
                 key={item.label}
-                className="text-[10px] text-gray-500 text-center truncate"
+                className="text-[10px] text-muted-foreground text-center truncate"
                 style={{ width: barWidth, maxWidth: barWidth + 16 }}
                 title={item.label}
               >
@@ -248,11 +251,11 @@ export default function BarChart({
           <div className="mt-3 flex items-center gap-4 justify-center">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-blue-500" />
-              <span className="text-[10px] text-gray-500">Value</span>
+              <span className="text-[10px] text-muted-foreground">Value</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-[10px] text-gray-500">Count</span>
+              <span className="text-[10px] text-muted-foreground">Count</span>
             </div>
           </div>
         )}
@@ -275,7 +278,7 @@ export default function BarChart({
             )}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

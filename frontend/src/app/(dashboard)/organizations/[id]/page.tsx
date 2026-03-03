@@ -11,9 +11,30 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useOrganization, useUpdateOrganization, useDeleteOrganization } from "@/hooks/useOrganizations"
 import type { OrganizationCreate } from "@/types/organization"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 
 function formatRevenue(value: number | null | undefined, currency?: string): string {
   if (value === null || value === undefined || value === 0) return "-"
@@ -80,8 +101,24 @@ export default function OrganizationDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-72" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-56" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-5 w-44" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -89,16 +126,16 @@ export default function OrganizationDetailPage() {
   if (isError || !organization) {
     return (
       <div className="space-y-4">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => router.push("/organizations")}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Organizations
-        </button>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500">Organization not found or failed to load.</p>
-        </div>
+        </Button>
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">Organization not found or failed to load.</p>
+        </Card>
       </div>
     )
   }
@@ -106,22 +143,22 @@ export default function OrganizationDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => router.push("/organizations")}
-        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Organizations
-      </button>
+      </Button>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {organization.organization_name}
           </h1>
           {organization.industry && (
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               {organization.industry}
               {organization.territory ? ` - ${organization.territory}` : ""}
             </p>
@@ -130,17 +167,13 @@ export default function OrganizationDetailPage() {
         <div className="flex items-center gap-3">
           {isEditing ? (
             <>
-              <button
-                onClick={cancelEditing}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="outline" onClick={cancelEditing}>
                 <X className="h-4 w-4" />
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={updateOrganization.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {updateOrganization.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -148,24 +181,21 @@ export default function OrganizationDetailPage() {
                   <Save className="h-4 w-4" />
                 )}
                 Save Changes
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
-                onClick={startEditing}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="outline" onClick={startEditing}>
                 <Pencil className="h-4 w-4" />
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -173,99 +203,90 @@ export default function OrganizationDetailPage() {
 
       {/* Error messages */}
       {updateOrganization.isError && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-4">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive">
+          <AlertDescription>
             {updateOrganization.error?.message || "Failed to update organization."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-800">
-                Are you sure you want to delete this organization?
-              </p>
-              <p className="text-sm text-red-600 mt-1">
-                This action cannot be undone.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteOrganization.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {deleteOrganization.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                Delete
-              </button>
-            </div>
-          </div>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to delete this organization?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the
+              organization record.
+            </DialogDescription>
+          </DialogHeader>
           {deleteOrganization.isError && (
-            <p className="text-sm text-red-700 mt-2">
-              {deleteOrganization.error?.message || "Failed to delete organization."}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>
+                {deleteOrganization.error?.message || "Failed to delete organization."}
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteOrganization.isPending}
+            >
+              {deleteOrganization.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Card */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Organization Details
-          </h2>
-        </div>
-        <div className="p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Organization Details</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Organization Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Organization Name
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Organization Name</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.organization_name || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, organization_name: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.organization_name}
                 </p>
               )}
             </div>
 
             {/* Website */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Website
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Website</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="url"
                   value={formData.website || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, website: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="https://example.com"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.website ? (
                     <a
                       href={organization.website}
@@ -284,12 +305,10 @@ export default function OrganizationDetailPage() {
             </div>
 
             {/* No. of Employees */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                No. of Employees
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">No. of Employees</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="number"
                   min={0}
                   value={formData.no_of_employees ?? ""}
@@ -299,10 +318,9 @@ export default function OrganizationDetailPage() {
                       no_of_employees: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.no_of_employees
                     ? organization.no_of_employees.toLocaleString()
                     : "-"}
@@ -311,12 +329,10 @@ export default function OrganizationDetailPage() {
             </div>
 
             {/* Annual Revenue */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Annual Revenue
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Annual Revenue</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="number"
                   min={0}
                   value={formData.annual_revenue ?? ""}
@@ -326,22 +342,19 @@ export default function OrganizationDetailPage() {
                       annual_revenue: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {formatRevenue(organization.annual_revenue, organization.currency)}
                 </p>
               )}
             </div>
 
             {/* Industry */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Industry
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Industry</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.industry_id ?? ""}
                   onChange={(e) =>
@@ -350,23 +363,20 @@ export default function OrganizationDetailPage() {
                       industry_id: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Industry ID"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.industry || "-"}
                 </p>
               )}
             </div>
 
             {/* Territory */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Territory
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Territory</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.territory_id ?? ""}
                   onChange={(e) =>
@@ -375,43 +385,38 @@ export default function OrganizationDetailPage() {
                       territory_id: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Territory ID"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.territory || "-"}
                 </p>
               )}
             </div>
 
             {/* Currency */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Currency
-              </label>
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-muted-foreground">Currency</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.currency || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, currency: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="USD"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {organization.currency || "-"}
                 </p>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Timestamps */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-          <div className="flex items-center gap-6 text-xs text-gray-500">
+        </CardContent>
+        <Separator />
+        <CardFooter className="py-4">
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <span>
               Created: {new Date(organization.created_at).toLocaleString()}
             </span>
@@ -419,8 +424,8 @@ export default function OrganizationDetailPage() {
               Updated: {new Date(organization.updated_at).toLocaleString()}
             </span>
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

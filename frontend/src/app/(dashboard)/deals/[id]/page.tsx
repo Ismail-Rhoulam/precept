@@ -11,12 +11,33 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useDeal, useUpdateDeal, useDeleteDeal } from "@/hooks/useDeals"
 import { ActivityTimeline } from "@/components/activities/ActivityTimeline"
 import { ProductLineItems } from "@/components/products/ProductLineItems"
 import { SLABadge } from "@/components/sla/SLABadge"
 import type { DealCreate } from "@/types/deal"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 function formatCurrency(value: number, currency: string): string {
   try {
@@ -125,8 +146,8 @@ export default function DealDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        <span className="ml-3 text-gray-500">Loading deal...</span>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading deal...</span>
       </div>
     )
   }
@@ -135,30 +156,33 @@ export default function DealDetailPage() {
   if (isError || !deal) {
     return (
       <div className="space-y-6">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => router.push("/deals")}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Deals
-        </button>
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <p className="text-lg font-medium text-gray-900">
-            Failed to load deal
-          </p>
-          <p className="mt-1 text-sm text-gray-500">
-            {error instanceof Error
-              ? error.message
-              : "The deal could not be found or an error occurred."}
-          </p>
-          <button
-            onClick={() => router.push("/deals")}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
-          >
-            Return to Deals
-          </button>
-        </div>
+        </Button>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-900">
+              Failed to load deal
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {error instanceof Error
+                ? error.message
+                : "The deal could not be found or an error occurred."}
+            </p>
+            <Button
+              onClick={() => router.push("/deals")}
+              className="mt-4"
+            >
+              Return to Deals
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -173,474 +197,476 @@ export default function DealDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => router.push("/deals")}
-        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+        className="gap-2 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Deals
-      </button>
+      </Button>
 
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{dealName}</h1>
-              <span
-                className={cn(
-                  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-gray-900">{dealName}</h1>
+                <Badge
+                  variant="outline"
+                  className="rounded-full"
+                  style={{
+                    backgroundColor: deal.status_color
+                      ? `${deal.status_color}20`
+                      : "#e5e7eb",
+                    color: deal.status_color || "#374151",
+                    borderColor: deal.status_color
+                      ? `${deal.status_color}40`
+                      : "#d1d5db",
+                  }}
+                >
+                  {deal.status}
+                </Badge>
+                {dealSlaStatus && (
+                  <SLABadge slaStatus={dealSlaStatus} responseBy={null} />
                 )}
-                style={{
-                  backgroundColor: deal.status_color
-                    ? `${deal.status_color}20`
-                    : "#e5e7eb",
-                  color: deal.status_color || "#374151",
-                }}
-              >
-                {deal.status}
-              </span>
-              {dealSlaStatus && (
-                <SLABadge slaStatus={dealSlaStatus} responseBy={null} />
-              )}
+              </div>
+              <p className="text-sm text-muted-foreground font-mono">
+                {deal.reference_id}
+              </p>
             </div>
-            <p className="text-sm text-gray-500 font-mono">
-              {deal.reference_id}
-            </p>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-gray-900">
+                {formatCurrency(deal.deal_value, deal.currency)}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {deal.probability}% probability
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-3xl font-bold text-gray-900">
-              {formatCurrency(deal.deal_value, deal.currency)}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {deal.probability}% probability
-            </p>
-          </div>
-        </div>
 
-        {/* Action buttons */}
-        <div className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-4">
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={updateDeal.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {updateDeal.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
-              </button>
-              <button
-                onClick={cancelEditing}
-                disabled={updateDeal.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-              >
-                <X className="h-4 w-4" />
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={startEditing}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Deal
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 text-sm font-medium rounded-md hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </button>
-            </>
+          {/* Action buttons */}
+          <div className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-4">
+            {isEditing ? (
+              <>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateDeal.isPending}
+                >
+                  {updateDeal.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={cancelEditing}
+                  disabled={updateDeal.isPending}
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={startEditing}>
+                  <Pencil className="h-4 w-4" />
+                  Edit Deal
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              </>
+            )}
+          </div>
+
+          {saveError && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{saveError}</AlertDescription>
+            </Alert>
           )}
-        </div>
-
-        {saveError && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-            {saveError}
-          </div>
-        )}
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Delete confirmation modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Delete Deal
-                </h3>
-                <p className="text-sm text-gray-500">
+                <DialogTitle>Delete Deal</DialogTitle>
+                <DialogDescription>
                   This action cannot be undone.
-                </p>
+                </DialogDescription>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-medium">&quot;{dealName}&quot;</span>? All
-              associated data will be permanently removed.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteDeal.isPending}
-                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteDeal.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {deleteDeal.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete Deal"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete{" "}
+            <span className="font-medium">&quot;{dealName}&quot;</span>? All
+            associated data will be permanently removed.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteDeal.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteDeal.isPending}
+            >
+              {deleteDeal.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Deal"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Deal Details */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">
-          Deal Details
-        </h2>
+      <Card>
+        <CardHeader>
+          <CardTitle>Deal Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            {/* First Name */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                First Name
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.first_name || ""}
+                  onChange={(e) => updateField("first_name", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.first_name || "--"}
+                </p>
+              )}
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-          {/* First Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              First Name
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.first_name || ""}
-                onChange={(e) => updateField("first_name", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.first_name || "--"}
-              </p>
-            )}
-          </div>
+            {/* Last Name */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Last Name
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.last_name || ""}
+                  onChange={(e) => updateField("last_name", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.last_name || "--"}
+                </p>
+              )}
+            </div>
 
-          {/* Last Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Last Name
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.last_name || ""}
-                onChange={(e) => updateField("last_name", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.last_name || "--"}
-              </p>
-            )}
-          </div>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Email
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="email"
+                  value={editForm.email || ""}
+                  onChange={(e) => updateField("email", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">{deal.email || "--"}</p>
+              )}
+            </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Email
-            </label>
-            {isEditing ? (
-              <input
-                type="email"
-                value={editForm.email || ""}
-                onChange={(e) => updateField("email", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">{deal.email || "--"}</p>
-            )}
-          </div>
+            {/* Mobile No */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Mobile No
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.mobile_no || ""}
+                  onChange={(e) => updateField("mobile_no", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.mobile_no || "--"}
+                </p>
+              )}
+            </div>
 
-          {/* Mobile No */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Mobile No
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.mobile_no || ""}
-                onChange={(e) => updateField("mobile_no", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.mobile_no || "--"}
-              </p>
-            )}
-          </div>
+            {/* Organization */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Organization
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.organization_name || ""}
+                  onChange={(e) =>
+                    updateField("organization_name", e.target.value)
+                  }
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.organization_name || "--"}
+                </p>
+              )}
+            </div>
 
-          {/* Organization */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Organization
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.organization_name || ""}
-                onChange={(e) =>
-                  updateField("organization_name", e.target.value)
-                }
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.organization_name || "--"}
-              </p>
-            )}
-          </div>
+            {/* Status */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Status
+              </Label>
+              {isEditing ? (
+                <Select
+                  value={editForm.status || ""}
+                  onValueChange={(value) => updateField("status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Qualification">Qualification</SelectItem>
+                    <SelectItem value="Needs Analysis">Needs Analysis</SelectItem>
+                    <SelectItem value="Proposal">Proposal</SelectItem>
+                    <SelectItem value="Negotiation">Negotiation</SelectItem>
+                    <SelectItem value="Closed Won">Closed Won</SelectItem>
+                    <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="rounded-full"
+                  style={{
+                    backgroundColor: deal.status_color
+                      ? `${deal.status_color}20`
+                      : "#e5e7eb",
+                    color: deal.status_color || "#374151",
+                    borderColor: deal.status_color
+                      ? `${deal.status_color}40`
+                      : "#d1d5db",
+                  }}
+                >
+                  {deal.status}
+                </Badge>
+              )}
+            </div>
 
-          {/* Status */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Status
-            </label>
-            {isEditing ? (
-              <select
-                value={editForm.status || ""}
-                onChange={(e) => updateField("status", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                <option value="Qualification">Qualification</option>
-                <option value="Needs Analysis">Needs Analysis</option>
-                <option value="Proposal">Proposal</option>
-                <option value="Negotiation">Negotiation</option>
-                <option value="Closed Won">Closed Won</option>
-                <option value="Closed Lost">Closed Lost</option>
-              </select>
-            ) : (
-              <span
-                className={cn(
-                  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                )}
-                style={{
-                  backgroundColor: deal.status_color
-                    ? `${deal.status_color}20`
-                    : "#e5e7eb",
-                  color: deal.status_color || "#374151",
-                }}
-              >
-                {deal.status}
-              </span>
-            )}
-          </div>
-
-          {/* Deal Value */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Deal Value
-            </label>
-            {isEditing ? (
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={editForm.deal_value || 0}
-                onChange={(e) =>
-                  updateField("deal_value", parseFloat(e.target.value) || 0)
-                }
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm font-medium text-gray-900">
-                {formatCurrency(deal.deal_value, deal.currency)}
-              </p>
-            )}
-          </div>
-
-          {/* Currency */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Currency
-            </label>
-            {isEditing ? (
-              <select
-                value={editForm.currency || "USD"}
-                onChange={(e) => updateField("currency", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="INR">INR</option>
-                <option value="CAD">CAD</option>
-                <option value="AUD">AUD</option>
-              </select>
-            ) : (
-              <p className="text-sm text-gray-900">{deal.currency}</p>
-            )}
-          </div>
-
-          {/* Probability */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Probability
-            </label>
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
+            {/* Deal Value */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Deal Value
+              </Label>
+              {isEditing ? (
+                <Input
                   type="number"
                   min="0"
-                  max="100"
-                  value={editForm.probability || 0}
+                  step="1"
+                  value={editForm.deal_value || 0}
                   onChange={(e) =>
-                    updateField(
-                      "probability",
-                      Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
-                    )
+                    updateField("deal_value", parseFloat(e.target.value) || 0)
                   }
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 />
-                <span className="text-sm text-gray-500">%</span>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-900">{deal.probability}%</p>
-            )}
-          </div>
+              ) : (
+                <p className="text-sm font-medium text-gray-900">
+                  {formatCurrency(deal.deal_value, deal.currency)}
+                </p>
+              )}
+            </div>
 
-          {/* Expected Closure Date */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Expected Closure Date
-            </label>
-            {isEditing ? (
-              <input
-                type="date"
-                value={editForm.expected_closure_date || ""}
-                onChange={(e) =>
-                  updateField("expected_closure_date", e.target.value)
-                }
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.expected_closure_date
-                  ? formatDate(deal.expected_closure_date)
-                  : "--"}
-              </p>
-            )}
-          </div>
+            {/* Currency */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Currency
+              </Label>
+              {isEditing ? (
+                <Select
+                  value={editForm.currency || "USD"}
+                  onValueChange={(value) => updateField("currency", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="CAD">CAD</SelectItem>
+                    <SelectItem value="AUD">AUD</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-gray-900">{deal.currency}</p>
+              )}
+            </div>
 
-          {/* Source */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Source
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.source || ""}
-                onChange={(e) => updateField("source", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">{deal.source || "--"}</p>
-            )}
-          </div>
+            {/* Probability */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Probability
+              </Label>
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editForm.probability || 0}
+                    onChange={(e) =>
+                      updateField(
+                        "probability",
+                        Math.min(100, Math.max(0, parseInt(e.target.value) || 0))
+                      )
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-900">{deal.probability}%</p>
+              )}
+            </div>
 
-          {/* Deal Owner */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Deal Owner
-            </label>
-            {isEditing ? (
-              <input
-                type="email"
-                value={editForm.deal_owner_email || ""}
-                onChange={(e) =>
-                  updateField("deal_owner_email", e.target.value)
-                }
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                placeholder="owner@example.com"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.deal_owner_name || deal.deal_owner_email || "--"}
-              </p>
-            )}
-          </div>
+            {/* Expected Closure Date */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Expected Closure Date
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="date"
+                  value={editForm.expected_closure_date || ""}
+                  onChange={(e) =>
+                    updateField("expected_closure_date", e.target.value)
+                  }
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.expected_closure_date
+                    ? formatDate(deal.expected_closure_date)
+                    : "--"}
+                </p>
+              )}
+            </div>
 
-          {/* Lead Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Lead Name
-            </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editForm.lead_name || ""}
-                onChange={(e) => updateField("lead_name", e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-              />
-            ) : (
-              <p className="text-sm text-gray-900">
-                {deal.lead_name || "--"}
-              </p>
-            )}
+            {/* Source */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Source
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.source || ""}
+                  onChange={(e) => updateField("source", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">{deal.source || "--"}</p>
+              )}
+            </div>
+
+            {/* Deal Owner */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Deal Owner
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="email"
+                  value={editForm.deal_owner_email || ""}
+                  onChange={(e) =>
+                    updateField("deal_owner_email", e.target.value)
+                  }
+                  placeholder="owner@example.com"
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.deal_owner_name || deal.deal_owner_email || "--"}
+                </p>
+              )}
+            </div>
+
+            {/* Lead Name */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Lead Name
+              </Label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={editForm.lead_name || ""}
+                  onChange={(e) => updateField("lead_name", e.target.value)}
+                />
+              ) : (
+                <p className="text-sm text-gray-900">
+                  {deal.lead_name || "--"}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Timestamps */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Timestamps
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Created At
-            </label>
-            <p className="text-sm text-gray-900">
-              {formatDateTime(deal.created_at)}
-            </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Timestamps</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Created At
+              </Label>
+              <p className="text-sm text-gray-900">
+                {formatDateTime(deal.created_at)}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Last Updated
+              </Label>
+              <p className="text-sm text-gray-900">
+                {formatDateTime(deal.updated_at)}
+              </p>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Last Updated
-            </label>
-            <p className="text-sm text-gray-900">
-              {formatDateTime(deal.updated_at)}
-            </p>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Product Line Items */}
       <ProductLineItems entityType="deal" entityId={dealId} />

@@ -1,8 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, X, Trash2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Plus, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { FilterCondition } from "@/types/view"
 
 interface FieldOption {
@@ -196,104 +205,122 @@ export function FilterBuilder({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+    <Card>
+      <CardHeader className="p-4 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm">Filters</CardTitle>
+            {filters.length > 0 && (
+              <Badge className="rounded-full text-[10px] font-bold">
+                {filters.length}
+              </Badge>
+            )}
+          </div>
           {filters.length > 0 && (
-            <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-100 rounded-full">
-              {filters.length}
-            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-xs text-muted-foreground hover:text-destructive h-auto py-1 px-2"
+            >
+              Clear all
+            </Button>
           )}
         </div>
-        {filters.length > 0 && (
-          <button
-            onClick={clearAll}
-            className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors"
-          >
-            Clear all
-          </button>
-        )}
-      </div>
+      </CardHeader>
 
-      {/* Filter Rows */}
-      <div className="space-y-2">
-        {filters.map((filter, index) => {
-          const fieldDef = fields.find((f) => f.key === filter.field)
-          const fieldType = fieldDef?.type || "text"
-          const operators = getOperatorsForType(fieldType)
-          const showValue = !isValuelessOperator(filter.operator)
+      <CardContent className="p-4 pt-0">
+        {/* Filter Rows */}
+        <div className="space-y-2">
+          {filters.map((filter, index) => {
+            const fieldDef = fields.find((f) => f.key === filter.field)
+            const fieldType = fieldDef?.type || "text"
+            const operators = getOperatorsForType(fieldType)
+            const showValue = !isValuelessOperator(filter.operator)
 
-          return (
-            <div key={index} className="flex items-center gap-2">
-              {/* Where / And label */}
-              <span className="w-12 text-xs font-medium text-gray-400 text-right flex-shrink-0">
-                {index === 0 ? "Where" : "And"}
-              </span>
+            return (
+              <div key={index} className="flex items-center gap-2">
+                {/* Where / And label */}
+                <span className="w-12 text-xs font-medium text-muted-foreground text-right flex-shrink-0">
+                  {index === 0 ? "Where" : "And"}
+                </span>
 
-              {/* Field Selector */}
-              <select
-                value={filter.field}
-                onChange={(e) => updateFilter(index, { field: e.target.value })}
-                className="w-40 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {fields.map((f) => (
-                  <option key={f.key} value={f.key}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
+                {/* Field Selector */}
+                <Select
+                  value={filter.field}
+                  onValueChange={(value) => updateFilter(index, { field: value })}
+                >
+                  <SelectTrigger className="w-40 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fields.map((f) => (
+                      <SelectItem key={f.key} value={f.key}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Operator Selector */}
-              <select
-                value={filter.operator}
-                onChange={(e) =>
-                  updateFilter(index, {
-                    operator: e.target.value as FilterCondition["operator"],
-                  })
-                }
-                className="w-40 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {operators.map((op) => (
-                  <option key={op.value} value={op.value}>
-                    {op.label}
-                  </option>
-                ))}
-              </select>
+                {/* Operator Selector */}
+                <Select
+                  value={filter.operator}
+                  onValueChange={(value) =>
+                    updateFilter(index, {
+                      operator: value as FilterCondition["operator"],
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-40 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operators.map((op) => (
+                      <SelectItem key={op.value} value={op.value}>
+                        {op.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Value Input */}
-              {showValue ? (
-                <ValueInput
-                  fieldType={fieldType}
-                  value={filter.value}
-                  onChange={(value) => updateFilter(index, { value })}
-                />
-              ) : (
-                <div className="flex-1" />
-              )}
+                {/* Value Input */}
+                {showValue ? (
+                  <ValueInput
+                    fieldType={fieldType}
+                    value={filter.value}
+                    onChange={(value) => updateFilter(index, { value })}
+                  />
+                ) : (
+                  <div className="flex-1" />
+                )}
 
-              {/* Remove Button */}
-              <button
-                onClick={() => removeFilter(index)}
-                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                title="Remove filter"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )
-        })}
-      </div>
+                {/* Remove Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFilter(index)}
+                  className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                  title="Remove filter"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )
+          })}
+        </div>
 
-      {/* Add Filter Button */}
-      <button
-        onClick={addFilter}
-        className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Add filter
-      </button>
-    </div>
+        {/* Add Filter Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={addFilter}
+          className="mt-3 text-sm font-medium text-primary hover:text-primary"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add filter
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -309,34 +336,38 @@ function ValueInput({ fieldType, value, onChange }: ValueInputProps) {
   switch (fieldType) {
     case "number":
       return (
-        <input
+        <Input
           type="number"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
           placeholder="Enter value"
-          className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="flex-1 h-8 text-sm"
         />
       )
 
     case "boolean":
       return (
-        <select
+        <Select
           value={String(value)}
-          onChange={(e) => onChange(e.target.value === "true")}
-          className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          onValueChange={(val) => onChange(val === "true")}
         >
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
+          <SelectTrigger className="flex-1 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Yes</SelectItem>
+            <SelectItem value="false">No</SelectItem>
+          </SelectContent>
+        </Select>
       )
 
     case "date":
       return (
-        <input
+        <Input
           type="date"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="flex-1 h-8 text-sm"
         />
       )
 
@@ -344,12 +375,12 @@ function ValueInput({ fieldType, value, onChange }: ValueInputProps) {
     case "select":
     default:
       return (
-        <input
+        <Input
           type="text"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Enter value"
-          className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="flex-1 h-8 text-sm"
         />
       )
   }

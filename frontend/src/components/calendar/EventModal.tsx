@@ -1,9 +1,29 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { X, Plus, Trash2, Loader2, MapPin, AlignLeft, Clock, Link as LinkIcon } from "lucide-react"
+import { useState } from "react"
+import { Plus, Trash2, Loader2, MapPin, AlignLeft, Clock, Link as LinkIcon, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CalendarEvent, EventCreate } from "@/types/event"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 
 const EVENT_COLORS = [
   "#6366f1", // indigo
@@ -153,78 +173,58 @@ export function EventModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Edit Event" : "New Event"}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Update your event details below." : "Fill in the details for your new event."}
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {isEditing ? "Edit Event" : "New Event"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Subject */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subject <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="event-subject">
+              Subject <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="event-subject"
               value={form.subject}
               onChange={(e) => update("subject", e.target.value)}
               placeholder="Event title"
-              className={cn(
-                "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
-                errors.subject ? "border-red-300" : "border-gray-300"
-              )}
+              className={cn(errors.subject && "border-destructive")}
             />
             {errors.subject && (
-              <p className="mt-1 text-xs text-red-600">{errors.subject}</p>
+              <p className="text-xs text-destructive">{errors.subject}</p>
             )}
           </div>
 
           {/* Date/Time Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="space-y-2">
+              <Label htmlFor="event-starts">
                 <Clock className="inline h-3.5 w-3.5 mr-1" />
-                Starts <span className="text-red-500">*</span>
-              </label>
-              <input
+                Starts <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="event-starts"
                 type={form.all_day ? "date" : "datetime-local"}
                 value={form.all_day ? form.starts_on.slice(0, 10) : form.starts_on}
                 onChange={(e) => update("starts_on", e.target.value)}
-                className={cn(
-                  "w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
-                  errors.starts_on ? "border-red-300" : "border-gray-300"
-                )}
+                className={cn(errors.starts_on && "border-destructive")}
               />
               {errors.starts_on && (
-                <p className="mt-1 text-xs text-red-600">{errors.starts_on}</p>
+                <p className="text-xs text-destructive">{errors.starts_on}</p>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ends
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="event-ends">Ends</Label>
+              <Input
+                id="event-ends"
                 type={form.all_day ? "date" : "datetime-local"}
                 value={form.all_day ? form.ends_on.slice(0, 10) : form.ends_on}
                 onChange={(e) => update("ends_on", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               />
             </div>
           </div>
@@ -236,64 +236,60 @@ export function EventModal({
               type="checkbox"
               checked={form.all_day}
               onChange={(e) => update("all_day", e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
             />
-            <label htmlFor="all-day" className="text-sm text-gray-700">
+            <Label htmlFor="all-day" className="font-normal">
               All day event
-            </label>
+            </Label>
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <Label htmlFor="event-description">
               <AlignLeft className="inline h-3.5 w-3.5 mr-1" />
               Description
-            </label>
-            <textarea
+            </Label>
+            <Textarea
+              id="event-description"
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
               placeholder="Add description..."
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
             />
           </div>
 
           {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <Label htmlFor="event-location">
               <MapPin className="inline h-3.5 w-3.5 mr-1" />
               Location
-            </label>
-            <input
-              type="text"
+            </Label>
+            <Input
+              id="event-location"
               value={form.location}
               onChange={(e) => update("location", e.target.value)}
               placeholder="Add location"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          {/* Event Type & Visibility */}
+          {/* Event Type & Color */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
-              </label>
-              <select
-                value={form.event_type}
-                onChange={(e) => update("event_type", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-              >
-                <option value="Private">Private</option>
-                <option value="Public">Public</option>
-              </select>
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Select value={form.event_type} onValueChange={(val) => update("event_type", val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Private">Private</SelectItem>
+                  <SelectItem value="Public">Public</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Color Picker */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Color
-              </label>
+            <div className="space-y-2">
+              <Label>Color</Label>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {EVENT_COLORS.map((c) => (
                   <button
@@ -302,7 +298,7 @@ export function EventModal({
                     onClick={() => update("color", c)}
                     className={cn(
                       "w-6 h-6 rounded-full border-2 transition-transform hover:scale-110",
-                      form.color === c ? "border-gray-800 scale-110" : "border-transparent"
+                      form.color === c ? "border-foreground scale-110" : "border-transparent"
                     )}
                     style={{ backgroundColor: c }}
                   />
@@ -313,46 +309,46 @@ export function EventModal({
 
           {/* Entity Link */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="space-y-2">
+              <Label>
                 <LinkIcon className="inline h-3.5 w-3.5 mr-1" />
                 Related To
-              </label>
-              <select
-                value={form.entity_type}
-                onChange={(e) => update("entity_type", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+              </Label>
+              <Select
+                value={form.entity_type || "__none__"}
+                onValueChange={(val) => update("entity_type", val === "__none__" ? "" : val)}
               >
-                <option value="">None</option>
-                <option value="lead">Lead</option>
-                <option value="deal">Deal</option>
-                <option value="contact">Contact</option>
-                <option value="organization">Organization</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="deal">Deal</SelectItem>
+                  <SelectItem value="contact">Contact</SelectItem>
+                  <SelectItem value="organization">Organization</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {form.entity_type && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="event-entity-id">ID</Label>
+                <Input
+                  id="event-entity-id"
                   type="number"
                   value={form.entity_id}
                   onChange={(e) => update("entity_id", e.target.value)}
                   placeholder="Entity ID"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
             )}
           </div>
 
           {/* Participants */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Participants
-            </label>
+          <div className="space-y-2">
+            <Label>Participants</Label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="email"
                 value={form.participantEmail}
                 onChange={(e) => update("participantEmail", e.target.value)}
@@ -364,108 +360,108 @@ export function EventModal({
                 }}
                 placeholder="Add by email..."
                 className={cn(
-                  "flex-1 px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
-                  errors.participantEmail ? "border-red-300" : "border-gray-300"
+                  "flex-1",
+                  errors.participantEmail && "border-destructive"
                 )}
               />
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon"
                 onClick={addParticipant}
-                className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm hover:bg-gray-200 transition-colors"
               >
                 <Plus className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             {errors.participantEmail && (
-              <p className="mt-1 text-xs text-red-600">{errors.participantEmail}</p>
+              <p className="text-xs text-destructive">{errors.participantEmail}</p>
             )}
             {form.participants.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {form.participants.map((email) => (
-                  <span
+                  <Badge
                     key={email}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-700"
+                    variant="secondary"
+                    className="gap-1"
                   >
                     {email}
                     <button
                       type="button"
                       onClick={() => removeParticipant(email)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       <X className="h-3 w-3" />
                     </button>
-                  </span>
+                  </Badge>
                 ))}
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <DialogFooter className="flex items-center justify-between pt-2 border-t sm:justify-between">
             <div>
               {isEditing && onDelete && (
                 <>
                   {showDeleteConfirm ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-red-600">Delete this event?</span>
-                      <button
+                      <span className="text-sm text-destructive">Delete this event?</span>
+                      <Button
                         type="button"
+                        variant="destructive"
+                        size="sm"
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
                       >
                         {isDeleting ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           "Confirm"
                         )}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
                       Delete
-                    </button>
+                    </Button>
                   )}
                 </>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={isSaving}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-                  isSaving
-                    ? "bg-primary/70 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary/90"
-                )}
               >
                 {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isSaving ? "Saving..." : isEditing ? "Save Changes" : "Create Event"}
-              </button>
+              </Button>
             </div>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

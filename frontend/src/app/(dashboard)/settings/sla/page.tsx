@@ -24,6 +24,13 @@ import {
   useDeleteSLA,
 } from "@/hooks/useSLA"
 import type { SLA, SLACreate, SLAUpdate } from "@/types/sla"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -201,26 +208,21 @@ function SLAForm({ form, onChange }: SLAFormProps) {
     <div className="space-y-6">
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            SLA Name
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label>SLA Name</Label>
+          <Input
             type="text"
             value={form.sla_name}
             onChange={(e) => updateField("sla_name", e.target.value)}
             placeholder="e.g. Standard SLA"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Apply On
-          </label>
+        <div className="space-y-2">
+          <Label>Apply On</Label>
           <select
             value={form.apply_on}
             onChange={(e) => updateField("apply_on", e.target.value as "Lead" | "Deal")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <option value="Lead">Lead</option>
             <option value="Deal">Deal</option>
@@ -236,7 +238,7 @@ function SLAForm({ form, onChange }: SLAFormProps) {
             onClick={() => updateField("enabled", !form.enabled)}
             className={cn(
               "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
-              form.enabled ? "bg-green-500" : "bg-gray-300"
+              form.enabled ? "bg-green-500" : "bg-muted-foreground/30"
             )}
           >
             <span
@@ -246,7 +248,7 @@ function SLAForm({ form, onChange }: SLAFormProps) {
               )}
             />
           </button>
-          <span className="text-sm text-gray-700">Enabled</span>
+          <span className="text-sm">Enabled</span>
         </label>
 
         <label className="flex items-center gap-2 cursor-pointer">
@@ -255,7 +257,7 @@ function SLAForm({ form, onChange }: SLAFormProps) {
             onClick={() => updateField("is_default", !form.is_default)}
             className={cn(
               "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
-              form.is_default ? "bg-blue-500" : "bg-gray-300"
+              form.is_default ? "bg-blue-500" : "bg-muted-foreground/30"
             )}
           >
             <span
@@ -265,32 +267,30 @@ function SLAForm({ form, onChange }: SLAFormProps) {
               )}
             />
           </button>
-          <span className="text-sm text-gray-700">Default</span>
+          <span className="text-sm">Default</span>
         </label>
       </div>
 
       {/* Date Range */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Start Date <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label>
+            Start Date <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
             type="date"
             value={form.start_date}
             onChange={(e) => updateField("start_date", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End Date <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label>
+            End Date <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
             type="date"
             value={form.end_date}
             onChange={(e) => updateField("end_date", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           />
         </div>
       </div>
@@ -298,36 +298,37 @@ function SLAForm({ form, onChange }: SLAFormProps) {
       {/* Priorities */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-gray-900">Priorities</h4>
-          <button
+          <h4 className="text-sm font-semibold">Priorities</h4>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={addPriority}
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Priority
-          </button>
+          </Button>
         </div>
         {form.priorities.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No priorities defined.</p>
+          <p className="text-sm text-muted-foreground italic">No priorities defined.</p>
         ) : (
           <div className="space-y-2">
             {form.priorities.map((p, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-md px-3 py-2"
+                className="flex items-center gap-3 bg-muted/50 border rounded-md px-3 py-2"
               >
-                <input
+                <Input
                   type="text"
                   value={p.priority}
                   onChange={(e) =>
                     updatePriority(index, "priority", e.target.value)
                   }
                   placeholder="Priority name"
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  className="flex-1"
                 />
                 <div className="flex items-center gap-1">
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     value={p.hours}
@@ -338,12 +339,12 @@ function SLAForm({ form, onChange }: SLAFormProps) {
                         Math.max(0, parseInt(e.target.value) || 0)
                       )
                     }
-                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    className="w-16 text-right"
                   />
-                  <span className="text-xs text-gray-500">hrs</span>
+                  <span className="text-xs text-muted-foreground">hrs</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     max="59"
@@ -355,17 +356,19 @@ function SLAForm({ form, onChange }: SLAFormProps) {
                         Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
                       )
                     }
-                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    className="w-16 text-right"
                   />
-                  <span className="text-xs text-gray-500">min</span>
+                  <span className="text-xs text-muted-foreground">min</span>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
                   onClick={() => removePriority(index)}
-                  className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -375,37 +378,33 @@ function SLAForm({ form, onChange }: SLAFormProps) {
       {/* Working Hours */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-gray-900">Working Hours</h4>
-          <button
+          <h4 className="text-sm font-semibold">Working Hours</h4>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={addWorkingHour}
             disabled={form.working_hours.length >= 7}
-            className={cn(
-              "inline-flex items-center gap-1 text-xs font-medium transition-colors",
-              form.working_hours.length >= 7
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-primary hover:text-primary/80"
-            )}
           >
             <Plus className="h-3.5 w-3.5" />
             Add Day
-          </button>
+          </Button>
         </div>
         {form.working_hours.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">No working hours defined.</p>
+          <p className="text-sm text-muted-foreground italic">No working hours defined.</p>
         ) : (
           <div className="space-y-2">
             {form.working_hours.map((wh, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-md px-3 py-2"
+                className="flex items-center gap-3 bg-muted/50 border rounded-md px-3 py-2"
               >
                 <select
                   value={wh.day}
                   onChange={(e) =>
                     updateWorkingHour(index, "day", e.target.value)
                   }
-                  className="w-32 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  className="w-32 flex h-9 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   {DAYS_OF_WEEK.map((day) => (
                     <option key={day} value={day}>
@@ -414,31 +413,33 @@ function SLAForm({ form, onChange }: SLAFormProps) {
                   ))}
                 </select>
                 <div className="flex items-center gap-2">
-                  <input
+                  <Input
                     type="time"
                     value={wh.start_time}
                     onChange={(e) =>
                       updateWorkingHour(index, "start_time", e.target.value)
                     }
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    className="w-auto"
                   />
-                  <span className="text-xs text-gray-400">to</span>
-                  <input
+                  <span className="text-xs text-muted-foreground">to</span>
+                  <Input
                     type="time"
                     value={wh.end_time}
                     onChange={(e) =>
                       updateWorkingHour(index, "end_time", e.target.value)
                     }
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    className="w-auto"
                   />
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive ml-auto"
                   onClick={() => removeWorkingHour(index)}
-                  className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors ml-auto"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -446,15 +447,15 @@ function SLAForm({ form, onChange }: SLAFormProps) {
       </div>
 
       {/* Condition JSON */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Condition JSON <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <textarea
+      <div className="space-y-2">
+        <Label>
+          Condition JSON <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+        <Textarea
           value={form.condition_json}
           onChange={(e) => updateField("condition_json", e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          className="font-mono resize-none"
           placeholder='{"field": "value"}'
         />
       </div>
@@ -501,35 +502,35 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <Card className="overflow-hidden">
       {/* SLA Summary Row */}
       <div
-        className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+        className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-accent transition-colors"
         onClick={onToggleExpand}
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
+              <h3 className="text-sm font-semibold truncate">
                 {sla.sla_name}
               </h3>
-              <span
+              <Badge
+                variant="secondary"
                 className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
                   sla.apply_on === "Lead"
                     ? "bg-blue-100 text-blue-800"
                     : "bg-purple-100 text-purple-800"
                 )}
               >
                 {sla.apply_on}
-              </span>
+              </Badge>
               {sla.is_default && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                <Badge variant="secondary" className="bg-amber-100 text-amber-800">
                   Default
-                </span>
+                </Badge>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
               <span>{sla.priorities.length} priorities</span>
               {sla.start_date && (
                 <span>
@@ -542,20 +543,20 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <span
+            <Badge
+              variant="secondary"
               className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
                 sla.enabled
                   ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               {sla.enabled ? "Enabled" : "Disabled"}
-            </span>
+            </Badge>
             {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
         </div>
@@ -563,41 +564,35 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-gray-200">
+        <div className="border-t">
           {isEditing ? (
             <div className="p-6">
               <SLAForm form={form} onChange={setForm} />
 
               {errorMessage && (
-                <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-red-700">{errorMessage}</p>
-                </div>
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
               )}
 
-              <div className="flex items-center gap-2 justify-end mt-6 pt-4 border-t border-gray-100">
-                <button
+              <div className="flex items-center gap-2 justify-end mt-6 pt-4 border-t">
+                <Button
+                  variant="outline"
                   onClick={handleCancelEdit}
                   disabled={updateSLA.isPending}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSave}
                   disabled={!form.sla_name.trim() || updateSLA.isPending}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                    !form.sla_name.trim() || updateSLA.isPending
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-primary text-white hover:bg-primary/90"
-                  )}
                 >
                   {updateSLA.isPending && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}
                   {updateSLA.isPending ? "Saving..." : "Save Changes"}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -606,22 +601,22 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Priorities */}
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                     Priorities
                   </h4>
                   {sla.priorities.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">None</p>
+                    <p className="text-sm text-muted-foreground italic">None</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sla.priorities.map((p) => (
                         <div
                           key={p.id}
-                          className="flex items-center justify-between bg-gray-50 rounded px-3 py-1.5"
+                          className="flex items-center justify-between bg-muted/50 rounded px-3 py-1.5"
                         >
-                          <span className="text-sm text-gray-900 font-medium">
+                          <span className="text-sm font-medium">
                             {p.priority}
                           </span>
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Clock className="h-3.5 w-3.5" />
                             {formatResponseTime(p.response_time_seconds)}
                           </div>
@@ -633,22 +628,22 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
 
                 {/* Working Hours */}
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                     Working Hours
                   </h4>
                   {sla.working_hours.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">None</p>
+                    <p className="text-sm text-muted-foreground italic">None</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sla.working_hours.map((wh) => (
                         <div
                           key={wh.id}
-                          className="flex items-center justify-between bg-gray-50 rounded px-3 py-1.5"
+                          className="flex items-center justify-between bg-muted/50 rounded px-3 py-1.5"
                         >
-                          <span className="text-sm text-gray-900 font-medium">
+                          <span className="text-sm font-medium">
                             {wh.day}
                           </span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             {wh.start_time} - {wh.end_time}
                           </span>
                         </div>
@@ -661,53 +656,56 @@ function SLACard({ sla, isExpanded, onToggleExpand, onDelete }: SLACardProps) {
               {/* Condition */}
               {sla.condition && (
                 <div className="mt-4">
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                     Condition
                   </h4>
-                  <p className="text-sm text-gray-700">{sla.condition}</p>
+                  <p className="text-sm">{sla.condition}</p>
                 </div>
               )}
 
               {sla.condition_json &&
                 Object.keys(sla.condition_json).length > 0 && (
                   <div className="mt-4">
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                       Condition JSON
                     </h4>
-                    <pre className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded p-3 overflow-x-auto">
+                    <pre className="text-xs text-muted-foreground bg-muted/50 border rounded p-3 overflow-x-auto">
                       {JSON.stringify(sla.condition_json, null, 2)}
                     </pre>
                   </div>
                 )}
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2 mt-6 pt-4 border-t border-gray-100">
-                <button
+              <div className="flex items-center gap-2 mt-6 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleStartEdit()
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation()
                     onDelete()
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -776,88 +774,81 @@ export default function SLASettingsPage() {
         <div className="flex items-center gap-3">
           <Shield className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold">
               Service Level Agreements
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Configure SLA rules for leads and deals
             </p>
           </div>
         </div>
         {!showCreateForm && (
-          <button
-            onClick={handleStartCreate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={handleStartCreate}>
             <Plus className="h-4 w-4" />
             New SLA
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Create Form */}
       {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Create New SLA
-          </h3>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">
+              Create New SLA
+            </h3>
 
-          <SLAForm form={createFormData} onChange={setCreateFormData} />
+            <SLAForm form={createFormData} onChange={setCreateFormData} />
 
-          {createError && (
-            <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">{createError}</p>
+            {createError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex items-center gap-2 justify-end mt-6 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={handleCancelCreate}
+                disabled={createSLA.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={!createFormData.sla_name.trim() || createSLA.isPending}
+              >
+                {createSLA.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {createSLA.isPending ? "Creating..." : "Create SLA"}
+              </Button>
             </div>
-          )}
-
-          <div className="flex items-center gap-2 justify-end mt-6 pt-4 border-t border-gray-100">
-            <button
-              onClick={handleCancelCreate}
-              disabled={createSLA.isPending}
-              className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreate}
-              disabled={!createFormData.sla_name.trim() || createSLA.isPending}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                !createFormData.sla_name.trim() || createSLA.isPending
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-primary text-white hover:bg-primary/90"
-              )}
-            >
-              {createSLA.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
-              {createSLA.isPending ? "Creating..." : "Create SLA"}
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* SLA List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-          <span className="ml-2 text-sm text-gray-500">Loading SLAs...</span>
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading SLAs...</span>
         </div>
       ) : isError ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm text-red-600">
+        <Card className="p-12 text-center">
+          <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+          <p className="text-sm text-destructive">
             Failed to load SLAs. Please try again.
           </p>
-        </div>
+        </Card>
       ) : !slas || slas.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">
+        <Card className="p-12 text-center">
+          <Inbox className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">
             No SLAs configured yet. Create your first SLA to get started.
           </p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-3">
           {slas.map((sla) => (
@@ -874,13 +865,13 @@ export default function SLASettingsPage() {
 
       {/* Delete error */}
       {deleteSLA.isError && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>
             {deleteSLA.error instanceof Error
               ? deleteSLA.error.message
               : "Failed to delete SLA."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   )

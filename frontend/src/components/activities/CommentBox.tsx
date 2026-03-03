@@ -4,6 +4,9 @@ import { useState } from "react"
 import { Send, Loader2 } from "lucide-react"
 import { useCreateComment } from "@/hooks/useComments"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CommentBoxProps {
   entityType: string
@@ -40,31 +43,25 @@ export function CommentBox({ entityType, entityId, onCommentAdded }: CommentBoxP
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="relative">
-        <textarea
+        <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Write a comment..."
           rows={3}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-gray-400"
+          className="resize-none"
         />
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <div className="flex justify-end">
-        <button
+        <Button
           type="submit"
           disabled={!content.trim() || createComment.isPending}
-          className={cn(
-            "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-            !content.trim() || createComment.isPending
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary/90"
-          )}
         >
           {createComment.isPending ? (
             <>
@@ -77,7 +74,7 @@ export function CommentBox({ entityType, entityId, onCommentAdded }: CommentBoxP
               Comment
             </>
           )}
-        </button>
+        </Button>
       </div>
     </form>
   )

@@ -3,6 +3,15 @@
 import { useState, useRef, useEffect } from "react"
 import { Calendar, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
 import {
   format,
   subDays,
@@ -63,7 +72,6 @@ export default function DateRangePicker({
   const [showCustom, setShowCustom] = useState(false)
   const [customFrom, setCustomFrom] = useState(value.from)
   const [customTo, setCustomTo] = useState(value.to)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const today = new Date()
 
@@ -129,24 +137,6 @@ export default function DateRangePicker({
     },
   ]
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false)
-        setShowCustom(false)
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isOpen])
-
   function handlePresetClick(preset: PresetOption) {
     const range = preset.getRange()
     onChange(range)
@@ -163,117 +153,96 @@ export default function DateRangePicker({
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-white border rounded-md transition-colors shadow-sm",
-          isOpen
-            ? "border-blue-300 ring-2 ring-blue-100"
-            : "border-gray-300 hover:bg-gray-50"
-        )}
-      >
-        <Calendar className="w-4 h-4 text-gray-400" />
-        <span className="text-gray-700">
-          {formatRangeLabel(value.from, value.to)}
-        </span>
-        <ChevronDown
-          className={cn(
-            "w-4 h-4 text-gray-400 transition-transform",
-            isOpen && "rotate-180"
-          )}
-        />
-      </button>
+    <Popover open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setShowCustom(false) }}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span>{formatRangeLabel(value.from, value.to)}</span>
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform",
+              isOpen && "rotate-180"
+            )}
+          />
+        </Button>
+      </PopoverTrigger>
 
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-          {!showCustom ? (
-            <div className="py-1">
-              {presets.map((preset) => (
-                <button
-                  key={preset.label}
-                  onClick={() => handlePresetClick(preset)}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  {preset.label}
-                </button>
-              ))}
-              <div className="border-t border-gray-100 mt-1 pt-1">
-                <button
-                  onClick={() => {
-                    setCustomFrom(value.from)
-                    setCustomTo(value.to)
-                    setShowCustom(true)
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-blue-600 font-medium hover:bg-blue-50 transition-colors"
-                >
-                  Custom Range...
-                </button>
-              </div>
+      <PopoverContent align="end" className="w-72 p-0">
+        {!showCustom ? (
+          <div className="py-1">
+            {presets.map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => handlePresetClick(preset)}
+                className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-accent transition-colors"
+              >
+                {preset.label}
+              </button>
+            ))}
+            <Separator className="my-1" />
+            <button
+              onClick={() => {
+                setCustomFrom(value.from)
+                setCustomTo(value.to)
+                setShowCustom(true)
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-primary font-medium hover:bg-accent transition-colors"
+            >
+              Custom Range...
+            </button>
+          </div>
+        ) : (
+          <div className="p-4 space-y-3">
+            <div>
+              <Label htmlFor="date-range-from" className="text-xs mb-1 block">
+                From
+              </Label>
+              <Input
+                id="date-range-from"
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
             </div>
-          ) : (
-            <div className="p-4 space-y-3">
-              <div>
-                <label
-                  htmlFor="date-range-from"
-                  className="block text-xs font-medium text-gray-600 mb-1"
-                >
-                  From
-                </label>
-                <input
-                  id="date-range-from"
-                  type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="date-range-to"
-                  className="block text-xs font-medium text-gray-600 mb-1"
-                >
-                  To
-                </label>
-                <input
-                  id="date-range-to"
-                  type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              {customFrom && customTo && customFrom > customTo && (
-                <p className="text-xs text-red-600">
-                  Start date must be before or equal to end date
-                </p>
-              )}
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={() => setShowCustom(false)}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleCustomApply}
-                  disabled={
-                    !customFrom || !customTo || customFrom > customTo
-                  }
-                  className={cn(
-                    "flex-1 px-3 py-2 text-sm font-medium text-white rounded-md transition-colors",
-                    !customFrom || !customTo || customFrom > customTo
-                      ? "bg-blue-300 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  )}
-                >
-                  Apply
-                </button>
-              </div>
+            <div>
+              <Label htmlFor="date-range-to" className="text-xs mb-1 block">
+                To
+              </Label>
+              <Input
+                id="date-range-to"
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+              />
             </div>
-          )}
-        </div>
-      )}
-    </div>
+            {customFrom && customTo && customFrom > customTo && (
+              <p className="text-xs text-destructive">
+                Start date must be before or equal to end date
+              </p>
+            )}
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setShowCustom(false)}
+              >
+                Back
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={handleCustomApply}
+                disabled={
+                  !customFrom || !customTo || customFrom > customTo
+                }
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   )
 }

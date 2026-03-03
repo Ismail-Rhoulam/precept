@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Settings, Package, Shield, ArrowRight, Sliders, Phone, Code2, LayoutTemplate } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 const settingsLinks = [
   {
@@ -48,8 +49,8 @@ export default function SettingsPage() {
       <div className="flex items-center gap-3 mb-6">
         <Settings className="h-7 w-7 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-sm text-muted-foreground">
             Configure your CRM settings and preferences
           </p>
         </div>
@@ -57,27 +58,27 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {settingsLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:border-primary/30 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-primary/10 transition-colors">
-                  <link.icon className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
+          <Link key={link.href} href={link.href}>
+            <Card className="hover:border-primary/30 hover:shadow-md transition-all group h-full">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                      <link.icon className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold group-hover:text-primary transition-colors">
+                        {link.name}
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {link.description}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors mt-1" />
                 </div>
-                <div>
-                  <h2 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                    {link.name}
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {link.description}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-primary transition-colors mt-1" />
-            </div>
+              </CardContent>
+            </Card>
           </Link>
         ))}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import type { ChartDataPoint } from "@/types/dashboard"
 
 const DEFAULT_COLORS = [
@@ -37,14 +38,16 @@ export default function DonutChart({ data, title }: DonutChartProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        </div>
-        <div className="flex items-center justify-center h-64 text-sm text-gray-400">
-          No data available
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -116,11 +119,11 @@ export default function DonutChart({ data, title }: DonutChartProps) {
   })
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-      </div>
-      <div className="p-5">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="flex items-center justify-center">
           <svg
             viewBox="0 0 200 200"
@@ -164,10 +167,10 @@ export default function DonutChart({ data, title }: DonutChartProps) {
         {/* Tooltip for hovered segment */}
         {hoveredIndex !== null && arcs[hoveredIndex] && (
           <div className="mt-3 text-center">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium">
               {arcs[hoveredIndex].label}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {" "}
               - {formatValue(arcs[hoveredIndex].value)} (
               {arcs[hoveredIndex].percentage}%)
@@ -199,17 +202,17 @@ export default function DonutChart({ data, title }: DonutChartProps) {
                   className="w-2.5 h-2.5 rounded-sm shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-xs text-gray-600 truncate">
+                <span className="text-xs text-muted-foreground truncate">
                   {item.label}
                 </span>
-                <span className="text-xs text-gray-400 ml-auto shrink-0">
+                <span className="text-xs text-muted-foreground ml-auto shrink-0">
                   {percentage}%
                 </span>
               </div>
             )
           })}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

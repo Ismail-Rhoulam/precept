@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { Clock, CheckCircle, XCircle } from "lucide-react"
 import { format, formatDistanceToNow, isPast } from "date-fns"
+import { Badge } from "@/components/ui/badge"
 
 interface SLABadgeProps {
   slaStatus: string
@@ -12,28 +13,24 @@ interface SLABadgeProps {
 export function SLABadge({ slaStatus, responseBy }: SLABadgeProps) {
   const statusConfig: Record<
     string,
-    { bg: string; text: string; icon: React.ReactNode }
+    { className: string; icon: React.ReactNode }
   > = {
     "First Response Due": {
-      bg: "bg-yellow-100",
-      text: "text-yellow-800",
+      className: "bg-yellow-100 text-yellow-800 border-transparent",
       icon: <Clock className="h-3 w-3" />,
     },
     Fulfilled: {
-      bg: "bg-green-100",
-      text: "text-green-800",
+      className: "bg-green-100 text-green-800 border-transparent",
       icon: <CheckCircle className="h-3 w-3" />,
     },
     Failed: {
-      bg: "bg-red-100",
-      text: "text-red-800",
+      className: "bg-red-100 text-red-800 border-transparent",
       icon: <XCircle className="h-3 w-3" />,
     },
   }
 
   const config = statusConfig[slaStatus] || {
-    bg: "bg-gray-100",
-    text: "text-gray-700",
+    className: "bg-gray-100 text-gray-700 border-transparent",
     icon: <Clock className="h-3 w-3" />,
   }
 
@@ -42,12 +39,9 @@ export function SLABadge({ slaStatus, responseBy }: SLABadgeProps) {
 
   return (
     <div className="inline-flex flex-col gap-1">
-      <div
-        className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium",
-          config.bg,
-          config.text
-        )}
+      <Badge
+        variant="secondary"
+        className={cn("gap-1.5", config.className)}
         title={
           responseByDate
             ? `Response by: ${format(responseByDate, "MMM d, yyyy 'at' h:mm a")}`
@@ -56,12 +50,12 @@ export function SLABadge({ slaStatus, responseBy }: SLABadgeProps) {
       >
         {config.icon}
         {slaStatus || "N/A"}
-      </div>
+      </Badge>
       {responseByDate && slaStatus === "First Response Due" && (
         <span
           className={cn(
             "text-xs",
-            isOverdue ? "text-red-600 font-medium" : "text-gray-500"
+            isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
           )}
         >
           {isOverdue

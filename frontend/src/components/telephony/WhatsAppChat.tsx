@@ -17,6 +17,11 @@ import {
   useSendWhatsAppMessage,
 } from "@/hooks/useIntegrations"
 import type { WhatsAppMessage } from "@/types/integration"
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface WhatsAppChatProps {
   entityType: "lead" | "deal"
@@ -49,15 +54,15 @@ function formatTime(dateStr: string): string {
 function StatusIcon({ status }: { status: WhatsAppMessage["status"] }) {
   switch (status) {
     case "Pending":
-      return <Clock className="h-3 w-3 text-gray-400" />
+      return <Clock className="h-3 w-3 text-muted-foreground" />
     case "Sent":
-      return <Check className="h-3 w-3 text-gray-400" />
+      return <Check className="h-3 w-3 text-muted-foreground" />
     case "Delivered":
-      return <CheckCheck className="h-3 w-3 text-gray-400" />
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />
     case "Read":
       return <CheckCheck className="h-3 w-3 text-blue-500" />
     case "Failed":
-      return <AlertCircle className="h-3 w-3 text-red-400" />
+      return <AlertCircle className="h-3 w-3 text-destructive" />
     default:
       return null
   }
@@ -108,35 +113,39 @@ export default function WhatsAppChat({
   }
 
   return (
-    <div className="flex flex-col h-full border border-gray-200 rounded-lg bg-white overflow-hidden">
+    <Card className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50">
-        <MessageCircle className="h-4 w-4 text-green-600" />
-        <span className="text-sm font-medium text-gray-900">WhatsApp</span>
-        <span className="text-xs text-gray-500">{phoneNumber}</span>
-      </div>
+      <CardHeader className="flex flex-row items-center gap-2 space-y-0 px-4 py-3 bg-muted/50">
+        <Avatar className="h-6 w-6">
+          <AvatarFallback className="bg-green-100">
+            <MessageCircle className="h-3 w-3 text-green-600" />
+          </AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium text-foreground">WhatsApp</span>
+        <span className="text-xs text-muted-foreground">{phoneNumber}</span>
+      </CardHeader>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px] max-h-[400px] bg-gray-50/50">
+      <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px] max-h-[400px] bg-muted/20">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
               Loading messages...
             </span>
           </div>
         ) : isError ? (
           <div className="flex items-center justify-center py-8">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <span className="ml-2 text-sm text-red-500">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span className="ml-2 text-sm text-destructive">
               Failed to load messages
             </span>
           </div>
         ) : !messages || messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Inbox className="h-8 w-8 text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500">No messages yet</p>
-            <p className="text-xs text-gray-400">
+            <Inbox className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-sm text-muted-foreground">No messages yet</p>
+            <p className="text-xs text-muted-foreground/60">
               Send a message to start the conversation
             </p>
           </div>
@@ -157,8 +166,8 @@ export default function WhatsAppChat({
                     className={cn(
                       "max-w-[75%] rounded-lg px-3 py-2 shadow-sm",
                       isOutgoing
-                        ? "bg-green-100 text-gray-900 rounded-br-sm"
-                        : "bg-white text-gray-900 border border-gray-200 rounded-bl-sm"
+                        ? "bg-green-100 text-foreground rounded-br-sm"
+                        : "bg-background text-foreground border border-border rounded-bl-sm"
                     )}
                   >
                     <p className="text-sm whitespace-pre-wrap break-words">
@@ -180,7 +189,7 @@ export default function WhatsAppChat({
                         isOutgoing ? "justify-end" : "justify-start"
                       )}
                     >
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-[10px] text-muted-foreground">
                         {formatTime(msg.created_at)}
                       </span>
                       {isOutgoing && <StatusIcon status={msg.status} />}
@@ -192,25 +201,27 @@ export default function WhatsAppChat({
             <div ref={messagesEndRef} />
           </>
         )}
-      </div>
+      </CardContent>
 
       {/* Input */}
-      <div className="border-t border-gray-200 p-3">
+      <CardFooter className="flex-col items-stretch p-3 gap-2">
         {sendMessage.isError && (
-          <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
-            {sendMessage.error instanceof Error
-              ? sendMessage.error.message
-              : "Failed to send message"}
-          </div>
+          <Alert variant="destructive" className="py-2">
+            <AlertDescription className="text-xs">
+              {sendMessage.error instanceof Error
+                ? sendMessage.error.message
+                : "Failed to send message"}
+            </AlertDescription>
+          </Alert>
         )}
         <div className="flex items-end gap-2">
-          <textarea
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 max-h-24"
+            className="flex-1 resize-none max-h-24 min-h-[38px]"
             style={{
               height: "auto",
               minHeight: "38px",
@@ -221,13 +232,14 @@ export default function WhatsAppChat({
               target.style.height = Math.min(target.scrollHeight, 96) + "px"
             }}
           />
-          <button
+          <Button
             onClick={handleSend}
             disabled={!input.trim() || sendMessage.isPending}
+            size="icon"
             className={cn(
-              "p-2 rounded-md transition-colors flex-shrink-0",
+              "flex-shrink-0",
               !input.trim() || sendMessage.isPending
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                ? ""
                 : "bg-green-600 text-white hover:bg-green-700"
             )}
           >
@@ -236,9 +248,9 @@ export default function WhatsAppChat({
             ) : (
               <Send className="h-4 w-4" />
             )}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }

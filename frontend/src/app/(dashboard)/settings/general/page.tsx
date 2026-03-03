@@ -12,6 +12,18 @@ import {
 import { cn } from "@/lib/utils"
 import { useCRMSettings, useUpdateCRMSettings } from "@/hooks/useIntegrations"
 import type { CRMSettingsData } from "@/types/integration"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const CURRENCIES = [
   { value: "USD", label: "USD - US Dollar" },
@@ -64,8 +76,8 @@ export default function GeneralSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        <span className="ml-2 text-sm text-gray-500">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">
           Loading settings...
         </span>
       </div>
@@ -75,8 +87,8 @@ export default function GeneralSettingsPage() {
   if (isError) {
     return (
       <div className="py-16 text-center">
-        <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-        <p className="text-sm text-red-600">
+        <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+        <p className="text-sm text-destructive">
           Failed to load settings. Please try again.
         </p>
       </div>
@@ -88,7 +100,7 @@ export default function GeneralSettingsPage() {
       <div className="mb-6">
         <Link
           href="/settings"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Settings
@@ -96,56 +108,56 @@ export default function GeneralSettingsPage() {
         <div className="flex items-center gap-3">
           <Settings className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold">
               General Settings
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Configure general CRM preferences
             </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm max-w-2xl">
-        <div className="p-6 space-y-5">
+      <Card className="max-w-2xl">
+        <CardContent className="p-6 space-y-5">
           {/* Brand Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Brand Name
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="brand-name">Brand Name</Label>
+            <Input
+              id="brand-name"
               type="text"
               value={form.brand_name || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, brand_name: e.target.value }))
               }
               placeholder="Your company or brand name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground">
               This name will be displayed across the CRM interface
             </p>
           </div>
 
           {/* Currency */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Currency
-            </label>
-            <select
+          <div className="space-y-2">
+            <Label>Currency</Label>
+            <Select
               value={form.currency || "USD"}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, currency: e.target.value }))
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, currency: value }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
             >
-              {CURRENCIES.map((currency) => (
-                <option key={currency.value} value={currency.value}>
-                  {currency.label}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((currency) => (
+                  <SelectItem key={currency.value} value={currency.value}>
+                    {currency.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
               Default currency for deals, products, and reports
             </p>
           </div>
@@ -153,10 +165,8 @@ export default function GeneralSettingsPage() {
           {/* Enable Forecasting */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">
-                Enable Forecasting
-              </label>
-              <p className="text-xs text-gray-500">
+              <Label>Enable Forecasting</Label>
+              <p className="text-xs text-muted-foreground">
                 Show revenue forecasting features in the dashboard
               </p>
             </div>
@@ -169,8 +179,8 @@ export default function GeneralSettingsPage() {
                 }))
               }
               className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                form.enable_forecasting ? "bg-primary" : "bg-gray-300"
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                form.enable_forecasting ? "bg-primary" : "bg-muted-foreground/30"
               )}
             >
               <span
@@ -184,35 +194,29 @@ export default function GeneralSettingsPage() {
 
           {/* Error */}
           {updateMutation.isError && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
                 {updateMutation.error instanceof Error
                   ? updateMutation.error.message
                   : "Failed to save settings."}
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Success */}
           {successMessage && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-700">{successMessage}</p>
-            </div>
+            <Alert className="border-green-200 bg-green-50 text-green-700">
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
           )}
-        </div>
+        </CardContent>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
-          <button
+        <CardFooter className="border-t px-6 py-4 justify-end">
+          <Button
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-              updateMutation.isPending
-                ? "bg-primary/60 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            )}
           >
             {updateMutation.isPending ? (
               <>
@@ -225,9 +229,9 @@ export default function GeneralSettingsPage() {
                 Save Settings
               </>
             )}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

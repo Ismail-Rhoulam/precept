@@ -29,7 +29,15 @@
       "Bash(/tmp/e2e_test_v2.sh:*)",
       "Bash(chmod +x /tmp/e2e_test_v2.sh)",
       "Bash(/tmp/e2e_final.sh:*)",
-      "Bash(chmod +x /tmp/e2e_final.sh)"
+      "Bash(chmod +x /tmp/e2e_final.sh)",
+      "Bash(wc -l /opt/frappe_docker/precept/frontend/src/components/**/*.tsx)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npm ls tailwindcss)",
+      "Bash(npm install)",
+      "Bash(npx shadcn@latest init -y --defaults)",
+      "Bash(npx shadcn@latest add button input label card badge table dialog dropdown-menu select tabs sheet separator avatar alert skeleton textarea popover tooltip -y)",
+      "Bash(npx next build)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

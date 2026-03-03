@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Bell } from "lucide-react"
 import { useUnreadCount } from "@/hooks/useNotifications"
 import { NotificationPanel } from "./NotificationPanel"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
@@ -33,18 +35,20 @@ export function NotificationBell() {
 
   return (
     <div ref={containerRef} className="relative">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
         aria-label="Notifications"
+        className="relative"
       >
         <Bell className="h-5 w-5" />
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold text-white bg-red-500 border-2 border-white">
+          <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full text-[10px] font-bold bg-red-500 text-white border-2 border-background hover:bg-red-500">
             {count > 99 ? "99+" : count}
-          </span>
+          </Badge>
         )}
-      </button>
+      </Button>
 
       {isOpen && <NotificationPanel onClose={() => setIsOpen(false)} />}
     </div>

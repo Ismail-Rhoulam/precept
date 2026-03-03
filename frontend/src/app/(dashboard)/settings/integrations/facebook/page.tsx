@@ -27,6 +27,27 @@ import {
 } from "@/hooks/useIntegrations"
 import { integrationsApi } from "@/lib/api/integrations"
 import type { LeadSyncSource, FacebookPage, FacebookForm } from "@/types/integration"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 const CRM_FIELDS = [
   "first_name",
@@ -221,57 +242,45 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
   const isSaving = createSyncSource.isPending || updateSyncSource.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
-          <h3 className="text-lg font-semibold text-gray-900">
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
             {isEditing ? "Edit Sync Source" : "Add Sync Source"}
-          </h3>
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="space-y-5 overflow-y-auto flex-1 px-1">
           {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input
               type="text"
               value={form.name}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, name: e.target.value }))
               }
               placeholder="e.g. Website Lead Ads"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           {/* Access Token + Fetch Pages */}
           {!isEditing && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Facebook Access Token
-              </label>
+            <div className="space-y-2">
+              <Label>Facebook Access Token</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <input
+                  <Input
                     type={showToken ? "text" : "password"}
                     value={accessToken}
                     onChange={(e) => setAccessToken(e.target.value)}
                     placeholder="Paste your Facebook access token"
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowToken(!showToken)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
                   >
                     {showToken ? (
                       <EyeOff className="h-4 w-4" />
@@ -280,36 +289,28 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
                     )}
                   </button>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={handleFetchPages}
                   disabled={!accessToken.trim() || fetchingPages}
-                  className={cn(
-                    "inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap",
-                    !accessToken.trim() || fetchingPages
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-primary text-white hover:bg-primary/90"
-                  )}
                 >
                   {fetchingPages && (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   )}
                   Fetch Pages
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
           {/* Page Dropdown */}
           {pages.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Facebook Page
-              </label>
+            <div className="space-y-2">
+              <Label>Facebook Page</Label>
               <select
                 value={form.facebook_page_id}
                 onChange={(e) => handlePageChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">Select a page</option>
                 {pages.map((page) => (
@@ -324,35 +325,28 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
           {/* Fetch Forms button (after page is selected) */}
           {form.facebook_page_id && !isEditing && (
             <div className="flex justify-end">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={handleFetchForms}
                 disabled={fetchingForms}
-                className={cn(
-                  "inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                  fetchingForms
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                )}
               >
                 {fetchingForms && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 Fetch Forms
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Form Dropdown */}
           {forms.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Lead Form
-              </label>
+            <div className="space-y-2">
+              <Label>Lead Form</Label>
               <select
                 value={form.facebook_form_id}
                 onChange={(e) => handleFormChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="">Select a form</option>
                 {forms.map((f) => (
@@ -367,94 +361,86 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
           {/* Display selected page/form for editing */}
           {isEditing && (
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Facebook Page
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label>Facebook Page</Label>
+                <Input
                   type="text"
                   value={form.facebook_page_name}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600"
+                  className="bg-muted text-muted-foreground"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lead Form
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label>Lead Form</Label>
+                <Input
                   type="text"
                   value={form.facebook_form_name}
                   readOnly
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm bg-gray-50 text-gray-600"
+                  className="bg-muted text-muted-foreground"
                 />
               </div>
             </div>
           )}
 
           {/* Field Mapping */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Field Mapping
-            </label>
-            <p className="text-xs text-gray-500 mb-3">
+          <div className="space-y-2">
+            <Label>Field Mapping</Label>
+            <p className="text-xs text-muted-foreground">
               Map Facebook form fields to CRM lead fields
             </p>
 
             {fbFields.length > 0 && (
-              <div className="border border-gray-200 rounded-md overflow-hidden mb-3">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                        Facebook Field
-                      </th>
-                      <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase">
-                        CRM Field
-                      </th>
-                      <th className="w-10 px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {fbFields.map((fbField) => (
-                      <tr key={fbField}>
-                        <td className="px-3 py-2 text-gray-700 font-mono text-xs">
-                          {fbField}
-                        </td>
-                        <td className="px-3 py-2">
-                          <select
-                            value={form.field_mapping[fbField] || ""}
-                            onChange={(e) =>
-                              updateFieldMapping(fbField, e.target.value)
-                            }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary bg-white"
-                          >
-                            <option value="">-- Select --</option>
-                            {CRM_FIELDS.map((crmField) => (
-                              <option key={crmField} value={crmField}>
-                                {crmField}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <button
-                            type="button"
-                            onClick={() => removeFieldMapping(fbField)}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      Facebook Field
+                    </TableHead>
+                    <TableHead className="text-xs font-semibold uppercase">
+                      CRM Field
+                    </TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fbFields.map((fbField) => (
+                    <TableRow key={fbField}>
+                      <TableCell className="font-mono text-xs">
+                        {fbField}
+                      </TableCell>
+                      <TableCell>
+                        <select
+                          value={form.field_mapping[fbField] || ""}
+                          onChange={(e) =>
+                            updateFieldMapping(fbField, e.target.value)
+                          }
+                          className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <option value="">-- Select --</option>
+                          {CRM_FIELDS.map((crmField) => (
+                            <option key={crmField} value={crmField}>
+                              {crmField}
+                            </option>
+                          ))}
+                        </select>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => removeFieldMapping(fbField)}
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
 
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={newFbField}
                 onChange={(e) => setNewFbField(e.target.value)}
@@ -465,30 +451,23 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
                   }
                 }}
                 placeholder="Facebook field name (e.g. full_name)"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                className="flex-1"
               />
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={addFieldMapping}
                 disabled={!newFbField.trim()}
-                className={cn(
-                  "inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                  !newFbField.trim()
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                )}
               >
                 <Plus className="h-4 w-4" />
                 Add
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Sync Frequency */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sync Frequency
-            </label>
+          <div className="space-y-2">
+            <Label>Sync Frequency</Label>
             <select
               value={form.sync_frequency}
               onChange={(e) =>
@@ -497,7 +476,7 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
                   sync_frequency: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {SYNC_FREQUENCIES.map((freq) => (
                 <option key={freq.value} value={freq.value}>
@@ -509,17 +488,15 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
 
           {/* Enabled Toggle */}
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">
-              Enabled
-            </label>
+            <Label>Enabled</Label>
             <button
               type="button"
               onClick={() =>
                 setForm((prev) => ({ ...prev, enabled: !prev.enabled }))
               }
               className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                form.enabled ? "bg-primary" : "bg-gray-300"
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                form.enabled ? "bg-primary" : "bg-muted-foreground/30"
               )}
             >
               <span
@@ -533,30 +510,25 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
 
           {/* Error */}
           {errorMessage && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">{errorMessage}</p>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3 sticky bottom-0 bg-white">
-          <button
+        <DialogFooter className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={isSaving}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-              isSaving
-                ? "bg-primary/60 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            )}
           >
             {isSaving ? (
               <>
@@ -569,10 +541,10 @@ function SyncSourceModal({ source, onClose }: SyncSourceModalProps) {
                 {isEditing ? "Save Changes" : "Create Source"}
               </>
             )}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -629,7 +601,7 @@ export default function FacebookSyncPage() {
       <div className="mb-6">
         <Link
           href="/settings/integrations"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Integrations
@@ -638,168 +610,165 @@ export default function FacebookSyncPage() {
           <div className="flex items-center gap-3">
             <Facebook className="h-7 w-7 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold">
                 Facebook Lead Sync
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Sync leads from Facebook Lead Ads into your CRM
               </p>
             </div>
           </div>
-          <button
+          <Button
             onClick={() => {
               setEditingSource(null)
               setShowModal(true)
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Add Sync Source
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
               Loading sync sources...
             </span>
           </div>
         ) : isError ? (
           <div className="py-16 text-center">
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-sm text-red-600">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="text-sm text-destructive">
               Failed to load sync sources. Please try again.
             </p>
           </div>
         ) : !sources || sources.length === 0 ? (
           <div className="py-16 text-center">
-            <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">
+            <Inbox className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
               No sync sources configured. Add one to start syncing leads from
               Facebook.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Name
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Page
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Form
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Frequency
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Last Synced
-                  </th>
-                  <th className="text-center px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Status
-                  </th>
-                  <th className="text-center px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sources.map((source) => (
-                  <tr
-                    key={source.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {source.name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {source.facebook_page_name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {source.facebook_form_name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {SYNC_FREQUENCIES.find(
-                        (f) => f.value === source.sync_frequency
-                      )?.label || source.sync_frequency}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {formatRelativeTime(source.last_synced_at)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleToggleEnabled(source)}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Name
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Page
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Form
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Frequency
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Last Synced
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-center">
+                  Status
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-center">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sources.map((source) => (
+                <TableRow key={source.id}>
+                  <TableCell className="font-medium">
+                    {source.name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {source.facebook_page_name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {source.facebook_form_name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {SYNC_FREQUENCIES.find(
+                      (f) => f.value === source.sync_frequency
+                    )?.label || source.sync_frequency}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {formatRelativeTime(source.last_synced_at)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <button onClick={() => handleToggleEnabled(source)}>
+                      <Badge
+                        variant="secondary"
                         className={cn(
-                          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer",
+                          "cursor-pointer",
                           source.enabled
                             ? "bg-green-100 text-green-800 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
                         )}
                       >
                         {source.enabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                    </button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => handleTriggerSync(source.id)}
+                        disabled={syncingIds.has(source.id)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                        title="Sync now"
+                      >
+                        <RefreshCw
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            syncingIds.has(source.id) && "animate-spin"
+                          )}
+                        />
                       </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleTriggerSync(source.id)}
-                          disabled={syncingIds.has(source.id)}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                          title="Sync now"
-                        >
-                          <RefreshCw
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              syncingIds.has(source.id) && "animate-spin"
-                            )}
-                          />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingSource(source)
-                            setShowModal(true)
-                          }}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(source)}
-                          disabled={deleteSyncSource.isPending}
-                          className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <button
+                        onClick={() => {
+                          setEditingSource(source)
+                          setShowModal(true)
+                        }}
+                        className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(source)}
+                        disabled={deleteSyncSource.isPending}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
 
       {/* Error display for mutations */}
       {(deleteSyncSource.isError || triggerSync.isError) && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
             {deleteSyncSource.error instanceof Error
               ? deleteSyncSource.error.message
               : triggerSync.error instanceof Error
                 ? triggerSync.error.message
                 : "An error occurred."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Modal */}

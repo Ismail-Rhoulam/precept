@@ -15,6 +15,28 @@ import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/u
 import type { TaskListParams } from "@/types/task"
 import { TaskItem } from "@/components/activities/TaskItem"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function TasksPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -94,188 +116,208 @@ export default function TasksPage() {
           <CheckSquare className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-            <p className="text-sm text-gray-500">Manage and track your tasks</p>
+            <p className="text-sm text-muted-foreground">Manage and track your tasks</p>
           </div>
         </div>
         {!showCreateForm && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={() => setShowCreateForm(true)}>
             <Plus className="h-4 w-4" />
             New Task
-          </button>
+          </Button>
         )}
       </div>
 
-      {/* Create form */}
-      {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Create New Task</h2>
+      {/* Create Task Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Add a new task to your list. Fill out the details below.
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleCreateTask} className="space-y-4">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Task description..."
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input
+                id="task-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Task title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description</Label>
+              <Textarea
+                id="task-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Task description..."
+                rows={3}
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  Priority
-                </label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  Status
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                >
-                  <option value="Backlog">Backlog</option>
-                  <option value="Todo">Todo</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Done">Done</option>
-                  <option value="Canceled">Canceled</option>
-                </select>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Backlog">Backlog</SelectItem>
+                    <SelectItem value="Todo">Todo</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Done">Done</SelectItem>
+                    <SelectItem value="Canceled">Canceled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  Due Date
-                </label>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="task-due-date">Due Date</Label>
+                <Input
+                  id="task-due-date"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
             </div>
 
             {createTask.isError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
                   {createTask.error instanceof Error
                     ? createTask.error.message
                     : "Failed to create task"}
-                </p>
-              </div>
+                </AlertDescription>
+              </Alert>
             )}
 
-            <div className="flex items-center gap-3 justify-end">
-              <button
+            <DialogFooter>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={!title.trim() || createTask.isPending}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  !title.trim() || createTask.isPending
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-primary text-white hover:bg-primary/90"
-                )}
               >
                 {createTask.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 {createTask.isPending ? "Creating..." : "Create Task"}
-              </button>
-            </div>
+              </Button>
+            </DialogFooter>
           </form>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Filter bar */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tasks..."
+                className="pl-10"
+              />
+            </div>
+            <Select
+              value={statusFilter || "__all__"}
+              onValueChange={(val) => {
+                setStatusFilter(val === "__all__" ? "" : val)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Statuses</SelectItem>
+                <SelectItem value="Backlog">Backlog</SelectItem>
+                <SelectItem value="Todo">Todo</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
+                <SelectItem value="Canceled">Canceled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={priorityFilter || "__all__"}
+              onValueChange={(val) => {
+                setPriorityFilter(val === "__all__" ? "" : val)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="All Priorities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Priorities</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value)
-              setPage(1)
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="">All Statuses</option>
-            <option value="Backlog">Backlog</option>
-            <option value="Todo">Todo</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-            <option value="Canceled">Canceled</option>
-          </select>
-          <select
-            value={priorityFilter}
-            onChange={(e) => {
-              setPriorityFilter(e.target.value)
-              setPage(1)
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="">All Priorities</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Task list */}
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading tasks...</p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <div className="w-full max-w-md space-y-3 mt-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : isError ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-900 mb-1">
-            Failed to load tasks
-          </p>
-          <p className="text-sm text-red-600">
-            {error instanceof Error ? error.message : "An error occurred"}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-900 mb-1">
+              Failed to load tasks
+            </p>
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : "An error occurred"}
+            </p>
+          </CardContent>
+        </Card>
       ) : filteredTasks.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">
-            {searchQuery || statusFilter || priorityFilter
-              ? "No tasks match your filters"
-              : "No tasks yet. Create your first task!"}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Inbox className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              {searchQuery || statusFilter || priorityFilter
+                ? "No tasks match your filters"
+                : "No tasks yet. Create your first task!"}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-3">
           {filteredTasks.map((task: any) => (
@@ -292,36 +334,28 @@ export default function TasksPage() {
       {/* Pagination */}
       {filteredTasks.length > 0 && (
         <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Page {page}
           </p>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className={cn(
-                "inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors",
-                page <= 1
-                  ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              )}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={filteredTasks.length < pageSize}
-              className={cn(
-                "inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors",
-                filteredTasks.length < pageSize
-                  ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              )}
             >
               Next
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
       )}

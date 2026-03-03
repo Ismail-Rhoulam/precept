@@ -15,6 +15,11 @@ import {
 import { cn } from "@/lib/utils"
 import { useExotelSettings, useSaveExotelSettings } from "@/hooks/useIntegrations"
 import type { ExotelSettings } from "@/types/integration"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function ExotelSettingsPage() {
   const { data: settings, isLoading, isError } = useExotelSettings()
@@ -65,8 +70,8 @@ export default function ExotelSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        <span className="ml-2 text-sm text-gray-500">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-sm text-muted-foreground">
           Loading Exotel settings...
         </span>
       </div>
@@ -76,8 +81,8 @@ export default function ExotelSettingsPage() {
   if (isError) {
     return (
       <div className="py-16 text-center">
-        <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-        <p className="text-sm text-red-600">
+        <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+        <p className="text-sm text-destructive">
           Failed to load Exotel settings. Please try again.
         </p>
       </div>
@@ -89,7 +94,7 @@ export default function ExotelSettingsPage() {
       <div className="mb-6">
         <Link
           href="/settings/integrations"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Integrations
@@ -97,25 +102,21 @@ export default function ExotelSettingsPage() {
         <div className="flex items-center gap-3">
           <Phone className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Exotel Settings
-            </h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold">Exotel Settings</h1>
+            <p className="text-sm text-muted-foreground">
               Configure Exotel for cloud telephony and click-to-call
             </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm max-w-2xl">
-        <div className="p-6 space-y-5">
+      <Card className="max-w-2xl">
+        <CardContent className="p-6 space-y-5">
           {/* Enabled Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">
-                Enable Exotel
-              </label>
-              <p className="text-xs text-gray-500">
+              <Label>Enable Exotel</Label>
+              <p className="text-xs text-muted-foreground">
                 Activate Exotel integration for your CRM
               </p>
             </div>
@@ -125,8 +126,8 @@ export default function ExotelSettingsPage() {
                 setForm((prev) => ({ ...prev, enabled: !prev.enabled }))
               }
               className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                form.enabled ? "bg-primary" : "bg-gray-300"
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                form.enabled ? "bg-primary" : "bg-muted-foreground/30"
               )}
             >
               <span
@@ -138,73 +139,58 @@ export default function ExotelSettingsPage() {
             </button>
           </div>
 
-          {/* Account SID */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Account SID
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Account SID</Label>
+            <Input
               type="text"
               value={form.account_sid || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, account_sid: e.target.value }))
               }
               placeholder="Your Exotel account SID"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          {/* Subdomain */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subdomain
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Subdomain</Label>
+            <Input
               type="text"
               value={form.subdomain || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, subdomain: e.target.value }))
               }
               placeholder="e.g. api.exotel.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          {/* API Key */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              API Key
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>API Key</Label>
+            <Input
               type="text"
               value={form.api_key || ""}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, api_key: e.target.value }))
               }
               placeholder="Your Exotel API key"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
-          {/* API Token */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              API Token
-            </label>
+          <div className="space-y-2">
+            <Label>API Token</Label>
             <div className="relative">
-              <input
+              <Input
                 type={showApiToken ? "text" : "password"}
                 value={form.api_token || ""}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, api_token: e.target.value }))
                 }
                 placeholder="Your Exotel API token"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                className="pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowApiToken(!showApiToken)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
               >
                 {showApiToken ? (
                   <EyeOff className="h-4 w-4" />
@@ -215,13 +201,10 @@ export default function ExotelSettingsPage() {
             </div>
           </div>
 
-          {/* Webhook Verify Token */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Webhook Verify Token
-            </label>
+          <div className="space-y-2">
+            <Label>Webhook Verify Token</Label>
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={form.webhook_verify_token || ""}
                 onChange={(e) =>
@@ -231,19 +214,20 @@ export default function ExotelSettingsPage() {
                   }))
                 }
                 placeholder="Token for webhook verification"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                className="flex-1"
               />
               {form.webhook_verify_token && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={() =>
                     copyToClipboard(form.webhook_verify_token || "")
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
                   title="Copy to clipboard"
                 >
                   <Copy className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -251,10 +235,8 @@ export default function ExotelSettingsPage() {
           {/* Record Calls Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">
-                Record Calls
-              </label>
-              <p className="text-xs text-gray-500">
+              <Label>Record Calls</Label>
+              <p className="text-xs text-muted-foreground">
                 Automatically record all calls made via Exotel
               </p>
             </div>
@@ -267,8 +249,8 @@ export default function ExotelSettingsPage() {
                 }))
               }
               className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                form.record_calls ? "bg-primary" : "bg-gray-300"
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                form.record_calls ? "bg-primary" : "bg-muted-foreground/30"
               )}
             >
               <span
@@ -280,38 +262,26 @@ export default function ExotelSettingsPage() {
             </button>
           </div>
 
-          {/* Error */}
           {saveMutation.isError && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
                 {saveMutation.error instanceof Error
                   ? saveMutation.error.message
                   : "Failed to save settings."}
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
 
-          {/* Success */}
           {successMessage && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-700">{successMessage}</p>
-            </div>
+            <Alert className="border-green-200 bg-green-50 text-green-700">
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
           )}
-        </div>
+        </CardContent>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-              saveMutation.isPending
-                ? "bg-primary/60 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            )}
-          >
+        <CardFooter className="border-t px-6 py-4 justify-end">
+          <Button onClick={handleSave} disabled={saveMutation.isPending}>
             {saveMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -323,9 +293,9 @@ export default function ExotelSettingsPage() {
                 Save Settings
               </>
             )}
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

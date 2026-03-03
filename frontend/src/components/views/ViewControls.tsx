@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState } from "react"
 import {
   List,
   Kanban,
@@ -17,7 +17,6 @@ import {
   Star,
   Copy,
   Trash2,
-  X,
   Loader2,
   MoreHorizontal,
 } from "lucide-react"
@@ -35,6 +34,20 @@ import type { ViewSettings, ViewSettingsCreate, ColumnDef, FilterCondition } fro
 import { FilterBuilder } from "./FilterBuilder"
 import { SortControls } from "./SortControls"
 import { ColumnSettings } from "./ColumnSettings"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface ViewControlsProps {
   entityType: string
@@ -83,54 +96,16 @@ export function ViewControls({
   const pinView = usePinView()
   const togglePublicView = useTogglePublicView()
 
-  const [showViewsDropdown, setShowViewsDropdown] = useState(false)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
-  const [showSortDropdown, setShowSortDropdown] = useState(false)
-  const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [showSaveForm, setShowSaveForm] = useState(false)
   const [saveLabel, setSaveLabel] = useState("")
-  const [viewActionMenuId, setViewActionMenuId] = useState<number | null>(null)
-
-  const viewsDropdownRef = useRef<HTMLDivElement>(null)
-  const sortDropdownRef = useRef<HTMLDivElement>(null)
-  const columnSettingsRef = useRef<HTMLDivElement>(null)
-  const saveFormRef = useRef<HTMLDivElement>(null)
-  const viewActionMenuRef = useRef<HTMLDivElement>(null)
-
-  const closeAllDropdowns = useCallback(() => {
-    setShowViewsDropdown(false)
-    setShowSortDropdown(false)
-    setShowColumnSettings(false)
-    setShowSaveForm(false)
-    setViewActionMenuId(null)
-  }, [])
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node
-      if (viewsDropdownRef.current && !viewsDropdownRef.current.contains(target)) {
-        setShowViewsDropdown(false)
-        setViewActionMenuId(null)
-      }
-      if (sortDropdownRef.current && !sortDropdownRef.current.contains(target)) {
-        setShowSortDropdown(false)
-      }
-      if (columnSettingsRef.current && !columnSettingsRef.current.contains(target)) {
-        setShowColumnSettings(false)
-      }
-      if (saveFormRef.current && !saveFormRef.current.contains(target)) {
-        setShowSaveForm(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  const [showViewsPopover, setShowViewsPopover] = useState(false)
+  const [showSortPopover, setShowSortPopover] = useState(false)
+  const [showColumnPopover, setShowColumnPopover] = useState(false)
 
   function handleViewTypeChange(type: "list" | "kanban" | "group_by") {
     setViewType(type)
     onViewTypeChange?.(type)
-    closeAllDropdowns()
   }
 
   function handleSelectView(view: ViewSettings) {
@@ -140,8 +115,7 @@ export function ViewControls({
     onViewTypeChange?.(view.type)
     if (view.column_field) onColumnFieldChange?.(view.column_field)
     if (view.group_by_field) onGroupByFieldChange?.(view.group_by_field)
-    setShowViewsDropdown(false)
-    setViewActionMenuId(null)
+    setShowViewsPopover(false)
   }
 
   function handleFiltersChange(newFilters: FilterCondition[]) {
@@ -203,7 +177,6 @@ export function ViewControls({
       if (activeView?.id === id) {
         setActiveView(null)
       }
-      setViewActionMenuId(null)
     } catch {
       // Error handled by mutation state
     }
@@ -212,7 +185,6 @@ export function ViewControls({
   async function handleSetDefault(id: number) {
     try {
       await setDefaultView.mutateAsync(id)
-      setViewActionMenuId(null)
     } catch {
       // Error handled by mutation state
     }
@@ -221,7 +193,6 @@ export function ViewControls({
   async function handlePinView(id: number) {
     try {
       await pinView.mutateAsync(id)
-      setViewActionMenuId(null)
     } catch {
       // Error handled by mutation state
     }
@@ -230,7 +201,6 @@ export function ViewControls({
   async function handleTogglePublic(id: number) {
     try {
       await togglePublicView.mutateAsync(id)
-      setViewActionMenuId(null)
     } catch {
       // Error handled by mutation state
     }
@@ -253,7 +223,6 @@ export function ViewControls({
 
     try {
       await createView.mutateAsync(data)
-      setViewActionMenuId(null)
     } catch {
       // Error handled by mutation state
     }
@@ -278,310 +247,253 @@ export function ViewControls({
   return (
     <div className="space-y-0">
       {/* Main Toolbar */}
-      <div className="flex items-center justify-between gap-4 px-4 py-2 bg-white border border-gray-200 rounded-lg">
+      <Card className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg">
         {/* Left Group: View Type Tabs + Active View Name */}
         <div className="flex items-center gap-3">
           {/* View Type Tabs */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-            {VIEW_TYPE_TABS.map((tab) => (
-              <button
-                key={tab.type}
-                onClick={() => handleViewTypeChange(tab.type)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                  viewType === tab.type
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <Tabs value={viewType} onValueChange={(val) => handleViewTypeChange(val as "list" | "kanban" | "group_by")}>
+            <TabsList className="h-8">
+              {VIEW_TYPE_TABS.map((tab) => (
+                <TabsTrigger key={tab.type} value={tab.type} className="gap-1.5 text-xs px-3 py-1">
+                  <tab.icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {/* View Name Dropdown */}
-          <div className="relative" ref={viewsDropdownRef}>
-            <button
-              onClick={() => {
-                setShowViewsDropdown(!showViewsDropdown)
-                setShowSortDropdown(false)
-                setShowColumnSettings(false)
-                setShowSaveForm(false)
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-            >
-              {activeView?.label || "All " + entityType + "s"}
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
-            </button>
+          <Popover open={showViewsPopover} onOpenChange={setShowViewsPopover}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-sm font-medium">
+                {activeView?.label || "All " + entityType + "s"}
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-2" align="start">
+              {viewsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {/* Default "All" view */}
+                  <Button
+                    variant={!activeView ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start gap-2 text-sm h-9",
+                      !activeView && "bg-accent text-accent-foreground"
+                    )}
+                    onClick={() => {
+                      setActiveView(null)
+                      onFiltersChange?.({})
+                      onSortChange?.({ created_at: "desc" })
+                      setShowViewsPopover(false)
+                    }}
+                  >
+                    <List className="w-4 h-4 flex-shrink-0" />
+                    <span className="flex-1 truncate text-left">All {entityType}s</span>
+                  </Button>
 
-            {showViewsDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="p-2">
-                  {viewsLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                    </div>
-                  ) : (
+                  {/* Pinned Views */}
+                  {pinnedViews.length > 0 && (
                     <>
-                      {/* Default "All" view */}
-                      <button
-                        onClick={() => {
-                          setActiveView(null)
-                          onFiltersChange?.({})
-                          onSortChange?.({ created_at: "desc" })
-                          setShowViewsDropdown(false)
-                        }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left",
-                          !activeView
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-700 hover:bg-gray-50"
-                        )}
-                      >
-                        <List className="w-4 h-4 flex-shrink-0" />
-                        <span className="flex-1 truncate">All {entityType}s</span>
-                      </button>
-
-                      {/* Pinned Views */}
-                      {pinnedViews.length > 0 && (
-                        <>
-                          <div className="px-3 py-1.5 mt-1">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                              Pinned
-                            </span>
-                          </div>
-                          {pinnedViews.map((view) => (
-                            <ViewListItem
-                              key={view.id}
-                              view={view}
-                              isActive={activeView?.id === view.id}
-                              actionMenuOpen={viewActionMenuId === view.id}
-                              onSelect={() => handleSelectView(view)}
-                              onToggleActions={() =>
-                                setViewActionMenuId(
-                                  viewActionMenuId === view.id ? null : view.id
-                                )
-                              }
-                              onSetDefault={() => handleSetDefault(view.id)}
-                              onPin={() => handlePinView(view.id)}
-                              onTogglePublic={() => handleTogglePublic(view.id)}
-                              onDuplicate={() => handleDuplicateView(view)}
-                              onDelete={() => handleDeleteView(view.id)}
-                              actionMenuRef={viewActionMenuRef}
-                            />
-                          ))}
-                        </>
-                      )}
-
-                      {/* Other Views */}
-                      {unpinnedViews.length > 0 && (
-                        <>
-                          <div className="px-3 py-1.5 mt-1">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                              Views
-                            </span>
-                          </div>
-                          {unpinnedViews.map((view) => (
-                            <ViewListItem
-                              key={view.id}
-                              view={view}
-                              isActive={activeView?.id === view.id}
-                              actionMenuOpen={viewActionMenuId === view.id}
-                              onSelect={() => handleSelectView(view)}
-                              onToggleActions={() =>
-                                setViewActionMenuId(
-                                  viewActionMenuId === view.id ? null : view.id
-                                )
-                              }
-                              onSetDefault={() => handleSetDefault(view.id)}
-                              onPin={() => handlePinView(view.id)}
-                              onTogglePublic={() => handleTogglePublic(view.id)}
-                              onDuplicate={() => handleDuplicateView(view)}
-                              onDelete={() => handleDeleteView(view.id)}
-                              actionMenuRef={viewActionMenuRef}
-                            />
-                          ))}
-                        </>
-                      )}
-
-                      {!viewsLoading && pinnedViews.length === 0 && unpinnedViews.length === 0 && (
-                        <p className="px-3 py-2 text-xs text-gray-400">No saved views</p>
-                      )}
+                      <div className="px-3 py-1.5 mt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Pinned
+                        </span>
+                      </div>
+                      {pinnedViews.map((view) => (
+                        <ViewListItem
+                          key={view.id}
+                          view={view}
+                          isActive={activeView?.id === view.id}
+                          onSelect={() => handleSelectView(view)}
+                          onSetDefault={() => handleSetDefault(view.id)}
+                          onPin={() => handlePinView(view.id)}
+                          onTogglePublic={() => handleTogglePublic(view.id)}
+                          onDuplicate={() => handleDuplicateView(view)}
+                          onDelete={() => handleDeleteView(view.id)}
+                        />
+                      ))}
                     </>
                   )}
-                </div>
-              </div>
-            )}
-          </div>
+
+                  {/* Other Views */}
+                  {unpinnedViews.length > 0 && (
+                    <>
+                      <div className="px-3 py-1.5 mt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Views
+                        </span>
+                      </div>
+                      {unpinnedViews.map((view) => (
+                        <ViewListItem
+                          key={view.id}
+                          view={view}
+                          isActive={activeView?.id === view.id}
+                          onSelect={() => handleSelectView(view)}
+                          onSetDefault={() => handleSetDefault(view.id)}
+                          onPin={() => handlePinView(view.id)}
+                          onTogglePublic={() => handleTogglePublic(view.id)}
+                          onDuplicate={() => handleDuplicateView(view)}
+                          onDelete={() => handleDeleteView(view.id)}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {!viewsLoading && pinnedViews.length === 0 && unpinnedViews.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">No saved views</p>
+                  )}
+                </>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Right Group: Filter, Sort, Columns, Save */}
         <div className="flex items-center gap-2">
           {/* Filter Button */}
-          <button
-            onClick={() => {
-              setShowFilterPanel(!showFilterPanel)
-              setShowSortDropdown(false)
-              setShowColumnSettings(false)
-              setShowSaveForm(false)
-            }}
+          <Button
+            variant={showFilterPanel || filterCount > 0 ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors",
+              "gap-1.5 text-sm",
               showFilterPanel || filterCount > 0
-                ? "bg-blue-50 border-blue-200 text-blue-700"
-                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-700"
+                : ""
             )}
           >
             <Filter className="w-3.5 h-3.5" />
             Filter
             {filterCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-blue-600 rounded-full">
+              <Badge className="w-5 h-5 rounded-full p-0 justify-center text-[10px] font-bold">
                 {filterCount}
-              </span>
+              </Badge>
             )}
-          </button>
+          </Button>
 
           {/* Sort Button */}
-          <div className="relative" ref={sortDropdownRef}>
-            <button
-              onClick={() => {
-                setShowSortDropdown(!showSortDropdown)
-                setShowFilterPanel(false)
-                setShowColumnSettings(false)
-                setShowSaveForm(false)
-              }}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors",
-                showSortDropdown || sortCount > 0
-                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              Sort
-              {sortCount > 0 && (
-                <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-blue-600 rounded-full">
-                  {sortCount}
-                </span>
-              )}
-            </button>
-
-            {showSortDropdown && (
-              <div className="absolute top-full right-0 mt-1 z-50">
-                <SortControls
-                  orderBy={orderBy}
-                  onSortChange={handleSortChange}
-                  entityType={entityType}
-                />
-              </div>
-            )}
-          </div>
+          <Popover open={showSortPopover} onOpenChange={setShowSortPopover}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={showSortPopover || sortCount > 0 ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "gap-1.5 text-sm",
+                  showSortPopover || sortCount > 0
+                    ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-700"
+                    : ""
+                )}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                Sort
+                {sortCount > 0 && (
+                  <Badge className="w-5 h-5 rounded-full p-0 justify-center text-[10px] font-bold">
+                    {sortCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 border-0 shadow-none" align="end">
+              <SortControls
+                orderBy={orderBy}
+                onSortChange={handleSortChange}
+                entityType={entityType}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Column Settings Button */}
-          <div className="relative" ref={columnSettingsRef}>
-            <button
-              onClick={() => {
-                setShowColumnSettings(!showColumnSettings)
-                setShowFilterPanel(false)
-                setShowSortDropdown(false)
-                setShowSaveForm(false)
-              }}
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border rounded-md transition-colors",
-                showColumnSettings
-                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-              )}
-            >
-              <Columns3 className="w-3.5 h-3.5" />
-              Columns
-            </button>
-
-            {showColumnSettings && (
-              <div className="absolute top-full right-0 mt-1 z-50">
-                <ColumnSettings
-                  columns={columns}
-                  onColumnsChange={handleColumnsChange}
-                  entityType={entityType}
-                />
-              </div>
-            )}
-          </div>
+          <Popover open={showColumnPopover} onOpenChange={setShowColumnPopover}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={showColumnPopover ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "gap-1.5 text-sm",
+                  showColumnPopover
+                    ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-700"
+                    : ""
+                )}
+              >
+                <Columns3 className="w-3.5 h-3.5" />
+                Columns
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 border-0 shadow-none" align="end">
+              <ColumnSettings
+                columns={columns}
+                onColumnsChange={handleColumnsChange}
+                entityType={entityType}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Save View Button */}
-          <div className="relative" ref={saveFormRef}>
-            <button
-              onClick={() => {
-                setShowSaveForm(!showSaveForm)
-                setShowFilterPanel(false)
-                setShowSortDropdown(false)
-                setShowColumnSettings(false)
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Save className="w-3.5 h-3.5" />
-              Save View
-            </button>
-
-            {showSaveForm && (
-              <div className="absolute top-full right-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <form onSubmit={handleSaveView} className="p-3">
-                  <label
-                    htmlFor="view-label"
-                    className="block text-xs font-medium text-gray-600 mb-1.5"
+          <Popover open={showSaveForm} onOpenChange={setShowSaveForm}>
+            <PopoverTrigger asChild>
+              <Button size="sm" className="gap-1.5 text-sm">
+                <Save className="w-3.5 h-3.5" />
+                Save View
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72" align="end">
+              <form onSubmit={handleSaveView}>
+                <Label
+                  htmlFor="view-label"
+                  className="text-xs text-muted-foreground mb-1.5 block"
+                >
+                  View Name
+                </Label>
+                <Input
+                  id="view-label"
+                  type="text"
+                  value={saveLabel}
+                  onChange={(e) => setSaveLabel(e.target.value)}
+                  placeholder="e.g. My Active Leads"
+                  className="h-9 text-sm"
+                  autoFocus
+                />
+                {createView.isError && (
+                  <p className="mt-1.5 text-xs text-destructive">
+                    {createView.error instanceof Error
+                      ? createView.error.message
+                      : "Failed to save view"}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowSaveForm(false)
+                      setSaveLabel("")
+                    }}
+                    className="flex-1"
                   >
-                    View Name
-                  </label>
-                  <input
-                    id="view-label"
-                    type="text"
-                    value={saveLabel}
-                    onChange={(e) => setSaveLabel(e.target.value)}
-                    placeholder="e.g. My Active Leads"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    autoFocus
-                  />
-                  {createView.isError && (
-                    <p className="mt-1.5 text-xs text-red-600">
-                      {createView.error instanceof Error
-                        ? createView.error.message
-                        : "Failed to save view"}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowSaveForm(false)
-                        setSaveLabel("")
-                      }}
-                      className="flex-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!saveLabel.trim() || createView.isPending}
-                      className={cn(
-                        "flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md transition-colors",
-                        !saveLabel.trim() || createView.isPending
-                          ? "bg-blue-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      )}
-                    >
-                      {createView.isPending && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      )}
-                      Save
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!saveLabel.trim() || createView.isPending}
+                    className="flex-1 gap-1.5"
+                  >
+                    {createView.isPending && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    )}
+                    Save
+                  </Button>
+                </div>
+              </form>
+            </PopoverContent>
+          </Popover>
         </div>
-      </div>
+      </Card>
 
       {/* Filter Panel (below toolbar) */}
       {showFilterPanel && (
@@ -602,29 +514,23 @@ export function ViewControls({
 interface ViewListItemProps {
   view: ViewSettings
   isActive: boolean
-  actionMenuOpen: boolean
   onSelect: () => void
-  onToggleActions: () => void
   onSetDefault: () => void
   onPin: () => void
   onTogglePublic: () => void
   onDuplicate: () => void
   onDelete: () => void
-  actionMenuRef: React.RefObject<HTMLDivElement>
 }
 
 function ViewListItem({
   view,
   isActive,
-  actionMenuOpen,
   onSelect,
-  onToggleActions,
   onSetDefault,
   onPin,
   onTogglePublic,
   onDuplicate,
   onDelete,
-  actionMenuRef,
 }: ViewListItemProps) {
   const typeIcon =
     view.type === "kanban" ? Kanban : view.type === "group_by" ? LayoutGrid : List
@@ -636,7 +542,7 @@ function ViewListItem({
       <div
         className={cn(
           "flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors",
-          isActive ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50"
+          isActive ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-muted"
         )}
       >
         <button onClick={onSelect} className="flex items-center gap-2 flex-1 min-w-0 text-left">
@@ -646,44 +552,32 @@ function ViewListItem({
             <Star className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
           )}
           {view.pinned && (
-            <Pin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            <Pin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
           )}
           {view.public && (
-            <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            <Globe className="w-3 h-3 text-muted-foreground flex-shrink-0" />
           )}
         </button>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onToggleActions()
-          }}
-          className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-200 transition-all"
-        >
-          <MoreHorizontal className="w-3.5 h-3.5 text-gray-500" />
-        </button>
-      </div>
-
-      {/* Actions Menu */}
-      {actionMenuOpen && (
-        <div
-          ref={actionMenuRef}
-          className="absolute right-0 top-full mt-0.5 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[60]"
-        >
-          <div className="py-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
             {!view.is_standard && (
-              <button
-                onClick={onSetDefault}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
-              >
+              <DropdownMenuItem onClick={onSetDefault}>
                 <Star className="w-3.5 h-3.5" />
                 {view.is_default ? "Unset Default" : "Set as Default"}
-              </button>
+              </DropdownMenuItem>
             )}
-            <button
-              onClick={onPin}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
-            >
+            <DropdownMenuItem onClick={onPin}>
               {view.pinned ? (
                 <>
                   <PinOff className="w-3.5 h-3.5" />
@@ -695,11 +589,8 @@ function ViewListItem({
                   Pin
                 </>
               )}
-            </button>
-            <button
-              onClick={onTogglePublic}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
-            >
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onTogglePublic}>
               {view.public ? (
                 <>
                   <Lock className="w-3.5 h-3.5" />
@@ -711,29 +602,23 @@ function ViewListItem({
                   Make Public
                 </>
               )}
-            </button>
-            <button
-              onClick={onDuplicate}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 text-left"
-            >
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDuplicate}>
               <Copy className="w-3.5 h-3.5" />
               Duplicate
-            </button>
+            </DropdownMenuItem>
             {!view.is_standard && (
               <>
-                <div className="my-1 border-t border-gray-100" />
-                <button
-                  onClick={onDelete}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 text-left"
-                >
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete
-                </button>
+                </DropdownMenuItem>
               </>
             )}
-          </div>
-        </div>
-      )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   )
 }

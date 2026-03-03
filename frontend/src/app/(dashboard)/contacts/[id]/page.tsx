@@ -10,9 +10,37 @@ import {
   X,
   Loader2,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useContact, useUpdateContact, useDeleteContact } from "@/hooks/useContacts"
 import type { ContactCreate } from "@/types/contact"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ContactDetailPage() {
   const router = useRouter()
@@ -68,8 +96,24 @@ export default function ContactDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-64" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -77,16 +121,16 @@ export default function ContactDetailPage() {
   if (isError || !contact) {
     return (
       <div className="space-y-4">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => router.push("/contacts")}
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Contacts
-        </button>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500">Contact not found or failed to load.</p>
-        </div>
+        </Button>
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">Contact not found or failed to load.</p>
+        </Card>
       </div>
     )
   }
@@ -94,22 +138,22 @@ export default function ContactDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => router.push("/contacts")}
-        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Contacts
-      </button>
+      </Button>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {contact.full_name}
           </h1>
           {contact.designation && contact.company_name && (
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               {contact.designation} at {contact.company_name}
             </p>
           )}
@@ -117,17 +161,13 @@ export default function ContactDetailPage() {
         <div className="flex items-center gap-3">
           {isEditing ? (
             <>
-              <button
-                onClick={cancelEditing}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="outline" onClick={cancelEditing}>
                 <X className="h-4 w-4" />
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={updateContact.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {updateContact.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -135,24 +175,21 @@ export default function ContactDetailPage() {
                   <Save className="h-4 w-4" />
                 )}
                 Save Changes
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
-                onClick={startEditing}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
+              <Button variant="outline" onClick={startEditing}>
                 <Pencil className="h-4 w-4" />
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -160,262 +197,239 @@ export default function ContactDetailPage() {
 
       {/* Error messages */}
       {updateContact.isError && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-4">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive">
+          <AlertDescription>
             {updateContact.error?.message || "Failed to update contact."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div className="rounded-md bg-red-50 border border-red-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-800">
-                Are you sure you want to delete this contact?
-              </p>
-              <p className="text-sm text-red-600 mt-1">
-                This action cannot be undone.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteContact.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {deleteContact.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                Delete
-              </button>
-            </div>
-          </div>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to delete this contact?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the
+              contact record.
+            </DialogDescription>
+          </DialogHeader>
           {deleteContact.isError && (
-            <p className="text-sm text-red-700 mt-2">
-              {deleteContact.error?.message || "Failed to delete contact."}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>
+                {deleteContact.error?.message || "Failed to delete contact."}
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteContact.isPending}
+            >
+              {deleteContact.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Card */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Contact Details
-          </h2>
-        </div>
-        <div className="p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Contact Details</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Salutation */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Salutation
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Salutation</Label>
               {isEditing ? (
-                <select
+                <Select
                   value={formData.salutation || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, salutation: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, salutation: value || undefined })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="">Select...</option>
-                  <option value="Mr">Mr</option>
-                  <option value="Mrs">Mrs</option>
-                  <option value="Ms">Ms</option>
-                  <option value="Dr">Dr</option>
-                  <option value="Prof">Prof</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mr">Mr</SelectItem>
+                    <SelectItem value="Mrs">Mrs</SelectItem>
+                    <SelectItem value="Ms">Ms</SelectItem>
+                    <SelectItem value="Dr">Dr</SelectItem>
+                    <SelectItem value="Prof">Prof</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.salutation || "-"}
                 </p>
               )}
             </div>
 
             {/* Gender */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Gender
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Gender</Label>
               {isEditing ? (
-                <select
+                <Select
                   value={formData.gender || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gender: e.target.value })
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, gender: value || undefined })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="">Select...</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.gender || "-"}
                 </p>
               )}
             </div>
 
             {/* First Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                First Name
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">First Name</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.first_name || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, first_name: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">{contact.first_name}</p>
+                <p className="text-sm text-foreground">{contact.first_name}</p>
               )}
             </div>
 
             {/* Last Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Last Name
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Last Name</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.last_name || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, last_name: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">{contact.last_name}</p>
+                <p className="text-sm text-foreground">{contact.last_name}</p>
               )}
             </div>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Email
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Email</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="email"
                   value={formData.email_id || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, email_id: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.email_id || "-"}
                 </p>
               )}
             </div>
 
             {/* Mobile No */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Mobile No
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Mobile No</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.mobile_no || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, mobile_no: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.mobile_no || "-"}
                 </p>
               )}
             </div>
 
             {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Phone
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Phone</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.phone || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.phone || "-"}
                 </p>
               )}
             </div>
 
             {/* Company */}
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Company
-              </label>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Company</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.company_name || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, company_name: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.company_name || "-"}
                 </p>
               )}
             </div>
 
             {/* Designation */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-500 mb-1">
-                Designation
-              </label>
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-muted-foreground">Designation</Label>
               {isEditing ? (
-                <input
+                <Input
                   type="text"
                   value={formData.designation || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, designation: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {contact.designation || "-"}
                 </p>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Timestamps */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-          <div className="flex items-center gap-6 text-xs text-gray-500">
+        </CardContent>
+        <Separator />
+        <CardFooter className="py-4">
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <span>
               Created: {new Date(contact.created_at).toLocaleString()}
             </span>
@@ -423,8 +437,8 @@ export default function ContactDetailPage() {
               Updated: {new Date(contact.updated_at).toLocaleString()}
             </span>
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

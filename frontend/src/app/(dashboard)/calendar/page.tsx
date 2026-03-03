@@ -8,6 +8,10 @@ import { CalendarGrid } from "@/components/calendar/CalendarGrid"
 import { EventModal } from "@/components/calendar/EventModal"
 import type { CalendarEvent, EventCreate } from "@/types/event"
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type ViewType = "month" | "week" | "day"
 
@@ -130,48 +134,49 @@ export default function CalendarPage() {
           <Calendar className="h-7 w-7 text-primary flex-shrink-0" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-            <p className="text-sm text-gray-500">Schedule and track your events</p>
+            <p className="text-sm text-muted-foreground">Schedule and track your events</p>
           </div>
         </div>
-        <button
-          onClick={() => openCreate()}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors shadow-sm"
-        >
+        <Button onClick={() => openCreate()}>
           <Plus className="h-4 w-4" />
           New Event
-        </button>
+        </Button>
       </div>
 
       {/* Calendar Controls */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col" style={{ minHeight: "600px" }}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-gray-200">
+      <Card className="overflow-hidden flex flex-col" style={{ minHeight: "600px" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b">
           {/* Navigation */}
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setCurrentDate((d) => navigate(d, viewType, -1))}
-              className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
-            </button>
+            </Button>
             <h2 className="text-sm font-semibold text-gray-900 min-w-[180px] text-center">
               {getTitle(currentDate, viewType)}
             </h2>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setCurrentDate((d) => navigate(d, viewType, 1))}
-              className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <ChevronRight className="h-5 w-5" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setCurrentDate(new Date())}
-              className="ml-2 px-3 py-1 text-xs font-medium border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50 transition-colors"
+              className="ml-2"
             >
               Today
-            </button>
+            </Button>
           </div>
 
           {/* View toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center bg-muted rounded-lg p-1">
             {(["month", "week", "day"] as ViewType[]).map((v) => (
               <button
                 key={v}
@@ -179,8 +184,8 @@ export default function CalendarPage() {
                 className={cn(
                   "px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize",
                   viewType === v
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {v}
@@ -192,8 +197,11 @@ export default function CalendarPage() {
         {/* Calendar Grid */}
         <div className="flex-1 overflow-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
-              Loading events...
+            <div className="flex items-center justify-center h-64">
+              <div className="flex flex-col items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-4 w-28" />
+              </div>
             </div>
           ) : (
             <CalendarGrid
@@ -205,7 +213,7 @@ export default function CalendarPage() {
             />
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Event Modal */}
       {showModal && (

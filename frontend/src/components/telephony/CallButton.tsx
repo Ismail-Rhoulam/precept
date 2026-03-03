@@ -8,6 +8,8 @@ import {
   useMakeExotelCall,
 } from "@/hooks/useIntegrations"
 import { integrationsApi } from "@/lib/api/integrations"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CallButtonProps {
   phoneNumber: string
@@ -110,15 +112,16 @@ export default function CallButton({
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       <div className="flex items-center">
-        <button
+        <Button
           onClick={handleDefaultCall}
           disabled={isDisabled}
           className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors",
+            "rounded-r-none",
             isDisabled
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              ? ""
               : "bg-green-600 text-white hover:bg-green-700"
           )}
+          size="sm"
           title={
             !hasAny
               ? "No telephony integration enabled"
@@ -131,21 +134,22 @@ export default function CallButton({
             <Phone className="h-4 w-4" />
           )}
           Call
-        </button>
+        </Button>
 
         {hasTwilio && hasExotel && (
-          <button
+          <Button
             onClick={() => setShowDropdown(!showDropdown)}
             disabled={isLoading}
             className={cn(
-              "inline-flex items-center px-1.5 py-1.5 text-sm font-medium rounded-r-md border-l transition-colors",
+              "rounded-l-none border-l px-1.5",
               isLoading
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
+                ? ""
                 : "bg-green-600 text-white hover:bg-green-700 border-green-700"
             )}
+            size="sm"
           >
             <ChevronDown className="h-4 w-4" />
-          </button>
+          </Button>
         )}
 
         {!(hasTwilio && hasExotel) && (
@@ -155,12 +159,12 @@ export default function CallButton({
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+        <div className="absolute right-0 mt-1 w-48 bg-background border border-border rounded-md shadow-lg z-50">
           <div className="py-1">
             {hasTwilio && (
               <button
                 onClick={handleCallViaTwilio}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 <Phone className="h-4 w-4 text-blue-600" />
                 Call via Twilio
@@ -169,7 +173,7 @@ export default function CallButton({
             {hasExotel && (
               <button
                 onClick={handleCallViaExotel}
-                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 w-full px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 <Phone className="h-4 w-4 text-purple-600" />
                 Call via Exotel
@@ -181,17 +185,19 @@ export default function CallButton({
 
       {/* Error tooltip */}
       {callError && (
-        <div className="absolute right-0 mt-1 w-64 p-2 bg-red-50 border border-red-200 rounded-md shadow-lg z-50">
-          <div className="flex items-start gap-1.5">
-            <AlertCircle className="h-3.5 w-3.5 text-red-500 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-red-700">{callError}</p>
-          </div>
-          <button
-            onClick={() => setCallError(null)}
-            className="mt-1 text-xs text-red-500 hover:text-red-700 underline"
-          >
-            Dismiss
-          </button>
+        <div className="absolute right-0 mt-1 w-64 z-50">
+          <Alert variant="destructive" className="shadow-lg">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription>
+              <p className="text-xs">{callError}</p>
+              <button
+                onClick={() => setCallError(null)}
+                className="mt-1 text-xs text-destructive hover:text-destructive/80 underline"
+              >
+                Dismiss
+              </button>
+            </AlertDescription>
+          </Alert>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import type { TimeSeriesPoint, ForecastPoint } from "@/types/dashboard"
 
 const TREND_COLORS = {
@@ -221,14 +222,16 @@ export default function LineChart({ data, title, type }: LineChartProps) {
 
   if (!data || data.length === 0 || !chartData) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        </div>
-        <div className="flex items-center justify-center h-64 text-sm text-gray-400">
-          No data available
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -287,11 +290,11 @@ export default function LineChart({ data, title, type }: LineChartProps) {
       : null
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-      </div>
-      <div className="p-5 relative">
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="relative">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto"
@@ -395,7 +398,7 @@ export default function LineChart({ data, title, type }: LineChartProps) {
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: s.color }}
               />
-              <span className="text-[11px] text-gray-600">{s.label}</span>
+              <span className="text-[11px] text-muted-foreground">{s.label}</span>
             </div>
           ))}
         </div>
@@ -465,7 +468,7 @@ export default function LineChart({ data, title, type }: LineChartProps) {
             )}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

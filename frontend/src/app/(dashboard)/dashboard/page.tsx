@@ -10,6 +10,10 @@ import BarChart from "@/components/dashboard/BarChart"
 import DonutChart from "@/components/dashboard/DonutChart"
 import LineChart from "@/components/dashboard/LineChart"
 import DateRangePicker from "@/components/dashboard/DateRangePicker"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 function toDateString(date: Date): string {
   return format(date, "yyyy-MM-dd")
@@ -17,37 +21,41 @@ function toDateString(date: Date): string {
 
 function NumberCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm animate-pulse">
-      <div className="h-4 bg-gray-200 rounded w-24 mb-3" />
-      <div className="h-7 bg-gray-200 rounded w-16 mb-2" />
-      <div className="h-3 bg-gray-200 rounded w-32" />
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-4 w-24" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-7 w-16 mb-2" />
+        <Skeleton className="h-3 w-32" />
+      </CardContent>
+    </Card>
   )
 }
 
 function ChartSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm animate-pulse">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <div className="h-4 bg-gray-200 rounded w-32" />
-      </div>
-      <div className="p-5">
-        <div className="h-56 bg-gray-100 rounded" />
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-4 w-32" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-56 w-full" />
+      </CardContent>
+    </Card>
   )
 }
 
 function ChartSkeletonWide() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm animate-pulse">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <div className="h-4 bg-gray-200 rounded w-48" />
-      </div>
-      <div className="p-5">
-        <div className="h-56 bg-gray-100 rounded" />
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-4 w-48" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-56 w-full" />
+      </CardContent>
+    </Card>
   )
 }
 
@@ -70,51 +78,52 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <LayoutDashboard className="h-7 w-7 text-blue-600" />
+          <LayoutDashboard className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
               Overview of your sales performance
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => refetch()}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
             title="Refresh data"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
+          </Button>
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
 
       {/* Error State */}
       {isError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-red-800">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-medium">
               Failed to load dashboard data
             </p>
-            <p className="text-sm text-red-600 mt-1">
+            <p className="mt-1">
               {error instanceof Error
                 ? error.message
                 : "An unexpected error occurred. Please try again."}
             </p>
             <button
               onClick={() => refetch()}
-              className="mt-2 text-sm font-medium text-red-700 hover:text-red-800 underline"
+              className="mt-2 text-sm font-medium underline"
             >
               Retry
             </button>
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Loading state with full-page spinner overlay */}
+      {/* Loading state with skeleton */}
       {isLoading && !data && (
         <>
           {/* Number Cards Skeleton */}
@@ -218,13 +227,13 @@ export default function DashboardPage() {
       {/* Empty state when no data and not loading */}
       {!isLoading && !isError && data && data.number_cards.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 px-4">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <LayoutDashboard className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <LayoutDashboard className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">
+          <h3 className="text-base font-semibold mb-1">
             No dashboard data
           </h3>
-          <p className="text-sm text-gray-500 text-center max-w-sm">
+          <p className="text-sm text-muted-foreground text-center max-w-sm">
             There is no data available for the selected date range. Try
             adjusting the date range or create some leads and deals first.
           </p>

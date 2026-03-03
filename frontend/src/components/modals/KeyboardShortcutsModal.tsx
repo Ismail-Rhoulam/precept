@@ -1,7 +1,15 @@
 "use client"
 
-import { X } from "lucide-react"
 import { useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 
 interface ShortcutEntry {
   key: string
@@ -69,30 +77,17 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
   const groups = groupBy(ALL_SHORTCUTS, (s) => s.category)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+        </DialogHeader>
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Keyboard Shortcuts</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {Object.entries(groups).map(([category, shortcuts]) => (
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+          {Object.entries(groups).map(([category, shortcuts], groupIndex) => (
             <div key={category}>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              {groupIndex > 0 && <Separator className="mb-4" />}
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 {category}
               </h3>
               <div className="space-y-2">
@@ -101,12 +96,12 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
                     key={i}
                     className="flex items-center justify-between py-1.5"
                   >
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-foreground/80">
                       {shortcut.description}
                     </span>
-                    <kbd className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-200 rounded text-xs font-mono text-gray-600 font-semibold">
+                    <Badge variant="outline" className="font-mono text-xs font-semibold">
                       {formatKey(shortcut)}
-                    </kbd>
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -114,10 +109,10 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
           ))}
         </div>
 
-        <div className="px-6 py-3 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-400">Press ? to toggle this panel</p>
-        </div>
-      </div>
-    </div>
+        <DialogFooter className="justify-center sm:justify-center">
+          <p className="text-xs text-muted-foreground">Press ? to toggle this panel</p>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

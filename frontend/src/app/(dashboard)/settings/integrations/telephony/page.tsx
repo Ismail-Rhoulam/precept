@@ -9,7 +9,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X,
   Save,
   AlertCircle,
   Inbox,
@@ -22,6 +21,27 @@ import {
   useDeleteAgent,
 } from "@/hooks/useIntegrations"
 import type { TelephonyAgent } from "@/types/integration"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 interface AgentFormData {
   user_email: string
@@ -84,28 +104,19 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
   const isSaving = createAgent.isPending || updateAgent.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
             {isEditing ? "Edit Agent" : "Add Agent"}
-          </h3>
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 px-1">
           {/* User Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              User Email
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>User Email</Label>
+            <Input
               type="email"
               value={form.user_email}
               onChange={(e) =>
@@ -113,50 +124,39 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
               }
               placeholder="user@example.com"
               disabled={isEditing}
-              className={cn(
-                "w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
-                isEditing && "bg-gray-50 text-gray-500"
-              )}
+              className={cn(isEditing && "bg-muted text-muted-foreground")}
             />
           </div>
 
           {/* User Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              User Name
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>User Name</Label>
+            <Input
               type="text"
               value={form.user_name}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, user_name: e.target.value }))
               }
               placeholder="Full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           {/* Mobile Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mobile Number
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label>Mobile Number</Label>
+            <Input
               type="tel"
               value={form.mobile_no}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, mobile_no: e.target.value }))
               }
               placeholder="+1234567890"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
 
           {/* Default Medium */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Calling Medium
-            </label>
+          <div className="space-y-2">
+            <Label>Default Calling Medium</Label>
             <select
               value={form.default_medium}
               onChange={(e) =>
@@ -165,7 +165,7 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                   default_medium: e.target.value,
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="Twilio">Twilio</option>
               <option value="Exotel">Exotel</option>
@@ -173,11 +173,9 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
           </div>
 
           {/* Twilio Settings */}
-          <div className="border border-gray-200 rounded-md p-4 space-y-3">
+          <div className="border rounded-md p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
-                Twilio
-              </label>
+              <Label>Twilio</Label>
               <button
                 type="button"
                 onClick={() =>
@@ -188,7 +186,7 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                 }
                 className={cn(
                   "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                  form.twilio_enabled ? "bg-primary" : "bg-gray-300"
+                  form.twilio_enabled ? "bg-primary" : "bg-muted-foreground/30"
                 )}
               >
                 <span
@@ -200,11 +198,11 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
               </button>
             </div>
             {form.twilio_enabled && (
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
                   Twilio Number
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={form.twilio_number}
                   onChange={(e) =>
@@ -214,18 +212,15 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                     }))
                   }
                   placeholder="+1234567890"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
             )}
           </div>
 
           {/* Exotel Settings */}
-          <div className="border border-gray-200 rounded-md p-4 space-y-3">
+          <div className="border rounded-md p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
-                Exotel
-              </label>
+              <Label>Exotel</Label>
               <button
                 type="button"
                 onClick={() =>
@@ -236,7 +231,7 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                 }
                 className={cn(
                   "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                  form.exotel_enabled ? "bg-primary" : "bg-gray-300"
+                  form.exotel_enabled ? "bg-primary" : "bg-muted-foreground/30"
                 )}
               >
                 <span
@@ -248,11 +243,11 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
               </button>
             </div>
             {form.exotel_enabled && (
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
                   Exotel Number
-                </label>
-                <input
+                </Label>
+                <Input
                   type="text"
                   value={form.exotel_number}
                   onChange={(e) =>
@@ -262,17 +257,14 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                     }))
                   }
                   placeholder="Exotel virtual number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
             )}
           </div>
 
           {/* Call Receiving Device */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Call Receiving Device
-            </label>
+          <div className="space-y-2">
+            <Label>Call Receiving Device</Label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -287,9 +279,9 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                         .value as "Computer" | "Phone",
                     }))
                   }
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                  className="h-4 w-4 text-primary focus:ring-primary border-input"
                 />
-                <span className="text-sm text-gray-700">Computer</span>
+                <span className="text-sm">Computer</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -304,39 +296,34 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                         .value as "Computer" | "Phone",
                     }))
                   }
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                  className="h-4 w-4 text-primary focus:ring-primary border-input"
                 />
-                <span className="text-sm text-gray-700">Phone</span>
+                <span className="text-sm">Phone</span>
               </label>
             </div>
           </div>
 
           {/* Error */}
           {errorMessage && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-700">{errorMessage}</p>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
-          <button
+        <DialogFooter className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={isSaving}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-              isSaving
-                ? "bg-primary/60 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            )}
           >
             {isSaving ? (
               <>
@@ -349,10 +336,10 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
                 {isEditing ? "Save Changes" : "Add Agent"}
               </>
             )}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -380,7 +367,7 @@ export default function TelephonyAgentsPage() {
       <div className="mb-6">
         <Link
           href="/settings/integrations"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Integrations
@@ -389,153 +376,148 @@ export default function TelephonyAgentsPage() {
           <div className="flex items-center gap-3">
             <Users className="h-7 w-7 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold">
                 Telephony Agents
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Manage agent phone numbers and calling preferences
               </p>
             </div>
           </div>
-          <button
+          <Button
             onClick={() => {
               setEditingAgent(null)
               setShowModal(true)
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Add Agent
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">
               Loading agents...
             </span>
           </div>
         ) : isError ? (
           <div className="py-16 text-center">
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-sm text-red-600">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="text-sm text-destructive">
               Failed to load agents. Please try again.
             </p>
           </div>
         ) : !agents || agents.length === 0 ? (
           <div className="py-16 text-center">
-            <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">
+            <Inbox className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
               No telephony agents configured. Add agents to enable click-to-call.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    User
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Mobile
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Default Medium
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Twilio Number
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Exotel Number
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs">
-                    Device
-                  </th>
-                  <th className="w-24 px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs text-center">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {agents.map((agent) => (
-                  <tr
-                    key={agent.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {agent.user_name || "—"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {agent.user_email}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {agent.mobile_no || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {agent.default_medium}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">
-                      {agent.twilio_enabled
-                        ? agent.twilio_number || "—"
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">
-                      {agent.exotel_enabled
-                        ? agent.exotel_number || "—"
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
-                      {agent.call_receiving_device}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingAgent(agent)
-                            setShowModal(true)
-                          }}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          title="Edit agent"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(agent)}
-                          disabled={deleteAgent.isPending}
-                          className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                          title="Delete agent"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs font-semibold uppercase">
+                  User
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Mobile
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Default Medium
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Twilio Number
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Exotel Number
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase">
+                  Device
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase text-center w-24">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {agents.map((agent) => (
+                <TableRow key={agent.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">
+                        {agent.user_name || "\u2014"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {agent.user_email}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {agent.mobile_no || "\u2014"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {agent.default_medium}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">
+                    {agent.twilio_enabled
+                      ? agent.twilio_number || "\u2014"
+                      : "\u2014"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">
+                    {agent.exotel_enabled
+                      ? agent.exotel_number || "\u2014"
+                      : "\u2014"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-xs">
+                    {agent.call_receiving_device}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => {
+                          setEditingAgent(agent)
+                          setShowModal(true)
+                        }}
+                        className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="Edit agent"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(agent)}
+                        disabled={deleteAgent.isPending}
+                        className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                        title="Delete agent"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
 
       {/* Error display for mutations */}
       {deleteAgent.isError && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-700">
+        <Alert variant="destructive" className="mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
             {deleteAgent.error instanceof Error
               ? deleteAgent.error.message
               : "An error occurred."}
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Modal */}

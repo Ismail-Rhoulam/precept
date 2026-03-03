@@ -1,7 +1,10 @@
 "use client"
 
 import { GripVertical, Eye, EyeOff, RotateCcw } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ColumnDef } from "@/types/view"
 
 interface AvailableColumn {
@@ -179,82 +182,93 @@ export function ColumnSettings({
   )
 
   return (
-    <div className="w-72 bg-white border border-gray-200 rounded-lg shadow-lg">
+    <Card className="w-72 shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900">Columns</h3>
-        <button
+      <CardHeader className="flex flex-row items-center justify-between px-4 py-3 space-y-0">
+        <CardTitle className="text-sm">Columns</CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={resetToDefaults}
-          className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
+          className="h-auto py-1 px-2 gap-1 text-xs text-muted-foreground hover:text-primary"
           title="Reset to default columns"
         >
           <RotateCcw className="w-3 h-3" />
           Reset
-        </button>
-      </div>
+        </Button>
+      </CardHeader>
+
+      <Separator />
 
       {/* Active Columns */}
-      <div className="px-2 py-2">
+      <CardContent className="px-2 py-2">
         <div className="px-2 py-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+          <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Visible
-          </span>
+          </Label>
         </div>
         <div className="space-y-0.5">
           {activeColumns.map((col) => (
             <div
               key={col.key}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 group"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted group"
             >
-              <GripVertical className="w-3.5 h-3.5 text-gray-300 flex-shrink-0 cursor-grab" />
-              <span className="flex-1 text-sm text-gray-700 truncate">
+              <GripVertical className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 cursor-grab" />
+              <span className="flex-1 text-sm text-foreground truncate">
                 {col.label}
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   const availCol = allColumns.find((c) => c.key === col.key)
                   if (availCol) toggleColumn(availCol)
                 }}
-                className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-all"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all"
                 title="Hide column"
               >
                 <Eye className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
-      </div>
+      </CardContent>
 
       {/* Inactive Columns */}
       {inactiveColumns.length > 0 && (
-        <div className="px-2 py-2 border-t border-gray-100">
-          <div className="px-2 py-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-              Hidden
-            </span>
-          </div>
-          <div className="space-y-0.5">
-            {inactiveColumns.map((col) => (
-              <div
-                key={col.key}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 group"
-              >
-                <div className="w-3.5 flex-shrink-0" />
-                <span className="flex-1 text-sm text-gray-400 truncate">
-                  {col.label}
-                </span>
-                <button
-                  onClick={() => toggleColumn(col)}
-                  className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600 transition-all"
-                  title="Show column"
+        <>
+          <Separator />
+          <CardContent className="px-2 py-2">
+            <div className="px-2 py-1">
+              <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Hidden
+              </Label>
+            </div>
+            <div className="space-y-0.5">
+              {inactiveColumns.map((col) => (
+                <div
+                  key={col.key}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted group"
                 >
-                  <EyeOff className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <div className="w-3.5 flex-shrink-0" />
+                  <span className="flex-1 text-sm text-muted-foreground truncate">
+                    {col.label}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleColumn(col)}
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all"
+                    title="Show column"
+                  >
+                    <EyeOff className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </>
       )}
-    </div>
+    </Card>
   )
 }

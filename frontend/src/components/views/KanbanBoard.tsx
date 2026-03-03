@@ -3,6 +3,9 @@
 import { useState, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronRight, GripVertical } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export interface KanbanColumn {
   name: string
@@ -27,37 +30,39 @@ interface DragState {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
-      <div className="h-3 bg-gray-200 rounded w-full mb-2" />
-      <div className="h-3 bg-gray-200 rounded w-2/3 mb-3" />
-      <div className="flex items-center gap-2 mt-3">
-        <div className="h-5 bg-gray-200 rounded-full w-16" />
-        <div className="h-5 bg-gray-200 rounded-full w-12" />
-      </div>
-      <div className="flex items-center gap-2 mt-3">
-        <div className="h-6 w-6 bg-gray-200 rounded-full" />
-        <div className="h-3 bg-gray-200 rounded w-20" />
-      </div>
-    </div>
+    <Card className="border-border">
+      <CardContent className="p-4 space-y-3">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-2/3" />
+        <div className="flex items-center gap-2 mt-3">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-12 rounded-full" />
+        </div>
+        <div className="flex items-center gap-2 mt-3">
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
 function SkeletonColumn() {
   return (
-    <div className="flex-shrink-0 w-80 bg-gray-50 rounded-lg border border-gray-200">
-      <div className="p-3 animate-pulse">
+    <Card className="flex-shrink-0 w-80 bg-muted/50">
+      <CardHeader className="p-3">
         <div className="flex items-center gap-2">
-          <div className="h-4 bg-gray-200 rounded w-24" />
-          <div className="h-5 bg-gray-200 rounded-full w-8" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-5 w-8 rounded-full" />
         </div>
-      </div>
-      <div className="p-3 space-y-3">
+      </CardHeader>
+      <CardContent className="p-3 pt-0 space-y-3">
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -153,13 +158,13 @@ export default function KanbanBoard({
   if (columns.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <GripVertical className="w-8 h-8 text-gray-400" />
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <GripVertical className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-base font-semibold text-gray-900 mb-1">
+        <h3 className="text-base font-semibold text-foreground mb-1">
           No {entityType} data available
         </h3>
-        <p className="text-sm text-gray-500 text-center max-w-sm">
+        <p className="text-sm text-muted-foreground text-center max-w-sm">
           There are no columns to display in the Kanban view. Try adjusting your filters or add some {entityType}.
         </p>
       </div>
@@ -170,9 +175,9 @@ export default function KanbanBoard({
     <>
       {/* Hidden drag image element */}
       <div ref={dragImageRef} className="fixed -left-[9999px]" aria-hidden="true">
-        <div className="bg-white rounded shadow-lg px-4 py-2 text-sm text-gray-700">
-          Moving...
-        </div>
+        <Card className="px-4 py-2">
+          <span className="text-sm text-muted-foreground">Moving...</span>
+        </Card>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4 px-1 min-h-[400px]">
@@ -181,29 +186,29 @@ export default function KanbanBoard({
           const isDropping = dropTarget === column.name && dragState.fromColumn !== column.name
 
           return (
-            <div
+            <Card
               key={column.name}
               className={cn(
-                "flex-shrink-0 rounded-lg border-2 transition-colors duration-150",
+                "flex-shrink-0 border-2 transition-colors duration-150 rounded-lg",
                 isCollapsed ? "w-12" : "w-80",
                 isDropping
                   ? "border-blue-400 bg-blue-50/50"
-                  : "border-gray-200 bg-gray-50/80"
+                  : "border-border bg-muted/40"
               )}
               onDragOver={(e) => handleDragOver(e, column.name)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, column.name)}
             >
               {/* Column Header */}
-              <div
+              <CardHeader
                 className="p-3 cursor-pointer select-none"
                 onClick={() => toggleColumn(column.name)}
               >
                 {isCollapsed ? (
                   <div className="flex flex-col items-center gap-2">
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     <span
-                      className="text-xs font-semibold writing-mode-vertical"
+                      className="text-xs font-semibold"
                       style={{
                         writingMode: "vertical-rl",
                         textOrientation: "mixed",
@@ -212,39 +217,39 @@ export default function KanbanBoard({
                     >
                       {column.name}
                     </span>
-                    <span
-                      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-medium text-white"
+                    <Badge
+                      className="min-w-[20px] justify-center rounded-full text-xs text-white border-transparent"
                       style={{ backgroundColor: column.color || "#6B7280" }}
                     >
                       {column.count}
-                    </span>
+                    </Badge>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: column.color || "#6B7280" }}
                     />
-                    <span className="text-sm font-semibold text-gray-800 truncate">
+                    <span className="text-sm font-semibold text-foreground truncate">
                       {column.name}
                     </span>
-                    <span
-                      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-medium text-white flex-shrink-0"
+                    <Badge
+                      className="min-w-[20px] justify-center rounded-full text-xs text-white flex-shrink-0 border-transparent"
                       style={{ backgroundColor: column.color || "#6B7280" }}
                     >
                       {column.count}
-                    </span>
+                    </Badge>
                   </div>
                 )}
-              </div>
+              </CardHeader>
 
               {/* Column Body */}
               {!isCollapsed && (
-                <div className="px-3 pb-3 space-y-2.5 max-h-[calc(100vh-280px)] overflow-y-auto">
+                <CardContent className="px-3 pb-3 pt-0 space-y-2.5 max-h-[calc(100vh-280px)] overflow-y-auto">
                   {column.items.length === 0 ? (
                     <div className="flex items-center justify-center py-8 px-4">
-                      <p className="text-xs text-gray-400 text-center">
+                      <p className="text-xs text-muted-foreground text-center">
                         No {entityType} in this column
                       </p>
                     </div>
@@ -265,9 +270,9 @@ export default function KanbanBoard({
                       </div>
                     ))
                   )}
-                </div>
+                </CardContent>
               )}
-            </div>
+            </Card>
           )
         })}
       </div>

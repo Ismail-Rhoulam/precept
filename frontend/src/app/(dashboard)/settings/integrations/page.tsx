@@ -12,6 +12,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIntegrationStatus } from "@/hooks/useIntegrations"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 const integrationCards = [
   {
@@ -64,7 +66,7 @@ export default function IntegrationsPage() {
       <div className="mb-6">
         <Link
           href="/settings"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Settings
@@ -72,8 +74,8 @@ export default function IntegrationsPage() {
         <div className="flex items-center gap-3">
           <Phone className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold">Integrations</h1>
+            <p className="text-sm text-muted-foreground">
               Connect your CRM with external services
             </p>
           </div>
@@ -82,8 +84,8 @@ export default function IntegrationsPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-          <span className="ml-2 text-sm text-gray-500">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">
             Loading integrations...
           </span>
         </div>
@@ -93,39 +95,39 @@ export default function IntegrationsPage() {
             const enabled = getEnabled(card.statusKey)
 
             return (
-              <Link
-                key={card.href}
-                href={card.href}
-                className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:border-primary/30 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-primary/10 transition-colors">
-                    <card.icon className="h-6 w-6 text-gray-600 group-hover:text-primary transition-colors" />
-                  </div>
-                  {enabled !== null && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                        enabled
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-600"
+              <Link key={card.href} href={card.href}>
+                <Card className="hover:border-primary/30 hover:shadow-md transition-all group h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                        <card.icon className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                      {enabled !== null && (
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            enabled
+                              ? "bg-green-100 text-green-800"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {enabled ? "Enabled" : "Disabled"}
+                        </Badge>
                       )}
-                    >
-                      {enabled ? "Enabled" : "Disabled"}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                      {card.name}
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {card.description}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-primary transition-colors flex-shrink-0 ml-2" />
-                </div>
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <h2 className="text-base font-semibold group-hover:text-primary transition-colors">
+                          {card.name}
+                        </h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {card.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0 ml-2" />
+                    </div>
+                  </CardContent>
+                </Card>
               </Link>
             )
           })}

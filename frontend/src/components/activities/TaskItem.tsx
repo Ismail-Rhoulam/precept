@@ -5,6 +5,10 @@ import { CheckSquare, Square, Trash2, Calendar, User } from "lucide-react"
 import { formatDistanceToNow, isPast, parseISO } from "date-fns"
 import type { Task } from "@/types/task"
 import { cn } from "@/lib/utils"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface TaskItemProps {
   task: Task
@@ -44,126 +48,131 @@ export function TaskItem({ task, onStatusChange, onDelete }: TaskItemProps) {
   }
 
   return (
-    <div
-      className={cn(
-        "flex items-start gap-3 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow",
-        isDone && "opacity-70"
-      )}
-    >
-      {/* Status checkbox */}
-      <button
-        onClick={handleToggleStatus}
-        disabled={!onStatusChange}
-        className={cn(
-          "flex-shrink-0 mt-0.5 transition-colors",
-          onStatusChange ? "cursor-pointer hover:text-primary" : "cursor-default",
-          isDone ? "text-green-500" : "text-gray-400"
-        )}
-        title={isDone ? "Mark as Todo" : "Mark as Done"}
-      >
-        {isDone ? (
-          <CheckSquare className="h-5 w-5" />
-        ) : (
-          <Square className="h-5 w-5" />
-        )}
-      </button>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <h3
+    <Card className={cn("hover:shadow-sm transition-shadow", isDone && "opacity-70")}>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          {/* Status checkbox */}
+          <button
+            onClick={handleToggleStatus}
+            disabled={!onStatusChange}
             className={cn(
-              "text-sm font-medium text-gray-900",
-              isDone && "line-through text-gray-500"
+              "flex-shrink-0 mt-0.5 transition-colors",
+              onStatusChange ? "cursor-pointer hover:text-primary" : "cursor-default",
+              isDone ? "text-green-500" : "text-muted-foreground"
             )}
+            title={isDone ? "Mark as Todo" : "Mark as Done"}
           >
-            {task.title}
-          </h3>
+            {isDone ? (
+              <CheckSquare className="h-5 w-5" />
+            ) : (
+              <Square className="h-5 w-5" />
+            )}
+          </button>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {onDelete && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                title="Delete task"
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h3
+                className={cn(
+                  "text-sm font-medium text-foreground",
+                  isDone && "line-through text-muted-foreground"
+                )}
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+                {task.title}
+              </h3>
+
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    title="Delete task"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {task.description && (
+              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                {task.description}
+              </p>
             )}
-          </div>
-        </div>
 
-        {task.description && (
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-            {task.description}
-          </p>
-        )}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {/* Priority badge */}
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "border-transparent",
+                  priorityConfig[task.priority] || "bg-gray-100 text-gray-700"
+                )}
+              >
+                {task.priority}
+              </Badge>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {/* Priority badge */}
-          <span
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-              priorityConfig[task.priority] || "bg-gray-100 text-gray-700"
-            )}
-          >
-            {task.priority}
-          </span>
+              {/* Status badge */}
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "border-transparent",
+                  statusConfig[task.status] || "bg-gray-100 text-gray-700"
+                )}
+              >
+                {task.status}
+              </Badge>
 
-          {/* Status badge */}
-          <span
-            className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-              statusConfig[task.status] || "bg-gray-100 text-gray-700"
-            )}
-          >
-            {task.status}
-          </span>
-
-          {/* Assigned user */}
-          {task.assigned_to_name && (
-            <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-              <User className="h-3 w-3" />
-              {task.assigned_to_name}
-            </span>
-          )}
-
-          {/* Due date */}
-          {task.due_date && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 text-xs",
-                isOverdue ? "text-red-600 font-medium" : "text-gray-500"
+              {/* Assigned user */}
+              {task.assigned_to_name && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <User className="h-3 w-3" />
+                  {task.assigned_to_name}
+                </span>
               )}
-            >
-              <Calendar className="h-3 w-3" />
-              {isOverdue ? "Overdue: " : ""}
-              {formatDistanceToNow(parseISO(task.due_date), { addSuffix: true })}
-            </span>
+
+              {/* Due date */}
+              {task.due_date && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="h-3 w-3" />
+                  {isOverdue ? "Overdue: " : ""}
+                  {formatDistanceToNow(parseISO(task.due_date), { addSuffix: true })}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Delete confirmation */}
+          {showDeleteConfirm && (
+            <div className="absolute right-4 top-4 p-3 bg-background border border-destructive/30 rounded-md shadow-lg z-10">
+              <p className="text-sm text-destructive mb-2">Delete this task?</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                >
+                  Delete
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Delete confirmation */}
-      {showDeleteConfirm && (
-        <div className="absolute right-4 top-4 p-3 bg-white border border-red-200 rounded-md shadow-lg z-10">
-          <p className="text-sm text-red-700 mb-2">Delete this task?</p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleDelete}
-              className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -13,6 +13,13 @@ import { useNotes, useCreateNote, useUpdateNote, useDeleteNote } from "@/hooks/u
 import type { Note } from "@/types/note"
 import { NoteCard } from "@/components/activities/NoteCard"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function NotesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -98,164 +105,180 @@ export default function NotesPage() {
           <StickyNote className="h-7 w-7 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Notes</h1>
-            <p className="text-sm text-gray-500">Your notes and annotations</p>
+            <p className="text-sm text-muted-foreground">Your notes and annotations</p>
           </div>
         </div>
         {!showCreateForm && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={() => setShowCreateForm(true)}>
             <Plus className="h-4 w-4" />
             New Note
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Create New Note</h2>
-          <form onSubmit={handleCreateNote} className="space-y-4">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note title"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Note content..."
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-
-            {createNote.isError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
-                  {createNote.error instanceof Error
-                    ? createNote.error.message
-                    : "Failed to create note"}
-                </p>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-sm">Create New Note</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateNote} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="note-title">Title</Label>
+                <Input
+                  id="note-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Note title"
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="note-content">Content</Label>
+                <Textarea
+                  id="note-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Note content..."
+                  rows={5}
+                />
+              </div>
 
-            <div className="flex items-center gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!title.trim() || createNote.isPending}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  !title.trim() || createNote.isPending
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-primary text-white hover:bg-primary/90"
-                )}
-              >
-                {createNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {createNote.isPending ? "Creating..." : "Create Note"}
-              </button>
-            </div>
-          </form>
-        </div>
+              {createNote.isError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {createNote.error instanceof Error
+                      ? createNote.error.message
+                      : "Failed to create note"}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-center gap-3 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!title.trim() || createNote.isPending}
+                >
+                  {createNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {createNote.isPending ? "Creating..." : "Create Note"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       {/* Edit form */}
       {editingNote && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-4">Edit Note</h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-
-            {updateNote.isError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">Failed to update note</p>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-sm">Edit Note</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-note-title">Title</Label>
+                <Input
+                  id="edit-note-title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="edit-note-content">Content</Label>
+                <Textarea
+                  id="edit-note-content"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={5}
+                />
+              </div>
 
-            <div className="flex items-center gap-3 justify-end">
-              <button
-                onClick={handleCancelEdit}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={!editTitle.trim() || updateNote.isPending}
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  !editTitle.trim() || updateNote.isPending
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-primary text-white hover:bg-primary/90"
-                )}
-              >
-                {updateNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {updateNote.isPending ? "Saving..." : "Save Changes"}
-              </button>
+              {updateNote.isError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>Failed to update note</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex items-center gap-3 justify-end">
+                <Button variant="outline" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={!editTitle.trim() || updateNote.isPending}
+                >
+                  {updateNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {updateNote.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Search */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search notes by title..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          />
-        </div>
-      </div>
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notes by title..."
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Notes grid */}
       {isLoading ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading notes...</p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full mt-4">
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : isError ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-900 mb-1">
-            Failed to load notes
-          </p>
-          <p className="text-sm text-red-600">
-            {error instanceof Error ? error.message : "An error occurred"}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-900 mb-1">
+              Failed to load notes
+            </p>
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : "An error occurred"}
+            </p>
+          </CardContent>
+        </Card>
       ) : filteredNotes.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 shadow-sm text-center">
-          <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">
-            {searchQuery
-              ? "No notes match your search"
-              : "No notes yet. Create your first note!"}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Inbox className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              {searchQuery
+                ? "No notes match your search"
+                : "No notes yet. Create your first note!"}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredNotes.map((note) => (

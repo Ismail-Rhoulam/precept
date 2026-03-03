@@ -1,7 +1,15 @@
 "use client"
 
 import { Plus, X, ArrowUp, ArrowDown } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface FieldOption {
   key: string
@@ -115,101 +123,114 @@ export function SortControls({
   }
 
   return (
-    <div className="w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Sort</h3>
-        {sortEntries.length > 0 && (
-          <button
-            onClick={clearAll}
-            className="text-xs font-medium text-gray-500 hover:text-red-600 transition-colors"
-          >
-            Clear all
-          </button>
+    <Card className="w-80 shadow-lg">
+      <CardHeader className="p-4 pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm">Sort</CardTitle>
+          {sortEntries.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-xs text-muted-foreground hover:text-destructive h-auto py-1 px-2"
+            >
+              Clear all
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-4 pt-0">
+        {/* Sort Rows */}
+        <div className="space-y-2">
+          {sortEntries.map(([field, direction], index) => {
+            const fieldDef = fields.find((f) => f.key === field)
+            const fieldLabel = fieldDef?.label || field
+
+            // Available options for this row: fields not used by other rows + current field
+            const rowAvailableFields = fields.filter(
+              (f) => f.key === field || !usedFields.has(f.key)
+            )
+
+            return (
+              <div key={field} className="flex items-center gap-2">
+                <span className="w-10 text-xs font-medium text-muted-foreground text-right flex-shrink-0">
+                  {index === 0 ? "Sort" : "Then"}
+                </span>
+
+                {/* Field Selector */}
+                <Select
+                  value={field}
+                  onValueChange={(value) => changeField(field, value)}
+                >
+                  <SelectTrigger className="flex-1 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rowAvailableFields.map((f) => (
+                      <SelectItem key={f.key} value={f.key}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Direction Toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toggleDirection(field)}
+                  className="h-8 gap-1 text-sm font-medium"
+                  title={direction === "asc" ? "Ascending" : "Descending"}
+                >
+                  {direction === "asc" ? (
+                    <>
+                      <ArrowUp className="w-3.5 h-3.5" />
+                      Asc
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown className="w-3.5 h-3.5" />
+                      Desc
+                    </>
+                  )}
+                </Button>
+
+                {/* Remove */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeSort(field)}
+                  className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                  title="Remove sort"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Empty State */}
+        {sortEntries.length === 0 && (
+          <p className="text-xs text-muted-foreground py-2">
+            No sort applied. Results are sorted by most recent.
+          </p>
         )}
-      </div>
 
-      {/* Sort Rows */}
-      <div className="space-y-2">
-        {sortEntries.map(([field, direction], index) => {
-          const fieldDef = fields.find((f) => f.key === field)
-          const fieldLabel = fieldDef?.label || field
-
-          // Available options for this row: fields not used by other rows + current field
-          const rowAvailableFields = fields.filter(
-            (f) => f.key === field || !usedFields.has(f.key)
-          )
-
-          return (
-            <div key={field} className="flex items-center gap-2">
-              <span className="w-10 text-xs font-medium text-gray-400 text-right flex-shrink-0">
-                {index === 0 ? "Sort" : "Then"}
-              </span>
-
-              {/* Field Selector */}
-              <select
-                value={field}
-                onChange={(e) => changeField(field, e.target.value)}
-                className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {rowAvailableFields.map((f) => (
-                  <option key={f.key} value={f.key}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-
-              {/* Direction Toggle */}
-              <button
-                onClick={() => toggleDirection(field)}
-                className={cn(
-                  "inline-flex items-center gap-1 px-2.5 py-1.5 border rounded-md text-sm font-medium transition-colors",
-                  "border-gray-300 text-gray-700 hover:bg-gray-50"
-                )}
-                title={direction === "asc" ? "Ascending" : "Descending"}
-              >
-                {direction === "asc" ? (
-                  <>
-                    <ArrowUp className="w-3.5 h-3.5" />
-                    Asc
-                  </>
-                ) : (
-                  <>
-                    <ArrowDown className="w-3.5 h-3.5" />
-                    Desc
-                  </>
-                )}
-              </button>
-
-              {/* Remove */}
-              <button
-                onClick={() => removeSort(field)}
-                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                title="Remove sort"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Empty State */}
-      {sortEntries.length === 0 && (
-        <p className="text-xs text-gray-400 py-2">
-          No sort applied. Results are sorted by most recent.
-        </p>
-      )}
-
-      {/* Add Sort Button */}
-      {availableFields.length > 0 && (
-        <button
-          onClick={addSort}
-          className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add sort
-        </button>
-      )}
-    </div>
+        {/* Add Sort Button */}
+        {availableFields.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={addSort}
+            className="mt-3 text-sm font-medium text-primary hover:text-primary"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add sort
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   )
 }

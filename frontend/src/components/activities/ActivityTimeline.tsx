@@ -24,6 +24,16 @@ import { cn } from "@/lib/utils"
 import { CommentBox } from "./CommentBox"
 import { NoteCard } from "./NoteCard"
 import { TaskItem } from "./TaskItem"
+import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ActivityTimelineProps {
   entityType: "lead" | "deal"
@@ -42,15 +52,15 @@ const tabs: { key: TabKey; label: string }[] = [
 
 function TimelineSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div className="space-y-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex gap-4">
           <div className="flex-shrink-0">
-            <div className="h-8 w-8 bg-gray-200 rounded-full" />
+            <Skeleton className="h-8 w-8 rounded-full" />
           </div>
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-3 bg-gray-100 rounded w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
           </div>
         </div>
       ))}
@@ -61,8 +71,8 @@ function TimelineSkeleton() {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="py-12 text-center">
-      <Inbox className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-      <p className="text-sm text-gray-500">{message}</p>
+      <Inbox className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   )
 }
@@ -99,14 +109,11 @@ function ActivityIcon({ type }: { type: string }) {
   const config = iconMap[type] || iconMap.creation
 
   return (
-    <div
-      className={cn(
-        "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
-        config.bg
-      )}
-    >
-      {config.icon}
-    </div>
+    <Avatar className="h-8 w-8">
+      <AvatarFallback className={config.bg}>
+        {config.icon}
+      </AvatarFallback>
+    </Avatar>
   )
 }
 
@@ -118,13 +125,13 @@ function ActivityEntry({ activity }: { activity: Activity }) {
       case "comment":
         return (
           <div>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-foreground">
               <span className="font-medium">{activity.user_name || "Someone"}</span>
               {" left a comment"}
             </p>
             {data.content && (
               <div
-                className="mt-1 text-sm text-gray-600 prose prose-sm max-w-none"
+                className="mt-1 text-sm text-muted-foreground prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: data.content }}
               />
             )}
@@ -133,15 +140,15 @@ function ActivityEntry({ activity }: { activity: Activity }) {
       case "note":
         return (
           <div>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-foreground">
               <span className="font-medium">{activity.user_name || "Someone"}</span>
               {" added a note"}
             </p>
             {data.title && (
-              <p className="mt-1 text-sm font-medium text-gray-700">{data.title}</p>
+              <p className="mt-1 text-sm font-medium text-foreground/80">{data.title}</p>
             )}
             {data.content && (
-              <p className="mt-0.5 text-sm text-gray-500 line-clamp-2">
+              <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">
                 {data.content}
               </p>
             )}
@@ -150,23 +157,24 @@ function ActivityEntry({ activity }: { activity: Activity }) {
       case "task":
         return (
           <div>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-foreground">
               <span className="font-medium">{activity.user_name || "Someone"}</span>
               {" created a task"}
             </p>
             <div className="mt-1 flex items-center gap-2">
               {data.title && (
-                <span className="text-sm text-gray-700">{data.title}</span>
+                <span className="text-sm text-foreground/80">{data.title}</span>
               )}
               {data.status && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-transparent">
                   {data.status}
-                </span>
+                </Badge>
               )}
               {data.priority && (
-                <span
+                <Badge
+                  variant="secondary"
                   className={cn(
-                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                    "border-transparent",
                     data.priority === "High"
                       ? "bg-red-100 text-red-800"
                       : data.priority === "Medium"
@@ -175,11 +183,11 @@ function ActivityEntry({ activity }: { activity: Activity }) {
                   )}
                 >
                   {data.priority}
-                </span>
+                </Badge>
               )}
             </div>
             {data.assigned_to_name && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Assigned to {data.assigned_to_name}
               </p>
             )}
@@ -188,7 +196,7 @@ function ActivityEntry({ activity }: { activity: Activity }) {
       case "call_log":
         return (
           <div>
-            <p className="text-sm text-gray-900 flex items-center gap-1.5">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
               <span className="font-medium">{activity.user_name || "System"}</span>
               {data.call_type === "Incoming" ? (
                 <PhoneIncoming className="h-3.5 w-3.5 text-green-500" />
@@ -197,7 +205,7 @@ function ActivityEntry({ activity }: { activity: Activity }) {
               )}
               <span>{data.call_type || "Call"}</span>
             </p>
-            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
               {data.status && <span>Status: {data.status}</span>}
               {data.duration && <span>Duration: {data.duration}</span>}
               {data.caller_name && <span>From: {data.caller_name}</span>}
@@ -207,24 +215,24 @@ function ActivityEntry({ activity }: { activity: Activity }) {
         )
       case "status_change":
         return (
-          <p className="text-sm text-gray-900">
+          <p className="text-sm text-foreground">
             <span className="font-medium">{activity.user_name || "Someone"}</span>
             {" changed status from "}
-            <span className="font-medium text-gray-700">{data.old_status || "Unknown"}</span>
+            <span className="font-medium text-foreground/80">{data.old_status || "Unknown"}</span>
             {" to "}
-            <span className="font-medium text-gray-700">{data.new_status || "Unknown"}</span>
+            <span className="font-medium text-foreground/80">{data.new_status || "Unknown"}</span>
           </p>
         )
       case "creation":
         return (
-          <p className="text-sm text-gray-900">
+          <p className="text-sm text-foreground">
             <span className="font-medium">{activity.user_name || "Someone"}</span>
             {" created this record"}
           </p>
         )
       default:
         return (
-          <p className="text-sm text-gray-500">Activity logged</p>
+          <p className="text-sm text-muted-foreground">Activity logged</p>
         )
     }
   }
@@ -233,11 +241,11 @@ function ActivityEntry({ activity }: { activity: Activity }) {
     <div className="flex gap-4">
       <div className="relative flex flex-col items-center">
         <ActivityIcon type={activity.activity_type} />
-        <div className="flex-1 w-px bg-gray-200 mt-2" />
+        <div className="flex-1 w-px bg-border mt-2" />
       </div>
       <div className="flex-1 pb-6">
         {renderContent()}
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-muted-foreground/60">
           {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
         </p>
       </div>
@@ -279,49 +287,44 @@ function NoteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Note title"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-      />
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Note content..."
-        rows={3}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-      />
-      {createNote.isError && (
-        <p className="text-sm text-red-600">
-          {createNote.error instanceof Error ? createNote.error.message : "Failed to create note"}
-        </p>
-      )}
-      <div className="flex items-center gap-2 justify-end">
-        <button
-          type="button"
-          onClick={onDone}
-          className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!title.trim() || createNote.isPending}
-          className={cn(
-            "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-            !title.trim() || createNote.isPending
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary/90"
+    <Card className="bg-muted/50">
+      <CardContent className="p-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Note title"
+          />
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Note content..."
+            rows={3}
+            className="resize-none"
+          />
+          {createNote.isError && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {createNote.error instanceof Error ? createNote.error.message : "Failed to create note"}
+              </AlertDescription>
+            </Alert>
           )}
-        >
-          {createNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {createNote.isPending ? "Saving..." : "Save Note"}
-        </button>
-      </div>
-    </form>
+          <div className="flex items-center gap-2 justify-end">
+            <Button type="button" variant="outline" onClick={onDone}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!title.trim() || createNote.isPending}
+            >
+              {createNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {createNote.isPending ? "Saving..." : "Save Note"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -368,86 +371,80 @@ function TaskForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Task title"
-        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-      />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Task description..."
-        rows={2}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-      />
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Priority</label>
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="Backlog">Backlog</option>
-            <option value="Todo">Todo</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-            <option value="Canceled">Canceled</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Due Date</label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+    <Card className="bg-muted/50">
+      <CardContent className="p-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
           />
-        </div>
-      </div>
-      {createTask.isError && (
-        <p className="text-sm text-red-600">
-          {createTask.error instanceof Error ? createTask.error.message : "Failed to create task"}
-        </p>
-      )}
-      <div className="flex items-center gap-2 justify-end">
-        <button
-          type="button"
-          onClick={onDone}
-          className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!title.trim() || createTask.isPending}
-          className={cn(
-            "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-            !title.trim() || createTask.isPending
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary/90"
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Task description..."
+            rows={2}
+            className="resize-none"
+          />
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <Label className="block text-xs text-muted-foreground mb-1">Priority</Label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div>
+              <Label className="block text-xs text-muted-foreground mb-1">Status</Label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="Backlog">Backlog</option>
+                <option value="Todo">Todo</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Done">Done</option>
+                <option value="Canceled">Canceled</option>
+              </select>
+            </div>
+            <div>
+              <Label className="block text-xs text-muted-foreground mb-1">Due Date</Label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+          {createTask.isError && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {createTask.error instanceof Error ? createTask.error.message : "Failed to create task"}
+              </AlertDescription>
+            </Alert>
           )}
-        >
-          {createTask.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {createTask.isPending ? "Creating..." : "Create Task"}
-        </button>
-      </div>
-    </form>
+          <div className="flex items-center gap-2 justify-end">
+            <Button type="button" variant="outline" onClick={onDone}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!title.trim() || createTask.isPending}
+            >
+              {createTask.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {createTask.isPending ? "Creating..." : "Create Task"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -521,7 +518,9 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
     if (isError) {
       return (
         <div className="py-8 text-center">
-          <p className="text-sm text-red-600">Failed to load activities. Please try again.</p>
+          <Alert variant="destructive" className="inline-flex">
+            <AlertDescription>Failed to load activities. Please try again.</AlertDescription>
+          </Alert>
         </div>
       )
     }
@@ -548,41 +547,44 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
             ) : (
               <div className="space-y-3">
                 {comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="flex gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-medium text-blue-700">
-                        {(comment.comment_by_name || "U")[0].toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900">
-                          {comment.comment_by_name || "Unknown"}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400">
-                            {formatDistanceToNow(new Date(comment.created_at), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteComment(comment.id)}
-                            className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                            title="Delete comment"
-                          >
-                            <span className="text-xs">x</span>
-                          </button>
+                  <Card key={comment.id}>
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-blue-100 text-xs font-medium text-blue-700">
+                            {(comment.comment_by_name || "U")[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium text-foreground">
+                              {comment.comment_by_name || "Unknown"}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground/60">
+                                {formatDistanceToNow(new Date(comment.created_at), {
+                                  addSuffix: true,
+                                })}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                title="Delete comment"
+                              >
+                                <span className="text-xs">x</span>
+                              </Button>
+                            </div>
+                          </div>
+                          <div
+                            className="mt-1 text-sm text-muted-foreground prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: comment.content }}
+                          />
                         </div>
                       </div>
-                      <div
-                        className="mt-1 text-sm text-gray-600 prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: comment.content }}
-                      />
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
@@ -594,13 +596,10 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
           <div className="space-y-4">
             <div className="flex justify-end">
               {!showNoteForm && (
-                <button
-                  onClick={() => setShowNoteForm(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                >
+                <Button onClick={() => setShowNoteForm(true)}>
                   <Plus className="h-4 w-4" />
                   Add Note
-                </button>
+                </Button>
               )}
             </div>
 
@@ -614,45 +613,39 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
 
             {/* Note editing inline form */}
             {editingNote && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-                <h4 className="text-sm font-medium text-gray-700">Edit Note</h4>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-                {updateNote.isError && (
-                  <p className="text-sm text-red-600">Failed to update note</p>
-                )}
-                <div className="flex items-center gap-2 justify-end">
-                  <button
-                    onClick={handleCancelNoteEdit}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveNoteEdit}
-                    disabled={!editTitle.trim() || updateNote.isPending}
-                    className={cn(
-                      "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                      !editTitle.trim() || updateNote.isPending
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-primary text-white hover:bg-primary/90"
-                    )}
-                  >
-                    {updateNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Save
-                  </button>
-                </div>
-              </div>
+              <Card className="bg-muted/50">
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="text-sm font-medium text-foreground/80">Edit Note</h4>
+                  <Input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                  />
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  {updateNote.isError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>Failed to update note</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button variant="outline" onClick={handleCancelNoteEdit}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveNoteEdit}
+                      disabled={!editTitle.trim() || updateNote.isPending}
+                    >
+                      {updateNote.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Save
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {notes.length === 0 && !showNoteForm ? (
@@ -677,13 +670,10 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
           <div className="space-y-4">
             <div className="flex justify-end">
               {!showTaskForm && (
-                <button
-                  onClick={() => setShowTaskForm(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                >
+                <Button onClick={() => setShowTaskForm(true)}>
                   <Plus className="h-4 w-4" />
                   Add Task
-                </button>
+                </Button>
               )}
             </div>
 
@@ -719,56 +709,59 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
         return (
           <div className="space-y-3">
             {callLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-              >
-                <div
-                  className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
-                    log.call_type === "Incoming"
-                      ? "bg-green-100"
-                      : "bg-blue-100"
-                  )}
-                >
-                  {log.call_type === "Incoming" ? (
-                    <PhoneIncoming className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <PhoneOutgoing className="h-4 w-4 text-blue-600" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      {log.call_type} Call
-                    </span>
-                    <span
-                      className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-                        log.status === "Completed"
-                          ? "bg-green-100 text-green-800"
-                          : log.status === "Missed"
-                            ? "bg-red-100 text-red-800"
-                            : log.status === "Failed"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-gray-100 text-gray-700"
-                      )}
-                    >
-                      {log.status}
-                    </span>
+              <Card key={log.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback
+                        className={cn(
+                          log.call_type === "Incoming"
+                            ? "bg-green-100"
+                            : "bg-blue-100"
+                        )}
+                      >
+                        {log.call_type === "Incoming" ? (
+                          <PhoneIncoming className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <PhoneOutgoing className="h-4 w-4 text-blue-600" />
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          {log.call_type} Call
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "border-transparent",
+                            log.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : log.status === "Missed"
+                                ? "bg-red-100 text-red-800"
+                                : log.status === "Failed"
+                                  ? "bg-red-100 text-red-600"
+                                  : "bg-gray-100 text-gray-700"
+                          )}
+                        >
+                          {log.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        {log.caller_name && <span>From: {log.caller_name}</span>}
+                        {log.receiver_name && <span>To: {log.receiver_name}</span>}
+                        {log.duration && <span>Duration: {log.duration}</span>}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground/60">
+                        {formatDistanceToNow(new Date(log.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                    {log.caller_name && <span>From: {log.caller_name}</span>}
-                    {log.receiver_name && <span>To: {log.receiver_name}</span>}
-                    {log.duration && <span>Duration: {log.duration}</span>}
-                  </div>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(log.created_at), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )
@@ -776,9 +769,9 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+    <Card>
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <nav className="flex -mb-px px-6" aria-label="Activity tabs">
           {tabs.map((tab) => (
             <button
@@ -788,24 +781,24 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
                 "py-4 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap",
                 activeTab === tab.key
                   ? "border-primary text-primary"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               )}
             >
               {tab.label}
               {tab.key === "comments" && comments.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                <Badge variant="secondary" className="ml-1.5 h-5 min-w-[20px] px-1.5 rounded-full text-xs">
                   {comments.length}
-                </span>
+                </Badge>
               )}
               {tab.key === "tasks" && tasks.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                <Badge variant="secondary" className="ml-1.5 h-5 min-w-[20px] px-1.5 rounded-full text-xs">
                   {tasks.length}
-                </span>
+                </Badge>
               )}
               {tab.key === "notes" && notes.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                <Badge variant="secondary" className="ml-1.5 h-5 min-w-[20px] px-1.5 rounded-full text-xs">
                   {notes.length}
-                </span>
+                </Badge>
               )}
             </button>
           ))}
@@ -813,7 +806,7 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
       </div>
 
       {/* Tab content */}
-      <div className="p-6">{renderTabContent()}</div>
-    </div>
+      <CardContent className="p-6">{renderTabContent()}</CardContent>
+    </Card>
   )
 }

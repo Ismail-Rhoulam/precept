@@ -20,6 +20,26 @@ import {
   useDownloadTemplate,
 } from "@/hooks/useDataImport"
 import type { ImportableEntity, ImportFieldDef, ImportPreview, ImportResult } from "@/types/data-import"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const STEPS = [
   { id: 1, label: "Select Type" },
@@ -123,7 +143,7 @@ function StepSelectType({
 }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground">
         Choose the type of records you want to import.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -135,22 +155,22 @@ function StepSelectType({
               "flex items-start gap-3 p-4 border-2 rounded-lg text-left transition-all",
               selected === entity.value
                 ? "border-primary bg-primary/5"
-                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                : "border-muted hover:border-muted-foreground/30 hover:bg-muted/50"
             )}
           >
             <div
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
                 selected === entity.value
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               {entity.label[0]}
             </div>
             <div>
-              <div className="text-sm font-semibold text-gray-900">{entity.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5">
+              <div className="text-sm font-semibold text-foreground">{entity.label}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
                 {entity.fields.length} fields available
               </div>
             </div>
@@ -195,14 +215,15 @@ function StepUploadFile({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground">
         Upload a CSV file. Download the template to see the expected format.
       </p>
 
-      <button
+      <Button
+        variant="outline"
         onClick={onDownloadTemplate}
         disabled={isDownloading}
-        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-md hover:bg-primary/10 transition-colors disabled:opacity-50"
+        className="text-primary border-primary/30 bg-primary/5 hover:bg-primary/10"
       >
         {isDownloading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -210,7 +231,7 @@ function StepUploadFile({
           <Download className="h-4 w-4" />
         )}
         Download Template
-      </button>
+      </Button>
 
       {/* Drop zone */}
       <div
@@ -227,7 +248,7 @@ function StepUploadFile({
             ? "border-primary bg-primary/5"
             : file
             ? "border-green-400 bg-green-50"
-            : "border-gray-300 hover:border-gray-400 bg-gray-50"
+            : "border-muted-foreground/30 hover:border-muted-foreground/50 bg-muted/30"
         )}
       >
         <input
@@ -254,18 +275,18 @@ function StepUploadFile({
                 e.stopPropagation()
                 onFileChange(null)
               }}
-              className="mt-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+              className="mt-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
               Remove
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <Upload className="h-10 w-10 text-gray-300" />
-            <p className="text-sm font-medium text-gray-700">
+            <Upload className="h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm font-medium text-foreground">
               Drop your CSV file here, or click to browse
             </p>
-            <p className="text-xs text-gray-400">Only .csv files are supported</p>
+            <p className="text-xs text-muted-foreground">Only .csv files are supported</p>
           </div>
         )}
       </div>
@@ -287,58 +308,58 @@ function StepColumnMapping({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground">
         Map your CSV columns to the corresponding fields. Required fields are marked with *.
       </p>
 
-      <div className="overflow-hidden border border-gray-200 rounded-lg">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                Entity Field
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                CSV Column
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Entity Field</TableHead>
+              <TableHead>CSV Column</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {entityFields.map((field) => (
-              <tr key={field.name} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <span className="text-sm font-medium text-gray-900">
+              <TableRow key={field.name}>
+                <TableCell>
+                  <span className="text-sm font-medium text-foreground">
                     {field.label}
                     {field.required && (
-                      <span className="ml-1 text-red-500">*</span>
+                      <span className="ml-1 text-destructive">*</span>
                     )}
                   </span>
-                  <div className="text-xs text-gray-400">{field.type}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <select
-                    value={mapping[field.name] || ""}
-                    onChange={(e) =>
+                  <div className="text-xs text-muted-foreground">{field.type}</div>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={mapping[field.name] || "__skip__"}
+                    onValueChange={(val) =>
                       onMappingChange({
                         ...mapping,
-                        [field.name]: e.target.value,
+                        [field.name]: val === "__skip__" ? "" : val,
                       })
                     }
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                   >
-                    <option value="">-- Skip --</option>
-                    {csvHeaders.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="-- Skip --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__skip__">-- Skip --</SelectItem>
+                      {csvHeaders.map((h) => (
+                        <SelectItem key={h} value={h}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   )
 }
@@ -357,52 +378,47 @@ function StepPreview({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 text-sm text-gray-600">
-        <span className="font-medium text-gray-900">{preview.row_count}</span> rows will be imported
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{preview.row_count}</span> rows will be imported
       </div>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">
-                #
-              </th>
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">#</TableHead>
               {mappedFields.map((f) => (
-                <th
-                  key={f.name}
-                  className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap"
-                >
+                <TableHead key={f.name} className="whitespace-nowrap">
                   {f.label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {preview.sample_rows.map((row, ri) => (
-              <tr key={ri} className="hover:bg-gray-50">
-                <td className="px-3 py-2 text-gray-400 text-xs">{ri + 1}</td>
+              <TableRow key={ri}>
+                <TableCell className="text-muted-foreground text-xs">{ri + 1}</TableCell>
                 {mappedFields.map((f) => {
                   const csvCol = mapping[f.name]
                   const colIdx = preview.headers.indexOf(csvCol)
                   const val = colIdx >= 0 ? row[colIdx] : ""
                   return (
-                    <td
+                    <TableCell
                       key={f.name}
-                      className="px-3 py-2 text-gray-700 whitespace-nowrap"
+                      className="whitespace-nowrap"
                     >
-                      {val || <span className="text-gray-300">&mdash;</span>}
-                    </td>
+                      {val || <span className="text-muted-foreground/50">&mdash;</span>}
+                    </TableCell>
                   )
                 })}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
 
       {preview.row_count > preview.sample_rows.length && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-muted-foreground">
           Showing {preview.sample_rows.length} of {preview.row_count} rows
         </p>
       )}
@@ -416,22 +432,22 @@ function StepResults({ result }: { result: ImportResult }) {
     <div className="space-y-4">
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">{result.total}</div>
-          <div className="text-xs text-gray-500 mt-1">Total</div>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+        <Card className="p-4 text-center bg-muted/50">
+          <div className="text-2xl font-bold text-foreground">{result.total}</div>
+          <div className="text-xs text-muted-foreground mt-1">Total</div>
+        </Card>
+        <Card className="p-4 text-center bg-green-50 border-green-200">
           <div className="text-2xl font-bold text-green-700">{result.success}</div>
           <div className="text-xs text-green-600 mt-1">Imported</div>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        </Card>
+        <Card className="p-4 text-center bg-red-50 border-red-200">
           <div className="text-2xl font-bold text-red-700">{result.errors.length}</div>
           <div className="text-xs text-red-600 mt-1">Errors</div>
-        </div>
+        </Card>
       </div>
 
       {/* Progress bar */}
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full bg-green-500 rounded-full transition-all"
           style={{
@@ -442,41 +458,43 @@ function StepResults({ result }: { result: ImportResult }) {
 
       {/* Error details */}
       {result.errors.length > 0 && (
-        <div className="border border-red-200 rounded-lg overflow-hidden">
-          <div className="px-4 py-3 bg-red-50 border-b border-red-200 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-red-500" />
-            <span className="text-sm font-medium text-red-700">
+        <Card className="border-destructive/50 overflow-hidden">
+          <div className="px-4 py-3 bg-red-50 border-b border-destructive/20 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <span className="text-sm font-medium text-destructive">
               {result.errors.length} error{result.errors.length !== 1 ? "s" : ""} found
             </span>
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Row</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Field</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Error</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Row</TableHead>
+                  <TableHead>Field</TableHead>
+                  <TableHead>Error</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {result.errors.map((err, i) => (
-                  <tr key={i}>
-                    <td className="px-3 py-2 text-gray-600">{err.row}</td>
-                    <td className="px-3 py-2 text-gray-600">{err.field}</td>
-                    <td className="px-3 py-2 text-red-600">{err.message}</td>
-                  </tr>
+                  <TableRow key={i}>
+                    <TableCell className="text-muted-foreground">{err.row}</TableCell>
+                    <TableCell className="text-muted-foreground">{err.field}</TableCell>
+                    <TableCell className="text-destructive">{err.message}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        </div>
+        </Card>
       )}
 
       {result.success === result.total && result.total > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+        <Alert>
           <Check className="h-4 w-4" />
-          All {result.total} records imported successfully!
-        </div>
+          <AlertDescription>
+            All {result.total} records imported successfully!
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   )
@@ -635,8 +653,8 @@ export default function DataImportPage() {
       <div className="flex items-center gap-3">
         <Upload className="h-7 w-7 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Data Import</h1>
-          <p className="text-sm text-gray-500">Import records from a CSV file</p>
+          <h1 className="text-2xl font-bold text-foreground">Data Import</h1>
+          <p className="text-sm text-muted-foreground">Import records from a CSV file</p>
         </div>
       </div>
 
@@ -649,10 +667,10 @@ export default function DataImportPage() {
                 className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
                   step > s.id
-                    ? "bg-primary border-primary text-white"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : step === s.id
-                    ? "border-primary text-primary bg-white"
-                    : "border-gray-200 text-gray-400 bg-white"
+                    ? "border-primary text-primary bg-background"
+                    : "border-muted text-muted-foreground bg-background"
                 )}
               >
                 {step > s.id ? <Check className="h-4 w-4" /> : s.id}
@@ -660,7 +678,7 @@ export default function DataImportPage() {
               <span
                 className={cn(
                   "mt-1 text-xs font-medium hidden sm:block",
-                  step === s.id ? "text-primary" : step > s.id ? "text-gray-600" : "text-gray-400"
+                  step === s.id ? "text-primary" : step > s.id ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 {s.label}
@@ -670,7 +688,7 @@ export default function DataImportPage() {
               <div
                 className={cn(
                   "flex-1 h-0.5 mx-1 transition-colors",
-                  step > s.id ? "bg-primary" : "bg-gray-200"
+                  step > s.id ? "bg-primary" : "bg-muted"
                 )}
               />
             )}
@@ -679,114 +697,105 @@ export default function DataImportPage() {
       </div>
 
       {/* Step content */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-        {step === 1 && (
-          <StepSelectType
-            entities={displayEntities}
-            selected={selectedEntityType}
-            onSelect={setSelectedEntityType}
-          />
-        )}
+      <Card>
+        <CardContent className="p-6">
+          {step === 1 && (
+            <StepSelectType
+              entities={displayEntities}
+              selected={selectedEntityType}
+              onSelect={setSelectedEntityType}
+            />
+          )}
 
-        {step === 2 && (
-          <StepUploadFile
-            file={file}
-            onFileChange={handleFileChange}
-            onDownloadTemplate={() =>
-              downloadTemplate.mutate(selectedEntityType)
-            }
-            isDownloading={downloadTemplate.isPending}
-            entityType={selectedEntityType}
-          />
-        )}
+          {step === 2 && (
+            <StepUploadFile
+              file={file}
+              onFileChange={handleFileChange}
+              onDownloadTemplate={() =>
+                downloadTemplate.mutate(selectedEntityType)
+              }
+              isDownloading={downloadTemplate.isPending}
+              entityType={selectedEntityType}
+            />
+          )}
 
-        {step === 3 && selectedEntity && (
-          <StepColumnMapping
-            csvHeaders={csvHeaders}
-            entityFields={selectedEntity.fields}
-            mapping={mapping}
-            onMappingChange={setMapping}
-          />
-        )}
+          {step === 3 && selectedEntity && (
+            <StepColumnMapping
+              csvHeaders={csvHeaders}
+              entityFields={selectedEntity.fields}
+              mapping={mapping}
+              onMappingChange={setMapping}
+            />
+          )}
 
-        {step === 4 && preview && selectedEntity && (
-          <StepPreview
-            preview={preview}
-            mapping={mapping}
-            entityFields={selectedEntity.fields}
-          />
-        )}
+          {step === 4 && preview && selectedEntity && (
+            <StepPreview
+              preview={preview}
+              mapping={mapping}
+              entityFields={selectedEntity.fields}
+            />
+          )}
 
-        {step === 5 && (
-          <div className="space-y-4">
-            {isImporting && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Importing records...
-                  </span>
+          {step === 5 && (
+            <div className="space-y-4">
+              {isImporting && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="text-sm font-medium text-foreground">
+                      Importing records...
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${importProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{importProgress}% complete</p>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${importProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400">{importProgress}% complete</p>
-              </div>
-            )}
+              )}
 
-            {result && !isImporting && (
-              <StepResults result={result} />
-            )}
-          </div>
-        )}
-      </div>
+              {result && !isImporting && (
+                <StepResults result={result} />
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
+          variant="outline"
           onClick={step === 1 ? undefined : () => setStep((s) => s - 1)}
           disabled={step === 1 || step === 5}
-          className={cn(
-            "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-md transition-colors",
-            step === 1 || step === 5
-              ? "border-gray-200 text-gray-300 cursor-not-allowed"
-              : "border-gray-300 text-gray-700 hover:bg-gray-50"
-          )}
         >
           <ChevronLeft className="h-4 w-4" />
           Back
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2">
           {step === 5 && result && (
-            <button
+            <Button
+              variant="outline"
               onClick={handleReset}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               Import Another File
-            </button>
+            </Button>
           )}
 
           {step < 5 && (
-            <button
+            <Button
               onClick={handleNext}
               disabled={!canProceed || previewMutation.isPending}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-md transition-colors",
-                !canProceed || previewMutation.isPending
-                  ? "bg-primary/50 cursor-not-allowed"
-                  : "bg-primary hover:bg-primary/90"
-              )}
             >
               {previewMutation.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
               {step === 4 ? "Start Import" : "Next"}
               {step < 4 && <ChevronRight className="h-4 w-4" />}
-            </button>
+            </Button>
           )}
         </div>
       </div>

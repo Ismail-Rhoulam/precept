@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type { CalendarEvent } from "@/types/event"
+import { Badge } from "@/components/ui/badge"
 
 type ViewType = "month" | "week" | "day"
 
@@ -14,7 +15,7 @@ interface CalendarGridProps {
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 8) // 8am–8pm
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 8) // 8am-8pm
 
 function getEventColor(event: CalendarEvent): string {
   if (event.color) return event.color
@@ -113,11 +114,11 @@ function MonthView({
   return (
     <div className="flex flex-col h-full">
       {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 border-b">
         {DAY_NAMES.map((day) => (
           <div
             key={day}
-            className="py-2 text-center text-xs font-semibold text-gray-500 uppercase"
+            className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase"
           >
             {day}
           </div>
@@ -129,7 +130,7 @@ function MonthView({
         {cells.map((date, idx) => {
           if (!date) {
             return (
-              <div key={`empty-${idx}`} className="border-r border-b border-gray-100 bg-gray-50/50" />
+              <div key={`empty-${idx}`} className="border-r border-b border-muted bg-muted/30" />
             )
           }
           const dayEvents = getEventsForDay(events, date)
@@ -141,16 +142,16 @@ function MonthView({
               key={date.toISOString()}
               onClick={() => onDateClick(date)}
               className={cn(
-                "border-r border-b border-gray-100 p-1 cursor-pointer hover:bg-gray-50 transition-colors min-h-[100px]",
-                !isCurrentMonth && "bg-gray-50/50"
+                "border-r border-b border-muted p-1 cursor-pointer hover:bg-muted/50 transition-colors min-h-[100px]",
+                !isCurrentMonth && "bg-muted/30"
               )}
             >
               <div
                 className={cn(
                   "w-7 h-7 flex items-center justify-center rounded-full text-sm mb-1",
                   isToday
-                    ? "bg-primary text-white font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-primary text-primary-foreground font-semibold"
+                    : "text-foreground hover:bg-muted"
                 )}
               >
                 {date.getDate()}
@@ -167,9 +168,9 @@ function MonthView({
                   />
                 ))}
                 {dayEvents.length > 3 && (
-                  <div className="text-xs text-gray-400 pl-1">
+                  <Badge variant="secondary" className="text-[10px] px-1 py-0">
                     +{dayEvents.length - 3} more
-                  </div>
+                  </Badge>
                 )}
               </div>
             </div>
@@ -201,22 +202,22 @@ function WeekView({
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Header row */}
-      <div className="grid grid-cols-8 border-b border-gray-200 sticky top-0 bg-white z-10">
-        <div className="py-2 text-xs text-gray-400 text-center border-r border-gray-100" />
+      <div className="grid grid-cols-8 border-b sticky top-0 bg-background z-10">
+        <div className="py-2 text-xs text-muted-foreground text-center border-r border-muted" />
         {weekDays.map((day) => {
           const isToday = isSameDay(day, today)
           return (
             <div
               key={day.toISOString()}
-              className="py-2 text-center border-r border-gray-100 last:border-r-0"
+              className="py-2 text-center border-r border-muted last:border-r-0"
             >
-              <div className="text-xs text-gray-500 uppercase">
+              <div className="text-xs text-muted-foreground uppercase">
                 {DAY_NAMES[day.getDay()]}
               </div>
               <div
                 className={cn(
                   "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium",
-                  isToday ? "bg-primary text-white" : "text-gray-700"
+                  isToday ? "bg-primary text-primary-foreground" : "text-foreground"
                 )}
               >
                 {day.getDate()}
@@ -229,8 +230,8 @@ function WeekView({
       {/* Time slots */}
       <div className="flex-1">
         {HOURS.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 border-b border-gray-100">
-            <div className="py-2 px-2 text-xs text-gray-400 text-right border-r border-gray-100 w-16">
+          <div key={hour} className="grid grid-cols-8 border-b border-muted">
+            <div className="py-2 px-2 text-xs text-muted-foreground text-right border-r border-muted w-16">
               {hour % 12 || 12}
               {hour < 12 ? "am" : "pm"}
             </div>
@@ -244,7 +245,7 @@ function WeekView({
                     d.setHours(hour, 0, 0, 0)
                     onDateClick(d)
                   }}
-                  className="min-h-[50px] border-r border-gray-100 last:border-r-0 p-0.5 cursor-pointer hover:bg-gray-50 transition-colors relative"
+                  className="min-h-[50px] border-r border-muted last:border-r-0 p-0.5 cursor-pointer hover:bg-muted/50 transition-colors relative"
                 >
                   {hourEvents.map((ev) => (
                     <EventPill
@@ -276,8 +277,8 @@ function DayView({
   return (
     <div className="flex flex-col h-full overflow-auto">
       {/* Header */}
-      <div className="flex items-center justify-center py-3 border-b border-gray-200">
-        <span className="text-sm font-medium text-gray-700">
+      <div className="flex items-center justify-center py-3 border-b">
+        <span className="text-sm font-medium text-foreground">
           {currentDate.toLocaleDateString("en-US", {
             weekday: "long",
             month: "long",
@@ -291,8 +292,8 @@ function DayView({
         {HOURS.map((hour) => {
           const hourEvents = getEventsForHour(events, currentDate, hour)
           return (
-            <div key={hour} className="flex border-b border-gray-100">
-              <div className="py-2 px-3 text-xs text-gray-400 text-right w-16 border-r border-gray-100">
+            <div key={hour} className="flex border-b border-muted">
+              <div className="py-2 px-3 text-xs text-muted-foreground text-right w-16 border-r border-muted">
                 {hour % 12 || 12}
                 {hour < 12 ? "am" : "pm"}
               </div>
@@ -302,7 +303,7 @@ function DayView({
                   d.setHours(hour, 0, 0, 0)
                   onDateClick(d)
                 }}
-                className="flex-1 min-h-[60px] p-1 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex-1 min-h-[60px] p-1 cursor-pointer hover:bg-muted/50 transition-colors"
               >
                 {hourEvents.map((ev) => (
                   <EventPill

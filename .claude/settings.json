@@ -37,7 +37,10 @@
       "Bash(npm install)",
       "Bash(npx shadcn@latest init -y --defaults)",
       "Bash(npx shadcn@latest add button input label card badge table dialog dropdown-menu select tabs sheet separator avatar alert skeleton textarea popover tooltip -y)",
-      "Bash(npx next build)"
+      "Bash(npx next build)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

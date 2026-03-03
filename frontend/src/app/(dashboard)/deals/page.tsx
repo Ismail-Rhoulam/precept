@@ -123,7 +123,7 @@ export default function DealsPage() {
   const [createError, setCreateError] = useState<string | null>(null)
 
   // View type state
-  const [viewType, setViewType] = useState<ViewType>("list")
+  const [viewType, setViewType] = useState<ViewType>("kanban")
   const [kanbanColumnField, setKanbanColumnField] = useState("status")
   const [groupByField, setGroupByField] = useState("status")
   const [showShortcutsModal, setShowShortcutsModal] = useState(false)
@@ -449,10 +449,11 @@ export default function DealsPage() {
         <KanbanBoard
           columns={kanbanQuery.data?.columns ?? []}
           onCardClick={(item) => router.push(`/deals/${item.id}`)}
-          onCardMove={(itemId, _fromColumn, toColumn) => {
+          onCardMove={(itemId, _fromColumnId, toColumnId) => {
+            if (toColumnId == null) return
             updateDeal.mutate({
               id: itemId,
-              data: { [kanbanColumnField]: toColumn } as Partial<DealCreate>,
+              data: { [`${kanbanColumnField}_id`]: toColumnId } as Partial<DealCreate>,
             })
           }}
           renderCard={(item) => <DealKanbanCard deal={item as Deal} />}

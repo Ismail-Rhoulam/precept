@@ -5,6 +5,7 @@ import type { Deal } from "@/types/deal"
 
 export interface KanbanColumn<T = any> {
   name: string
+  column_id: number | null
   color: string
   count: number
   items: T[]

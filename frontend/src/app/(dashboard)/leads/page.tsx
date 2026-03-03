@@ -314,7 +314,7 @@ export default function LeadsListPage() {
   const pageSize = 20
 
   // View type state
-  const [viewType, setViewType] = useState<ViewType>("list")
+  const [viewType, setViewType] = useState<ViewType>("kanban")
   const [kanbanColumnField, setKanbanColumnField] = useState("status")
   const [groupByField, setGroupByField] = useState("source")
   const [showShortcutsModal, setShowShortcutsModal] = useState(false)
@@ -488,10 +488,11 @@ export default function LeadsListPage() {
         <KanbanBoard
           columns={kanbanQuery.data?.columns ?? []}
           onCardClick={(item) => router.push(`/leads/${item.id}`)}
-          onCardMove={(itemId, _fromColumn, toColumn) => {
+          onCardMove={(itemId, _fromColumnId, toColumnId) => {
+            if (toColumnId == null) return
             updateLead.mutate({
               id: itemId,
-              data: { [kanbanColumnField]: toColumn } as Partial<LeadCreate>,
+              data: { [`${kanbanColumnField}_id`]: toColumnId } as Partial<LeadCreate>,
             })
           }}
           renderCard={(item) => <LeadKanbanCard lead={item as Lead} />}

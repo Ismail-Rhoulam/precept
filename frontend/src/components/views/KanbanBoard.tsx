@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export interface KanbanColumn {
   name: string
+  column_id: number | null
   color: string
   count: number
   items: any[]
@@ -17,7 +18,7 @@ export interface KanbanColumn {
 interface KanbanBoardProps {
   columns: KanbanColumn[]
   onCardClick: (item: any) => void
-  onCardMove?: (itemId: number, fromColumn: string, toColumn: string) => void
+  onCardMove?: (itemId: number, fromColumnId: number | null, toColumnId: number | null) => void
   renderCard: (item: any) => React.ReactNode
   isLoading?: boolean
   entityType: string
@@ -25,7 +26,7 @@ interface KanbanBoardProps {
 
 interface DragState {
   itemId: number | null
-  fromColumn: string | null
+  fromColumnId: number | null
 }
 
 function SkeletonCard() {
@@ -75,7 +76,7 @@ export default function KanbanBoard({
   entityType,
 }: KanbanBoardProps) {
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set())
-  const [dragState, setDragState] = useState<DragState>({ itemId: null, fromColumn: null })
+  const [dragState, setDragState] = useState<DragState>({ itemId: null, fromColumnId: null })
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const dragImageRef = useRef<HTMLDivElement | null>(null)
 
@@ -92,10 +93,10 @@ export default function KanbanBoard({
   }, [])
 
   const handleDragStart = useCallback(
-    (e: React.DragEvent, itemId: number, fromColumn: string) => {
-      setDragState({ itemId, fromColumn })
+    (e: React.DragEvent, itemId: number, fromColumnId: number | null) => {
+      setDragState({ itemId, fromColumnId })
       e.dataTransfer.effectAllowed = "move"
-      e.dataTransfer.setData("text/plain", JSON.stringify({ itemId, fromColumn }))
+      e.dataTransfer.setData("text/plain", JSON.stringify({ itemId, fromColumnId }))
 
       // Set a custom drag image if available
       if (dragImageRef.current) {
@@ -106,7 +107,7 @@ export default function KanbanBoard({
   )
 
   const handleDragEnd = useCallback(() => {
-    setDragState({ itemId: null, fromColumn: null })
+    setDragState({ itemId: null, fromColumnId: null })
     setDropTarget(null)
   }, [])
 
@@ -125,22 +126,22 @@ export default function KanbanBoard({
   }, [])
 
   const handleDrop = useCallback(
-    (e: React.DragEvent, toColumn: string) => {
+    (e: React.DragEvent, toColumnId: number | null) => {
       e.preventDefault()
       setDropTarget(null)
 
       try {
         const data = JSON.parse(e.dataTransfer.getData("text/plain"))
-        const { itemId, fromColumn } = data
+        const { itemId, fromColumnId } = data
 
-        if (fromColumn !== toColumn && onCardMove) {
-          onCardMove(itemId, fromColumn, toColumn)
+        if (fromColumnId !== toColumnId && onCardMove) {
+          onCardMove(itemId, fromColumnId, toColumnId)
         }
       } catch {
         // Ignore invalid drag data
       }
 
-      setDragState({ itemId: null, fromColumn: null })
+      setDragState({ itemId: null, fromColumnId: null })
     },
     [onCardMove]
   )
@@ -183,7 +184,7 @@ export default function KanbanBoard({
       <div className="flex gap-4 overflow-x-auto pb-4 px-1 min-h-[400px]">
         {columns.map((column) => {
           const isCollapsed = collapsedColumns.has(column.name)
-          const isDropping = dropTarget === column.name && dragState.fromColumn !== column.name
+          const isDropping = dropTarget === column.name && dragState.fromColumnId !== column.column_id
 
           return (
             <Card
@@ -197,7 +198,7 @@ export default function KanbanBoard({
               )}
               onDragOver={(e) => handleDragOver(e, column.name)}
               onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, column.name)}
+              onDrop={(e) => handleDrop(e, column.column_id)}
             >
               {/* Column Header */}
               <CardHeader
@@ -258,7 +259,7 @@ export default function KanbanBoard({
                       <div
                         key={item.id}
                         draggable="true"
-                        onDragStart={(e) => handleDragStart(e, item.id, column.name)}
+                        onDragStart={(e) => handleDragStart(e, item.id, column.column_id)}
                         onDragEnd={handleDragEnd}
                         onClick={() => onCardClick(item)}
                         className={cn(

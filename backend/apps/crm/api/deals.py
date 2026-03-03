@@ -125,30 +125,36 @@ def kanban_deals(
             items = [DealOut.from_orm(deal) for deal in deals_qs[:page_size]]
             columns.append({
                 "name": status.deal_status,
+                "column_id": status.id,
                 "color": status.color,
                 "count": count,
                 "items": items,
             })
     else:
-        # Generic grouping for other fields
-        distinct_values = (
+        # FK fields: group by FK id and resolve display name
+        fk_field = f"{column_field}_id"
+        distinct_ids = (
             Deal.objects
-            .values_list(column_field, flat=True)
+            .values_list(fk_field, flat=True)
             .distinct()
-            .order_by(column_field)
+            .order_by(fk_field)
         )
-        for value in distinct_values:
+        for fk_id in distinct_ids:
+            if fk_id is None:
+                continue
             deals_qs = (
                 Deal.objects
                 .select_related(
                     "status", "deal_owner", "source", "organization",
                 )
-                .filter(**{column_field: value})
+                .filter(**{fk_field: fk_id})
             )
             count = deals_qs.count()
             items = [DealOut.from_orm(deal) for deal in deals_qs[:page_size]]
+            display_name = getattr(items[0], column_field, "") if items else ""
             columns.append({
-                "name": str(value) if value else "",
+                "name": str(display_name) if display_name else "",
+                "column_id": fk_id,
                 "color": "",
                 "count": count,
                 "items": items,

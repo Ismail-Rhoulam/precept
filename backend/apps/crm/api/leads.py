@@ -131,30 +131,36 @@ def kanban_leads(
             items = [LeadOut.from_orm(lead) for lead in leads_qs[:page_size]]
             columns.append({
                 "name": status.lead_status,
+                "column_id": status.id,
                 "color": status.color,
                 "count": count,
                 "items": items,
             })
     else:
-        # Generic grouping for other fields
-        distinct_values = (
+        # FK fields: group by FK id and resolve display name
+        fk_field = f"{column_field}_id"
+        distinct_ids = (
             Lead.objects
-            .values_list(column_field, flat=True)
+            .values_list(fk_field, flat=True)
             .distinct()
-            .order_by(column_field)
+            .order_by(fk_field)
         )
-        for value in distinct_values:
+        for fk_id in distinct_ids:
+            if fk_id is None:
+                continue
             leads_qs = (
                 Lead.objects
                 .select_related(
                     "status", "lead_owner", "source", "industry", "territory",
                 )
-                .filter(**{column_field: value})
+                .filter(**{fk_field: fk_id})
             )
             count = leads_qs.count()
             items = [LeadOut.from_orm(lead) for lead in leads_qs[:page_size]]
+            display_name = getattr(items[0], column_field, "") if items else ""
             columns.append({
-                "name": str(value) if value else "",
+                "name": str(display_name) if display_name else "",
+                "column_id": fk_id,
                 "color": "",
                 "count": count,
                 "items": items,

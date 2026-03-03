@@ -129,11 +129,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    command: npm run dev
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      args:
+        - NEXT_PUBLIC_API_URL=https://precept.online/api
+        - NEXT_PUBLIC_WS_URL=wss://precept.online/ws
     ports:
       - "3000:3000"
     environment:

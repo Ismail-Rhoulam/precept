@@ -16,7 +16,7 @@ import {
   Columns3,
   Layers,
 } from "lucide-react"
-import { useDeals, useCreateDeal } from "@/hooks/useDeals"
+import { useDeals, useCreateDeal, useUpdateDeal } from "@/hooks/useDeals"
 import { useDealKanban } from "@/hooks/useKanban"
 import { useDealGroupBy } from "@/hooks/useGroupBy"
 import type { DealListParams, DealCreate } from "@/types/deal"
@@ -161,6 +161,8 @@ export default function DealsPage() {
 
   const { data, isLoading, isError, error } = useDeals(params)
   const createDeal = useCreateDeal()
+
+  const updateDeal = useUpdateDeal()
 
   // Kanban & Group By hooks
   const kanbanQuery = useDealKanban({
@@ -447,9 +449,11 @@ export default function DealsPage() {
         <KanbanBoard
           columns={kanbanQuery.data?.columns ?? []}
           onCardClick={(item) => router.push(`/deals/${item.id}`)}
-          onCardMove={(itemId, fromColumn, toColumn) => {
-            // Card move will be handled when the backend PATCH API is ready
-            console.log(`Move deal ${itemId} from "${fromColumn}" to "${toColumn}"`)
+          onCardMove={(itemId, _fromColumn, toColumn) => {
+            updateDeal.mutate({
+              id: itemId,
+              data: { [kanbanColumnField]: toColumn } as Partial<DealCreate>,
+            })
           }}
           renderCard={(item) => <DealKanbanCard deal={item as Deal} />}
           isLoading={kanbanQuery.isLoading}

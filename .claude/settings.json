@@ -43,7 +43,11 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(docker ps -a --format \"table {{.Names}}\\\\t{{.Status}}\\\\t{{.Ports}}\")",
       "Bash(docker compose up -d frontend)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(docker exec precept-frontend-1 env)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/api/)",
+      "Bash(docker exec precept-backend-1 python -c \"from django.conf import settings; print\\(''ALLOWED_HOSTS:'', settings.ALLOWED_HOSTS\\); print\\(''CORS_ALLOWED_ORIGINS:'', getattr\\(settings, ''CORS_ALLOWED_ORIGINS'', ''not set''\\)\\); print\\(''CORS_ALLOW_ALL:'', getattr\\(settings, ''CORS_ALLOW_ALL_ORIGINS'', ''not set''\\)\\)\")",
+      "Bash(docker compose restart frontend)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

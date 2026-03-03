@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { useLeads, useCreateLead } from "@/hooks/useLeads"
+import { useLeads, useCreateLead, useUpdateLead } from "@/hooks/useLeads"
 import { useLeadKanban } from "@/hooks/useKanban"
 import { useLeadGroupBy } from "@/hooks/useGroupBy"
 import type { LeadListParams, LeadCreate } from "@/types/lead"
@@ -365,6 +365,8 @@ export default function LeadsListPage() {
 
   const { data, isLoading, isError, error } = useLeads(buildParams())
 
+  const updateLead = useUpdateLead()
+
   // Kanban & Group By hooks
   const kanbanQuery = useLeadKanban({
     column_field: kanbanColumnField,
@@ -486,9 +488,11 @@ export default function LeadsListPage() {
         <KanbanBoard
           columns={kanbanQuery.data?.columns ?? []}
           onCardClick={(item) => router.push(`/leads/${item.id}`)}
-          onCardMove={(itemId, fromColumn, toColumn) => {
-            // Card move will be handled when the backend PATCH API is ready
-            console.log(`Move lead ${itemId} from "${fromColumn}" to "${toColumn}"`)
+          onCardMove={(itemId, _fromColumn, toColumn) => {
+            updateLead.mutate({
+              id: itemId,
+              data: { [kanbanColumnField]: toColumn } as Partial<LeadCreate>,
+            })
           }}
           renderCard={(item) => <LeadKanbanCard lead={item as Lead} />}
           isLoading={kanbanQuery.isLoading}

@@ -30,7 +30,7 @@ export function SLABadge({ slaStatus, responseBy }: SLABadgeProps) {
   }
 
   const config = statusConfig[slaStatus] || {
-    className: "bg-gray-100 text-gray-700 border-transparent",
+    className: "bg-muted text-muted-foreground border-transparent",
     icon: <Clock className="h-3 w-3" />,
   }
 

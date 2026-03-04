@@ -133,7 +133,7 @@ export default function CalendarPage() {
         <div className="flex items-center gap-3">
           <Calendar className="h-7 w-7 text-primary flex-shrink-0" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+            <h1 className="text-2xl font-bold text-foreground">Calendar</h1>
             <p className="text-sm text-muted-foreground">Schedule and track your events</p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function CalendarPage() {
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <h2 className="text-sm font-semibold text-gray-900 min-w-[180px] text-center">
+            <h2 className="text-sm font-semibold text-foreground min-w-[180px] text-center">
               {getTitle(currentDate, viewType)}
             </h2>
             <Button

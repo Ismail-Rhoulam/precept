@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     title: "Precept CRM",
   },
   other: {
-    "theme-color": "#4f46e5",
+    "theme-color": "#7e3bed",
   },
 }
 
@@ -25,10 +25,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#4f46e5" />
+        <meta name="theme-color" content="#7e3bed" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Precept CRM" />

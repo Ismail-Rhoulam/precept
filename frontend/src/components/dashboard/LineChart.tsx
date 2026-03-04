@@ -406,7 +406,7 @@ export default function LineChart({ data, title, type }: LineChartProps) {
         {/* Tooltip */}
         {tooltip.visible && tooltipData && (
           <div
-            className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg pointer-events-none"
+            className="fixed z-50 px-3 py-2 bg-foreground text-white text-xs rounded-md shadow-lg pointer-events-none"
             style={{
               left: tooltip.x + 12,
               top: tooltip.y - 12,

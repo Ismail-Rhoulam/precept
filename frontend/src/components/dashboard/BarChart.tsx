@@ -138,7 +138,7 @@ export default function BarChart({
           })}
           {tooltip.visible && (
             <div
-              className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg pointer-events-none"
+              className="fixed z-50 px-3 py-2 bg-foreground text-white text-xs rounded-md shadow-lg pointer-events-none"
               style={{
                 left: tooltip.x,
                 top: tooltip.y,
@@ -148,7 +148,7 @@ export default function BarChart({
               <div className="font-medium">{tooltip.label}</div>
               <div>{formatValue(tooltip.value)}</div>
               {tooltip.value2 != null && (
-                <div className="text-gray-300">
+                <div className="text-muted-foreground/50">
                   Secondary: {formatValue(tooltip.value2)}
                 </div>
               )}
@@ -262,7 +262,7 @@ export default function BarChart({
 
         {tooltip.visible && (
           <div
-            className="fixed z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg pointer-events-none"
+            className="fixed z-50 px-3 py-2 bg-foreground text-white text-xs rounded-md shadow-lg pointer-events-none"
             style={{
               left: tooltip.x,
               top: tooltip.y,
@@ -272,7 +272,7 @@ export default function BarChart({
             <div className="font-medium">{tooltip.label}</div>
             <div>{formatValue(tooltip.value)}</div>
             {tooltip.value2 != null && (
-              <div className="text-gray-300">
+              <div className="text-muted-foreground/50">
                 Count: {formatValue(tooltip.value2)}
               </div>
             )}

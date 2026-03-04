@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 function getBreadcrumbs(pathname: string): string[] {
   const segments = pathname.split("/").filter(Boolean)
@@ -96,6 +97,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <ConnectionStatus />
+        <ThemeToggle />
         <NotificationBell />
 
         {/* User dropdown menu */}

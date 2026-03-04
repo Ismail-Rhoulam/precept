@@ -17,13 +17,13 @@ interface TaskItemProps {
 }
 
 const priorityConfig: Record<string, string> = {
-  Low: "bg-gray-100 text-gray-700",
+  Low: "bg-muted text-muted-foreground",
   Medium: "bg-yellow-100 text-yellow-800",
   High: "bg-red-100 text-red-800",
 }
 
 const statusConfig: Record<string, string> = {
-  Backlog: "bg-gray-100 text-gray-700",
+  Backlog: "bg-muted text-muted-foreground",
   Todo: "bg-blue-100 text-blue-800",
   "In Progress": "bg-purple-100 text-purple-800",
   Done: "bg-green-100 text-green-800",
@@ -108,7 +108,7 @@ export function TaskItem({ task, onStatusChange, onDelete }: TaskItemProps) {
                 variant="secondary"
                 className={cn(
                   "border-transparent",
-                  priorityConfig[task.priority] || "bg-gray-100 text-gray-700"
+                  priorityConfig[task.priority] || "bg-muted text-muted-foreground"
                 )}
               >
                 {task.priority}
@@ -119,7 +119,7 @@ export function TaskItem({ task, onStatusChange, onDelete }: TaskItemProps) {
                 variant="secondary"
                 className={cn(
                   "border-transparent",
-                  statusConfig[task.status] || "bg-gray-100 text-gray-700"
+                  statusConfig[task.status] || "bg-muted text-muted-foreground"
                 )}
               >
                 {task.status}

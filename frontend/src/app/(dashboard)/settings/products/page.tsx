@@ -161,7 +161,7 @@ function EditModal({ product, onClose }: EditModalProps) {
             >
               <span
                 className={cn(
-                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out",
                   form.disabled ? "translate-x-0" : "translate-x-5"
                 )}
               />

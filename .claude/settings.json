@@ -80,7 +80,11 @@
       "Bash(curl -s -X POST https://precept.online/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"ismail.rhoulam@precept.online\"\",\"\"password\"\":\"\"Precept@2025\"\"}')",
       "Bash(ls -la /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/)",
       "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/)",
-      "Bash(docker compose -f docker-compose.prod.yml exec -T backend python -c \":*)"
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend python -c \":*)",
+      "Bash(ls -la /opt/frappe_docker/precept/frontend/src/app/\\\\\\(auth\\\\\\)/)",
+      "Bash(npm install next-themes)",
+      "Bash(find . \\\\\\( -name '*.tsx' -o -name '*.ts' \\\\\\) -exec sed -i -e 's/text-gray-900/text-foreground/g' -e 's/text-gray-800/text-foreground/g' -e 's/text-gray-700/text-muted-foreground/g' -e 's/text-gray-600/text-muted-foreground/g' -e 's/text-gray-500/text-muted-foreground/g' -e 's/text-gray-400/text-muted-foreground/g' -e 's/text-gray-300/text-muted-foreground\\\\/50/g' -e 's/bg-gray-900/bg-foreground/g' -e 's/bg-gray-800/bg-foreground/g' -e 's/bg-gray-100/bg-muted/g' -e 's/bg-gray-200/bg-muted/g' -e 's/bg-gray-50/bg-muted\\\\/50/g' -e 's/border-gray-100/border-border/g' -e 's/border-gray-200/border-border/g' -e 's/border-gray-300/border-border/g' {} +)",
+      "Bash(find . \\\\\\( -name '*.tsx' -o -name '*.ts' \\\\\\) -exec sed -i 's/bg-white/bg-card/g' {} +)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

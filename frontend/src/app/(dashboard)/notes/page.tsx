@@ -104,7 +104,7 @@ export default function NotesPage() {
         <div className="flex items-center gap-3">
           <StickyNote className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notes</h1>
+            <h1 className="text-2xl font-bold text-foreground">Notes</h1>
             <p className="text-sm text-muted-foreground">Your notes and annotations</p>
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function NotesPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-900 mb-1">
+            <p className="text-sm font-medium text-foreground mb-1">
               Failed to load notes
             </p>
             <p className="text-sm text-destructive">

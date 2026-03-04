@@ -29,7 +29,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 const statusVariantMap: Record<string, string> = {
-  Initiated: "bg-gray-100 text-gray-700 border-gray-200",
+  Initiated: "bg-muted text-muted-foreground border-border",
   Ringing: "bg-yellow-100 text-yellow-800 border-yellow-200",
   "In Progress": "bg-blue-100 text-blue-800 border-blue-200",
   Completed: "bg-green-100 text-green-800 border-green-200",
@@ -59,7 +59,7 @@ export default function CallLogsPage() {
       <div className="flex items-center gap-3 mb-6">
         <Phone className="h-7 w-7 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Call Logs</h1>
+          <h1 className="text-2xl font-bold text-foreground">Call Logs</h1>
           <p className="text-sm text-muted-foreground">Phone activity and call history</p>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function CallLogsPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-900 mb-1">
+            <p className="text-sm font-medium text-foreground mb-1">
               Failed to load call logs
             </p>
             <p className="text-sm text-destructive">
@@ -122,7 +122,7 @@ export default function CallLogsPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="text-sm text-gray-900">
+                      <p className="text-sm text-foreground">
                         {log.caller_name || log.caller_number}
                       </p>
                       {log.caller_name && (
@@ -134,7 +134,7 @@ export default function CallLogsPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="text-sm text-gray-900">
+                      <p className="text-sm text-foreground">
                         {log.receiver_name || log.receiver_number}
                       </p>
                       {log.receiver_name && (
@@ -149,7 +149,7 @@ export default function CallLogsPage() {
                       variant="outline"
                       className={cn(
                         "gap-1",
-                        typeVariantMap[log.call_type] || "bg-gray-100 text-gray-700"
+                        typeVariantMap[log.call_type] || "bg-muted text-muted-foreground"
                       )}
                     >
                       {log.call_type === "Incoming" ? (
@@ -164,7 +164,7 @@ export default function CallLogsPage() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        statusVariantMap[log.status] || "bg-gray-100 text-gray-700"
+                        statusVariantMap[log.status] || "bg-muted text-muted-foreground"
                       )}
                     >
                       {log.status}

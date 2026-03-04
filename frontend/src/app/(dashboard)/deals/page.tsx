@@ -210,13 +210,13 @@ export default function DealsPage() {
   }) => {
     if (sort.field !== field) {
       return (
-        <ChevronUp className="h-3 w-3 text-gray-300 ml-1 inline-block" />
+        <ChevronUp className="h-3 w-3 text-muted-foreground/50 ml-1 inline-block" />
       )
     }
     return sort.direction === "asc" ? (
-      <ChevronUp className="h-3 w-3 text-gray-700 ml-1 inline-block" />
+      <ChevronUp className="h-3 w-3 text-muted-foreground ml-1 inline-block" />
     ) : (
-      <ChevronDown className="h-3 w-3 text-gray-700 ml-1 inline-block" />
+      <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 inline-block" />
     )
   }
 
@@ -225,7 +225,7 @@ export default function DealsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Deals</h1>
+          <h1 className="text-2xl font-bold text-foreground">Deals</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your sales pipeline and track deal progress.
           </p>
@@ -520,8 +520,8 @@ export default function DealsPage() {
           </CardContent>
         ) : data && data.results.length === 0 ? (
           <CardContent className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <Handshake className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-lg font-medium text-gray-900">No deals found</p>
+            <Handshake className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-lg font-medium text-foreground">No deals found</p>
             <p className="mt-1 text-sm">
               {debouncedSearch
                 ? "Try adjusting your search criteria."
@@ -600,7 +600,7 @@ export default function DealsPage() {
                         {deal.reference_id}
                       </TableCell>
                       <TableCell className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-foreground">
                           {dealName}
                         </div>
                         {deal.email && (
@@ -609,7 +609,7 @@ export default function DealsPage() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                         {deal.organization_name || "--"}
                       </TableCell>
                       <TableCell className="px-4 py-3 whitespace-nowrap">
@@ -629,13 +629,13 @@ export default function DealsPage() {
                           {deal.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-foreground">
                         {formatCurrency(deal.deal_value, deal.currency)}
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                         {deal.probability}%
                       </TableCell>
-                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                         {deal.deal_owner_name || deal.deal_owner_email || "--"}
                       </TableCell>
                       <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">

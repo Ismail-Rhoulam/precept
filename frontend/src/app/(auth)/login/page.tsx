@@ -4,18 +4,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { useAuthStore } from "@/stores/authStore"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface LoginForm {
@@ -49,15 +41,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md w-full">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Precept CRM</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
-        </CardHeader>
+    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+      {/* Mobile logo */}
+      <div className="flex items-center justify-center lg:hidden">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="mr-2 h-6 w-6"
+        >
+          <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+        </svg>
+        <span className="text-lg font-medium">Precept CRM</span>
+      </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="flex flex-col space-y-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Sign in to your account
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your email and password below to sign in
+        </p>
+      </div>
+
+      <div className="grid gap-6">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid gap-4">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -65,13 +78,18 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+            <div className="grid gap-2">
+              <Label className="sr-only" htmlFor="email">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="name@example.com"
+                disabled={isSubmitting}
                 {...register("email", {
                   required: "Email is required",
                   pattern: {
@@ -87,13 +105,16 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="grid gap-2">
+              <Label className="sr-only" htmlFor="password">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder="Password"
+                disabled={isSubmitting}
                 {...register("password", {
                   required: "Password is required",
                   minLength: {
@@ -109,12 +130,19 @@ export default function LoginPage() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign in"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Sign In
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
+
+      <p className="px-8 text-center text-sm text-muted-foreground">
+        By signing in, you agree to our Terms of Service and Privacy Policy.
+      </p>
     </div>
   )
 }

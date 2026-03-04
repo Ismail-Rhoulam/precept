@@ -7,6 +7,10 @@ module.exports = {
   theme: {
   	extend: {
   		colors: {
+  			'brand-black': '#010203',
+  			'brand-violet': '#7e3bed',
+  			'brand-white': '#f0eee9',
+  			'brand-lime': '#c6ff34',
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

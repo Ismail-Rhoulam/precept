@@ -41,10 +41,10 @@ function StatusBadge({ status, color }: { status: string; color?: string }) {
     Interested: "bg-emerald-100 text-emerald-800 border-emerald-200",
     Converted: "bg-indigo-100 text-indigo-800 border-indigo-200",
     "Do Not Contact": "bg-red-100 text-red-800 border-red-200",
-    Lost: "bg-gray-100 text-gray-600 border-gray-200",
+    Lost: "bg-muted text-muted-foreground border-border",
   }
 
-  const colorClass = fallbackColors[status] || "bg-gray-100 text-gray-700 border-gray-200"
+  const colorClass = fallbackColors[status] || "bg-muted text-muted-foreground border-border"
 
   return (
     <Badge
@@ -111,8 +111,8 @@ function EditableField({
           onChange={(e) => onChange(fieldKey, e.target.value)}
         />
       ) : (
-        <p className="text-sm text-gray-900 py-2">
-          {value || <span className="text-gray-300">&mdash;</span>}
+        <p className="text-sm text-foreground py-2">
+          {value || <span className="text-muted-foreground/50">&mdash;</span>}
         </p>
       )}
     </div>
@@ -255,7 +255,7 @@ export default function LeadDetailPage() {
         <Card className="border-red-200">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-            <h2 className="text-base font-semibold text-gray-900 mb-1">Failed to load lead</h2>
+            <h2 className="text-base font-semibold text-foreground mb-1">Failed to load lead</h2>
             <p className="text-sm text-red-600 mb-4">
               {error instanceof Error ? error.message : "An unexpected error occurred."}
             </p>
@@ -281,7 +281,7 @@ export default function LeadDetailPage() {
         </Button>
         <Card>
           <CardContent className="p-8 text-center">
-            <h2 className="text-base font-semibold text-gray-900 mb-1">Lead not found</h2>
+            <h2 className="text-base font-semibold text-foreground mb-1">Lead not found</h2>
             <p className="text-sm text-muted-foreground">The lead you are looking for does not exist or has been removed.</p>
           </CardContent>
         </Card>
@@ -307,7 +307,7 @@ export default function LeadDetailPage() {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-foreground">
                   {lead.first_name} {lead.last_name}
                 </h1>
                 <StatusBadge status={lead.status} color={lead.status_color} />
@@ -412,7 +412,7 @@ export default function LeadDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             {/* Personal Information */}
             <div className="md:col-span-2">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-foreground mb-4 pb-2 border-b border-border">
                 Personal Information
               </h2>
             </div>
@@ -453,7 +453,7 @@ export default function LeadDetailPage() {
 
             {/* Organization Details */}
             <div className="md:col-span-2 mt-4">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-foreground mb-4 pb-2 border-b border-border">
                 Organization Details
               </h2>
             </div>
@@ -485,7 +485,7 @@ export default function LeadDetailPage() {
 
             {/* Lead Management */}
             <div className="md:col-span-2 mt-4">
-              <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-sm font-semibold text-foreground mb-4 pb-2 border-b border-border">
                 Lead Management
               </h2>
             </div>
@@ -517,8 +517,8 @@ export default function LeadDetailPage() {
             />
 
             <ReadOnlyField label="Lead Owner Name">
-              <p className="text-sm text-gray-900">
-                {lead.lead_owner_name || <span className="text-gray-300">&mdash;</span>}
+              <p className="text-sm text-foreground">
+                {lead.lead_owner_name || <span className="text-muted-foreground/50">&mdash;</span>}
               </p>
             </ReadOnlyField>
 
@@ -533,7 +533,7 @@ export default function LeadDetailPage() {
                   "rounded-full",
                   lead.converted
                     ? "bg-green-100 text-green-800 border-green-200"
-                    : "bg-gray-100 text-gray-600 border-gray-200"
+                    : "bg-muted text-muted-foreground border-border"
                 )}
               >
                 {lead.converted ? "Yes" : "No"}

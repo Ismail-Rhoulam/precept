@@ -75,10 +75,10 @@ function StatusBadge({ status, color }: { status: string; color?: string }) {
     Interested: "bg-emerald-100 text-emerald-800 border-emerald-200",
     Converted: "bg-indigo-100 text-indigo-800 border-indigo-200",
     "Do Not Contact": "bg-red-100 text-red-800 border-red-200",
-    Lost: "bg-gray-100 text-gray-600 border-gray-200",
+    Lost: "bg-muted text-muted-foreground border-border",
   }
 
-  const colorClass = fallbackColors[status] || "bg-gray-100 text-gray-700 border-gray-200"
+  const colorClass = fallbackColors[status] || "bg-muted text-muted-foreground border-border"
 
   return (
     <Badge
@@ -93,12 +93,12 @@ function StatusBadge({ status, color }: { status: string; color?: string }) {
 
 function SortIcon({ field, currentField, direction }: { field: SortField; currentField: SortField | null; direction: SortDirection }) {
   if (field !== currentField) {
-    return <ChevronUp className="w-3.5 h-3.5 text-gray-300" />
+    return <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/50" />
   }
   return direction === "asc" ? (
-    <ChevronUp className="w-3.5 h-3.5 text-gray-700" />
+    <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
   ) : (
-    <ChevronDown className="w-3.5 h-3.5 text-gray-700" />
+    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
   )
 }
 
@@ -106,7 +106,7 @@ function LoadingSkeleton() {
   return (
     <div>
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center border-b border-gray-100 px-6 py-4 gap-4">
+        <div key={i} className="flex items-center border-b border-border px-6 py-4 gap-4">
           <Skeleton className="h-4 w-36" />
           <Skeleton className="h-4 w-48" />
           <Skeleton className="h-4 w-32" />
@@ -124,10 +124,10 @@ function EmptyState() {
   return (
     <Card className="border-0 shadow-none">
       <CardContent className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <Users className="w-8 h-8 text-gray-400" />
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Users className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-base font-semibold text-gray-900 mb-1">No leads found</h3>
+        <h3 className="text-base font-semibold text-foreground mb-1">No leads found</h3>
         <p className="text-sm text-muted-foreground text-center max-w-sm">
           There are no leads matching your current filters. Try adjusting your search or create a new lead.
         </p>
@@ -407,7 +407,7 @@ export default function LeadsListPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+          <h1 className="text-2xl font-bold text-foreground">Leads</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {totalLeads > 0
               ? `${totalLeads} lead${totalLeads === 1 ? "" : "s"} total`
@@ -691,25 +691,25 @@ export default function LeadsListPage() {
                     className="cursor-pointer"
                   >
                     <TableCell className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-foreground">
                         {lead.first_name} {lead.last_name}
                       </div>
                       <div className="text-xs text-muted-foreground">{lead.reference_id}</div>
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {lead.email}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {lead.organization || <span className="text-gray-300">&mdash;</span>}
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      {lead.organization || <span className="text-muted-foreground/50">&mdash;</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={lead.status} color={lead.status_color} />
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {lead.source || <span className="text-gray-300">&mdash;</span>}
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      {lead.source || <span className="text-muted-foreground/50">&mdash;</span>}
                     </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {lead.lead_owner_name || <span className="text-gray-300">&mdash;</span>}
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      {lead.lead_owner_name || <span className="text-muted-foreground/50">&mdash;</span>}
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {format(new Date(lead.created_at), "MMM d, yyyy")}

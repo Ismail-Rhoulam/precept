@@ -170,7 +170,7 @@ export default function DealDetailPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-900">
+            <p className="text-lg font-medium text-foreground">
               Failed to load deal
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -215,7 +215,7 @@ export default function DealDetailPage() {
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{dealName}</h1>
+                <h1 className="text-2xl font-bold text-foreground">{dealName}</h1>
                 <Badge
                   variant="outline"
                   className="rounded-full"
@@ -240,7 +240,7 @@ export default function DealDetailPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-foreground">
                 {formatCurrency(deal.deal_value, deal.currency)}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -250,7 +250,7 @@ export default function DealDetailPage() {
           </div>
 
           {/* Action buttons */}
-          <div className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-4">
+          <div className="mt-6 flex items-center gap-3 border-t border-border pt-4">
             {isEditing ? (
               <>
                 <Button
@@ -320,7 +320,7 @@ export default function DealDetailPage() {
               </div>
             </div>
           </DialogHeader>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Are you sure you want to delete{" "}
             <span className="font-medium">&quot;{dealName}&quot;</span>? All
             associated data will be permanently removed.
@@ -370,7 +370,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("first_name", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.first_name || "--"}
                 </p>
               )}
@@ -388,7 +388,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("last_name", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.last_name || "--"}
                 </p>
               )}
@@ -406,7 +406,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("email", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">{deal.email || "--"}</p>
+                <p className="text-sm text-foreground">{deal.email || "--"}</p>
               )}
             </div>
 
@@ -422,7 +422,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("mobile_no", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.mobile_no || "--"}
                 </p>
               )}
@@ -442,7 +442,7 @@ export default function DealDetailPage() {
                   }
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.organization_name || "--"}
                 </p>
               )}
@@ -505,7 +505,7 @@ export default function DealDetailPage() {
                   }
                 />
               ) : (
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   {formatCurrency(deal.deal_value, deal.currency)}
                 </p>
               )}
@@ -534,7 +534,7 @@ export default function DealDetailPage() {
                   </SelectContent>
                 </Select>
               ) : (
-                <p className="text-sm text-gray-900">{deal.currency}</p>
+                <p className="text-sm text-foreground">{deal.currency}</p>
               )}
             </div>
 
@@ -560,7 +560,7 @@ export default function DealDetailPage() {
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
               ) : (
-                <p className="text-sm text-gray-900">{deal.probability}%</p>
+                <p className="text-sm text-foreground">{deal.probability}%</p>
               )}
             </div>
 
@@ -578,7 +578,7 @@ export default function DealDetailPage() {
                   }
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.expected_closure_date
                     ? formatDate(deal.expected_closure_date)
                     : "--"}
@@ -598,7 +598,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("source", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">{deal.source || "--"}</p>
+                <p className="text-sm text-foreground">{deal.source || "--"}</p>
               )}
             </div>
 
@@ -617,7 +617,7 @@ export default function DealDetailPage() {
                   placeholder="owner@example.com"
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.deal_owner_name || deal.deal_owner_email || "--"}
                 </p>
               )}
@@ -635,7 +635,7 @@ export default function DealDetailPage() {
                   onChange={(e) => updateField("lead_name", e.target.value)}
                 />
               ) : (
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-foreground">
                   {deal.lead_name || "--"}
                 </p>
               )}
@@ -655,7 +655,7 @@ export default function DealDetailPage() {
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Created At
               </Label>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {formatDateTime(deal.created_at)}
               </p>
             </div>
@@ -663,7 +663,7 @@ export default function DealDetailPage() {
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                 Last Updated
               </Label>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 {formatDateTime(deal.updated_at)}
               </p>
             </div>

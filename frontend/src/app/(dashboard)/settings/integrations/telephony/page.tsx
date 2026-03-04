@@ -191,7 +191,7 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
               >
                 <span
                   className={cn(
-                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out",
                     form.twilio_enabled ? "translate-x-4" : "translate-x-0"
                   )}
                 />
@@ -236,7 +236,7 @@ function AgentModal({ agent, onClose }: AgentModalProps) {
               >
                 <span
                   className={cn(
-                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-card shadow ring-0 transition duration-200 ease-in-out",
                     form.exotel_enabled ? "translate-x-4" : "translate-x-0"
                   )}
                 />

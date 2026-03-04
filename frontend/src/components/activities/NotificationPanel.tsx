@@ -52,7 +52,7 @@ function notificationIconBg(type: Notification["type"]) {
     case "WhatsApp":
       return "bg-emerald-100"
     default:
-      return "bg-gray-100"
+      return "bg-muted"
   }
 }
 

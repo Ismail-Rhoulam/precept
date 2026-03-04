@@ -116,7 +116,7 @@ export default function ContactsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
+          <h1 className="text-2xl font-bold text-foreground">Contacts</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your contacts and their information.
           </p>

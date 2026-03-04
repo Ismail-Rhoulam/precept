@@ -101,8 +101,8 @@ function ActivityIcon({ type }: { type: string }) {
       bg: "bg-indigo-100",
     },
     creation: {
-      icon: <Plus className="h-4 w-4 text-gray-600" />,
-      bg: "bg-gray-100",
+      icon: <Plus className="h-4 w-4 text-muted-foreground" />,
+      bg: "bg-muted",
     },
   }
 
@@ -179,7 +179,7 @@ function ActivityEntry({ activity }: { activity: Activity }) {
                       ? "bg-red-100 text-red-800"
                       : data.priority === "Medium"
                         ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-muted text-muted-foreground"
                   )}
                 >
                   {data.priority}
@@ -742,7 +742,7 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
                                 ? "bg-red-100 text-red-800"
                                 : log.status === "Failed"
                                   ? "bg-red-100 text-red-600"
-                                  : "bg-gray-100 text-gray-700"
+                                  : "bg-muted text-muted-foreground"
                           )}
                         >
                           {log.status}

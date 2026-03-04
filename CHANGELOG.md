@@ -34,6 +34,15 @@ Error messages from the API were showing as `[object Object]` instead of readabl
 #### Changes
 - **`lib/api/client.ts`** — Added `extractErrorMessage()` that handles Django Ninja validation errors (arrays of `{loc, msg}` objects) and converts them to readable strings like `"status_id: Field required"`
 
+### Lead Detail Page Crash — `i.map is not a function`
+Clicking on a lead detail page caused a client-side crash.
+
+#### Root Cause
+The backend WhatsApp messages endpoint (`GET /messages/{entity_type}/{entity_id}`) returns a paginated object `{ results: [], total, page, page_size }`, but the frontend API client expected a flat `WhatsAppMessage[]` array. The `WhatsAppChat` component then called `.map()` on the object, which crashed.
+
+#### Changes
+- **`lib/api/integrations.ts`** — `getWhatsAppMessages()` now extracts `.results` from the paginated response before returning
+
 ---
 
 ## 2026-03-03 — Kanban Drag-and-Drop Fix & Default View

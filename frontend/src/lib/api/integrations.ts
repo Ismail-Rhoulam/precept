@@ -41,10 +41,12 @@ export const integrationsApi = {
   saveWhatsAppSettings: (data: Partial<WhatsAppSettings>) =>
     api.post<WhatsAppSettings>("/integrations/whatsapp/settings", data),
 
-  getWhatsAppMessages: (entityType: string, entityId: number) =>
-    api.get<WhatsAppMessage[]>(
+  getWhatsAppMessages: async (entityType: string, entityId: number) => {
+    const res = await api.get<{ results: WhatsAppMessage[]; total: number }>(
       `/integrations/whatsapp/messages/${entityType}/${entityId}`
-    ),
+    )
+    return res.results
+  },
 
   sendWhatsAppMessage: (data: {
     to_number: string

@@ -79,7 +79,8 @@
       "Bash(docker compose -f docker-compose.prod.yml logs backend --tail=30)",
       "Bash(curl -s -X POST https://precept.online/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"ismail.rhoulam@precept.online\"\",\"\"password\"\":\"\"Precept@2025\"\"}')",
       "Bash(ls -la /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/)",
-      "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/)"
+      "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend python -c \":*)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

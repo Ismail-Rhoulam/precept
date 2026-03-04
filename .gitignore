@@ -48,4 +48,5 @@ build/
 *.egg-info/
 .next/
 
-/.claude
+.claude/
+.claude/settings.json

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -13,7 +14,6 @@ import {
   Phone,
   Calendar,
   Settings,
-  MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 
-const navigation = [
+type NavigationItem = {
+  name: string
+  href: string
+  icon: typeof LayoutDashboard | string
+}
+
+const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Leads", href: "/leads", icon: Users },
   { name: "Deals", href: "/deals", icon: Handshake },
@@ -33,7 +39,7 @@ const navigation = [
   { name: "Organizations", href: "/organizations", icon: Building2 },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
   { name: "Notes", href: "/notes", icon: StickyNote },
-  { name: "WhatsApp", href: "/whatsapp", icon: MessageCircle },
+  { name: "WhatsApp", href: "/whatsapp", icon: "/icons/whatsapp.svg" },
   { name: "Call Logs", href: "/call-logs", icon: Phone },
   { name: "Calendar", href: "/calendar", icon: Calendar },
 ]
@@ -58,6 +64,21 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/")
+          const icon =
+            typeof item.icon === "string" ? (
+              <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center">
+                <Image
+                  src={item.icon}
+                  alt=""
+                  width={18}
+                  height={18}
+                  className="h-[18px] w-[18px]"
+                  aria-hidden="true"
+                />
+              </span>
+            ) : (
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+            )
           return (
             <Button
               key={item.name}
@@ -66,7 +87,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               asChild
             >
               <Link href={item.href} onClick={onClose}>
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {icon}
                 {item.name}
               </Link>
             </Button>

@@ -72,6 +72,21 @@ export function useSaveWhatsAppSettings() {
   })
 }
 
+export function useWhatsAppConversations() {
+  return useQuery({
+    queryKey: ["whatsapp-conversations"],
+    queryFn: () => integrationsApi.getWhatsAppConversations(),
+  })
+}
+
+export function useConversationMessages(phoneNumber: string) {
+  return useQuery({
+    queryKey: ["whatsapp-conversation-messages", phoneNumber],
+    queryFn: () => integrationsApi.getConversationMessages(phoneNumber),
+    enabled: !!phoneNumber,
+  })
+}
+
 export function useWhatsAppMessages(entityType: string, entityId: number) {
   return useQuery({
     queryKey: ["whatsapp-messages", entityType, entityId],

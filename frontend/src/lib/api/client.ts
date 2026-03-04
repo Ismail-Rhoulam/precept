@@ -89,10 +89,26 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
   return response
 }
 
+function extractErrorMessage(error: Record<string, unknown>): string {
+  const detail = error.detail
+  if (!detail) return `An error occurred`
+  if (typeof detail === "string") return detail
+  if (Array.isArray(detail)) {
+    // Django Ninja validation: [{ "msg": "...", "loc": [...] }, ...]
+    const messages = detail.map((item: Record<string, unknown>) => {
+      if (typeof item === "string") return item
+      const loc = Array.isArray(item.loc) ? item.loc.slice(-1)[0] : ""
+      return loc ? `${loc}: ${item.msg}` : String(item.msg || item)
+    })
+    return messages.join(", ")
+  }
+  return JSON.stringify(detail)
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "An error occurred" }))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+    throw new Error(extractErrorMessage(error))
   }
 
   if (response.status === 204) {

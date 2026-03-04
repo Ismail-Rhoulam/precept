@@ -13,6 +13,7 @@ import {
   Phone,
   Calendar,
   Settings,
+  MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ const navigation = [
   { name: "Organizations", href: "/organizations", icon: Building2 },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
   { name: "Notes", href: "/notes", icon: StickyNote },
+  { name: "WhatsApp", href: "/whatsapp", icon: MessageCircle },
   { name: "Call Logs", href: "/call-logs", icon: Phone },
   { name: "Calendar", href: "/calendar", icon: Calendar },
 ]

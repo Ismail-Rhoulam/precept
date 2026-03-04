@@ -4,6 +4,7 @@ import type {
   ExotelSettings,
   WhatsAppSettings,
   WhatsAppMessage,
+  WhatsAppConversation,
   TelephonyAgent,
   LeadSyncSource,
   FacebookPage,
@@ -51,6 +52,18 @@ export const integrationsApi = {
     entity_type?: string
     entity_id?: number
   }) => api.post<WhatsAppMessage>("/integrations/whatsapp/messages", data),
+
+  getWhatsAppConversations: (page: number = 1) =>
+    api.get<{ results: WhatsAppConversation[]; total: number }>(
+      "/integrations/whatsapp/conversations",
+      { params: { page } }
+    ),
+
+  getConversationMessages: (phoneNumber: string, page: number = 1) =>
+    api.get<{ results: WhatsAppMessage[]; total: number }>(
+      `/integrations/whatsapp/conversations/${encodeURIComponent(phoneNumber)}/messages`,
+      { params: { page } }
+    ),
 
   // Facebook
   getSyncSources: () =>

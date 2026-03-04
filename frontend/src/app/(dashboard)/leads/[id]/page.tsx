@@ -21,6 +21,8 @@ import { ActivityTimeline } from "@/components/activities/ActivityTimeline"
 import { ProductLineItems } from "@/components/products/ProductLineItems"
 import { ConvertLeadModal } from "@/components/modals/ConvertLeadModal"
 import { SLABadge } from "@/components/sla/SLABadge"
+import WhatsAppChat from "@/components/telephony/WhatsAppChat"
+import { useWhatsAppSettings } from "@/hooks/useIntegrations"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -141,6 +143,7 @@ export default function LeadDetailPage() {
   const { data: lead, isLoading, isError, error } = useLead(leadId)
   const updateLead = useUpdateLead()
   const deleteLead = useDeleteLead()
+  const { data: whatsAppSettings } = useWhatsAppSettings()
 
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -562,6 +565,15 @@ export default function LeadDetailPage() {
       <ProductLineItems entityType="lead" entityId={leadId} />
 
       <ActivityTimeline entityType="lead" entityId={leadId} />
+
+      {/* WhatsApp Chat */}
+      {whatsAppSettings?.enabled && lead.mobile_no && (
+        <WhatsAppChat
+          entityType="lead"
+          entityId={leadId}
+          phoneNumber={lead.mobile_no}
+        />
+      )}
 
       {/* Convert Lead Modal */}
       <ConvertLeadModal

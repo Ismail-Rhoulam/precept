@@ -76,7 +76,7 @@ class LeadCreate(Schema):
     email: str = ""
     mobile_no: str = ""
     organization: str = ""
-    status_id: int
+    status_id: Optional[int] = None
     lead_owner_id: Optional[int] = None
     source_id: Optional[int] = None
     industry_id: Optional[int] = None

@@ -44,6 +44,15 @@ export interface WhatsAppMessage {
   created_at: string
 }
 
+export interface WhatsAppConversation {
+  phone_number: string
+  last_message: WhatsAppMessage
+  last_message_at: string
+  entity_type: string | null
+  entity_id: number | null
+  entity_name: string | null
+}
+
 export interface TelephonyAgent {
   id: number
   user_id: number

@@ -84,6 +84,13 @@ def create_lead(request, payload: LeadCreate):
     data["company"] = request.company
     data["created_by"] = user
     data["modified_by"] = user
+
+    # Auto-assign the first status if none provided
+    if not data.get("status_id"):
+        default_status = LeadStatus.objects.order_by("position").first()
+        if default_status:
+            data["status_id"] = default_status.id
+
     lead = Lead(**data)
     lead.save()
     broadcast_crm_update("lead_created", "lead", lead.id)

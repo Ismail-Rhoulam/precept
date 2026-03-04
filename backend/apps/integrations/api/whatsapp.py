@@ -102,6 +102,82 @@ def get_messages(
     }
 
 
+@router.get("/conversations", response=Dict[str, Any])
+def get_conversations(request, page: int = 1, page_size: int = 20):
+    """Get all WhatsApp conversations grouped by remote phone number."""
+    from django.db.models import Max, Q
+
+    wa_settings = WhatsAppSettings.objects.filter(company=request.company).first()
+    our_number = wa_settings.phone_number_id if wa_settings else ""
+
+    qs = WhatsAppMessage.objects.filter(company=request.company)
+
+    # Get all unique remote phone numbers with their latest message time
+    seen: Dict[str, dict] = {}
+    for msg in qs.order_by("-created_at").select_related("content_type_fk"):
+        remote = msg.to_number if msg.from_number == our_number else msg.from_number
+        if not remote:
+            continue
+        if remote not in seen:
+            seen[remote] = {
+                "phone_number": remote,
+                "last_message": WhatsAppMessageOut.from_orm(msg).dict(),
+                "last_message_at": msg.created_at.isoformat(),
+                "entity_type": None,
+                "entity_id": None,
+                "entity_name": None,
+            }
+            if msg.content_type_fk and msg.object_id:
+                seen[remote]["entity_type"] = msg.content_type_fk.model
+                seen[remote]["entity_id"] = msg.object_id
+                try:
+                    entity = msg.content_type_fk.get_object_for_this_type(pk=msg.object_id)
+                    seen[remote]["entity_name"] = str(entity)
+                except Exception:
+                    pass
+
+    conversations = sorted(seen.values(), key=lambda c: c["last_message_at"], reverse=True)
+    total = len(conversations)
+    offset = (page - 1) * page_size
+    paginated = conversations[offset : offset + page_size]
+
+    return {
+        "results": paginated,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.get("/conversations/{phone_number}/messages", response=Dict[str, Any])
+def get_conversation_messages(
+    request,
+    phone_number: str,
+    page: int = 1,
+    page_size: int = 50,
+):
+    """Get all messages for a specific phone number conversation."""
+    from django.db.models import Q
+
+    qs = (
+        WhatsAppMessage.objects.filter(company=request.company)
+        .filter(Q(to_number=phone_number) | Q(from_number=phone_number))
+        .select_related("content_type_fk")
+        .order_by("created_at")
+    )
+
+    total = qs.count()
+    offset = (page - 1) * page_size
+    messages = qs[offset : offset + page_size]
+
+    return {
+        "results": [WhatsAppMessageOut.from_orm(m) for m in messages],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+
 @router.post("/messages", response={201: WhatsAppMessageOut})
 def send_message(request, payload: WhatsAppMessageCreate):
     """Send a WhatsApp text message."""

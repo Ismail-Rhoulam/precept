@@ -78,6 +78,13 @@ def create_deal(request, payload: DealCreate):
     data["company"] = request.company
     data["created_by"] = user
     data["modified_by"] = user
+
+    # Auto-assign the first status if none provided
+    if not data.get("status_id"):
+        default_status = DealStatus.objects.order_by("position").first()
+        if default_status:
+            data["status_id"] = default_status.id
+
     deal = Deal(**data)
     deal.save()
     broadcast_crm_update("deal_created", "deal", deal.id)

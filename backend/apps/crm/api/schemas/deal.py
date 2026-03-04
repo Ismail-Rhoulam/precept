@@ -67,7 +67,7 @@ class DealOut(Schema):
 
 class DealCreate(Schema):
     organization_id: Optional[int] = None
-    status_id: int
+    status_id: Optional[int] = None
     deal_owner_id: Optional[int] = None
     deal_value: float = 0
     probability: float = 0

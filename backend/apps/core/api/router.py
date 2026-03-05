@@ -120,47 +120,60 @@ def _seed_lookup_data(company):
     from django.apps import apps
 
     lookups = {
-        ("crm", "LeadStatus"): [
-            {"name": "New", "category": "Open", "color": "blue", "order": 1},
-            {"name": "Contacted", "category": "Ongoing", "color": "orange", "order": 2},
-            {"name": "Qualified", "category": "Ongoing", "color": "green", "order": 3},
-            {"name": "Unqualified", "category": "Lost", "color": "red", "order": 4},
-            {"name": "Junk", "category": "Lost", "color": "gray", "order": 5},
-        ],
-        ("crm", "DealStatus"): [
-            {"name": "Qualification", "category": "Open", "probability": 10, "order": 1},
-            {"name": "Demo/Meeting", "category": "Ongoing", "probability": 30, "order": 2},
-            {"name": "Proposal", "category": "Ongoing", "probability": 50, "order": 3},
-            {"name": "Negotiation", "category": "Ongoing", "probability": 70, "order": 4},
-            {"name": "Won", "category": "Won", "probability": 100, "order": 5},
-            {"name": "Lost", "category": "Lost", "probability": 0, "order": 6},
-        ],
-        ("crm", "LeadSource"): [
-            {"name": "Website"},
-            {"name": "Referral"},
-            {"name": "Cold Call"},
-            {"name": "Social Media"},
-            {"name": "Advertisement"},
-        ],
-        ("crm", "Industry"): [
-            {"name": "Technology"},
-            {"name": "Healthcare"},
-            {"name": "Finance"},
-            {"name": "Education"},
-            {"name": "Retail"},
-            {"name": "Manufacturing"},
-        ],
+        ("crm", "LeadStatus"): {
+            "key": "lead_status",
+            "records": [
+                {"lead_status": "New", "type": "Open", "color": "blue", "position": 1},
+                {"lead_status": "Contacted", "type": "Ongoing", "color": "orange", "position": 2},
+                {"lead_status": "Qualified", "type": "Ongoing", "color": "green", "position": 3},
+                {"lead_status": "Unqualified", "type": "Lost", "color": "red", "position": 4},
+                {"lead_status": "Junk", "type": "Lost", "color": "gray", "position": 5},
+            ],
+        },
+        ("crm", "DealStatus"): {
+            "key": "deal_status",
+            "records": [
+                {"deal_status": "Qualification", "type": "Open", "probability": 10, "position": 1},
+                {"deal_status": "Demo/Meeting", "type": "Ongoing", "probability": 30, "position": 2},
+                {"deal_status": "Proposal", "type": "Ongoing", "probability": 50, "position": 3},
+                {"deal_status": "Negotiation", "type": "Ongoing", "probability": 70, "position": 4},
+                {"deal_status": "Won", "type": "Won", "probability": 100, "position": 5},
+                {"deal_status": "Lost", "type": "Lost", "probability": 0, "position": 6},
+            ],
+        },
+        ("crm", "LeadSource"): {
+            "key": "source_name",
+            "records": [
+                {"source_name": "Website"},
+                {"source_name": "Referral"},
+                {"source_name": "Cold Call"},
+                {"source_name": "Social Media"},
+                {"source_name": "Advertisement"},
+            ],
+        },
+        ("crm", "Industry"): {
+            "key": "industry_name",
+            "records": [
+                {"industry_name": "Technology"},
+                {"industry_name": "Healthcare"},
+                {"industry_name": "Finance"},
+                {"industry_name": "Education"},
+                {"industry_name": "Retail"},
+                {"industry_name": "Manufacturing"},
+            ],
+        },
     }
 
-    for (app_label, model_name), records in lookups.items():
+    for (app_label, model_name), config in lookups.items():
         try:
             Model = apps.get_model(app_label, model_name)
         except LookupError:
             continue
-        for record in records:
-            defaults = {k: v for k, v in record.items() if k != "name"}
+        key_field = config["key"]
+        for record in config["records"]:
+            defaults = {k: v for k, v in record.items() if k != key_field}
             Model.unscoped.get_or_create(
-                name=record["name"], company=company, defaults=defaults
+                **{key_field: record[key_field]}, company=company, defaults=defaults
             )
 
 

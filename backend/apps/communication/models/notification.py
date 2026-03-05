@@ -11,6 +11,7 @@ class Notification(TenantMixin, TimestampMixin):
         TASK = "Task", "Task"
         ASSIGNMENT = "Assignment", "Assignment"
         WHATSAPP = "WhatsApp", "WhatsApp"
+        EVENT = "Event", "Event"
 
     notification_text = models.TextField(blank=True)
     from_user = models.ForeignKey(

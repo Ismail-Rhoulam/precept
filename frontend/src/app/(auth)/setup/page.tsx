@@ -259,7 +259,7 @@ export default function SetupPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden p-2">
           <AnimatePresence mode="wait" custom={direction}>
             {/* Step 1: Company */}
             {step === 0 && (

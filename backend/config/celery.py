@@ -28,17 +28,12 @@ app.conf.beat_schedule = {
     "sync-leads-5min": {
         "task": "apps.integrations.tasks.sync_leads_from_sources",
         "schedule": crontab(minute="*/5"),
-        "args": ("Every 5 Minutes",),
-    },
-    "sync-leads-10min": {
-        "task": "apps.integrations.tasks.sync_leads_from_sources",
-        "schedule": crontab(minute="*/10"),
-        "args": ("Every 10 Minutes",),
+        "args": ("Every 5 minutes",),
     },
     "sync-leads-15min": {
         "task": "apps.integrations.tasks.sync_leads_from_sources",
         "schedule": crontab(minute="*/15"),
-        "args": ("Every 15 Minutes",),
+        "args": ("Every 15 minutes",),
     },
     "sync-leads-hourly": {
         "task": "apps.integrations.tasks.sync_leads_from_sources",
@@ -49,10 +44,5 @@ app.conf.beat_schedule = {
         "task": "apps.integrations.tasks.sync_leads_from_sources",
         "schedule": crontab(hour=2, minute=0),
         "args": ("Daily",),
-    },
-    "sync-leads-monthly": {
-        "task": "apps.integrations.tasks.sync_leads_from_sources",
-        "schedule": crontab(day_of_month=1, hour=3, minute=0),
-        "args": ("Monthly",),
     },
 }

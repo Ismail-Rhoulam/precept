@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-03-05 — Fix Setup Wizard Seed Data Crash
+
+### Setup Endpoint 500 Error
+The "Launch Precept" button on the setup screen failed with a generic "An error occurred" message. The `_seed_lookup_data` function used incorrect field names (`name`, `category`, `order`) that didn't match the actual model fields.
+
+- **`backend/apps/core/api/router.py`** — Fixed `_seed_lookup_data` to use correct model field names: `lead_status`/`type`/`position` for `LeadStatus`, `deal_status`/`type`/`position`/`probability` for `DealStatus`, `source_name` for `LeadSource`, and `industry_name` for `Industry`. Refactored the seed config to specify each model's key field explicitly.
+
+---
+
 ## 2026-03-05 — Fix Multi-Schema Migrations & Celery Beat Startup
 
 ### Database Migration Order Fix

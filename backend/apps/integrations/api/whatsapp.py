@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
+import requests
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -18,8 +19,10 @@ from apps.integrations.api.schemas import (
 from apps.integrations.models import WhatsAppMessage, WhatsAppSettings
 from apps.integrations.services.whatsapp_service import (
     handle_webhook,
+    send_media_message,
     send_template_message,
     send_text_message,
+    upload_media,
 )
 
 logger = logging.getLogger(__name__)
@@ -180,13 +183,86 @@ def get_conversation_messages(
 
 @router.post("/messages", response={201: WhatsAppMessageOut})
 def send_message(request, payload: WhatsAppMessageCreate):
-    """Send a WhatsApp text message."""
+    """Send a WhatsApp message (text or media).
+
+    For media messages set ``content_type`` to image/video/audio/document/sticker
+    and provide ``media_url`` pointing to a local file under /media/ that was
+    previously uploaded via the ``/upload`` endpoint.
+    """
     wa_settings = get_object_or_404(WhatsAppSettings, company=request.company)
     if not wa_settings.enabled:
         return 400, {"error": "WhatsApp is not enabled"}
 
-    # Send via Graph API
-    result = send_text_message(wa_settings, payload.to_number, payload.content)
+    import mimetypes
+    import os
+    from django.conf import settings as django_settings
+
+    media_types = ("image", "video", "audio", "document", "sticker")
+    content_type = payload.content_type or "text"
+
+    if content_type in media_types and payload.media_url:
+        # Resolve local file path from /media/... URL
+        local_path = os.path.join(
+            django_settings.MEDIA_ROOT,
+            payload.media_url.replace("/media/", "", 1),
+        )
+        if not os.path.isfile(local_path):
+            return 400, {"error": "Media file not found"}
+
+        mime = payload.mime_type or mimetypes.guess_type(local_path)[0] or "application/octet-stream"
+        # Strip codec params (e.g. "audio/ogg; codecs=opus" → "audio/ogg") for WA API
+        mime_clean = mime.split(";")[0].strip()
+
+        # WhatsApp rejects audio/webm – convert to OGG with ffmpeg
+        if mime_clean == "audio/webm" and content_type == "audio":
+            import shutil
+            import subprocess
+
+            if shutil.which("ffmpeg"):
+                ogg_path = local_path.rsplit(".", 1)[0] + ".ogg"
+                try:
+                    subprocess.run(
+                        ["ffmpeg", "-y", "-i", local_path, "-c:a", "libopus", "-b:a", "48k", ogg_path],
+                        check=True, capture_output=True, timeout=30,
+                    )
+                    local_path = ogg_path
+                    mime_clean = "audio/ogg"
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+                    logger.warning("ffmpeg conversion failed: %s", exc)
+
+        try:
+            # Upload to WhatsApp
+            wa_media_id = upload_media(wa_settings, local_path, mime_clean)
+            if not wa_media_id:
+                return 400, {"error": "Failed to upload media to WhatsApp"}
+
+            result = send_media_message(
+                wa_settings,
+                payload.to_number,
+                content_type,
+                wa_media_id,
+                caption=payload.content,
+            )
+        except requests.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.response.json().get("error", {}).get("message", str(exc))
+            except Exception:
+                detail = str(exc)
+            logger.error("WhatsApp API error sending media: %s", detail)
+            return 400, {"error": f"WhatsApp API error: {detail}"}
+    else:
+        # Plain text message
+        try:
+            result = send_text_message(wa_settings, payload.to_number, payload.content)
+        except requests.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.response.json().get("error", {}).get("message", str(exc))
+            except Exception:
+                detail = str(exc)
+            logger.error("WhatsApp API error sending text: %s", detail)
+            return 400, {"error": f"WhatsApp API error: {detail}"}
 
     # Create message record
     msg_data = {
@@ -196,10 +272,11 @@ def send_message(request, payload: WhatsAppMessageCreate):
         "from_number": wa_settings.phone_number_id,
         "to_number": payload.to_number,
         "content": payload.content,
-        "content_type": payload.content_type,
+        "content_type": content_type,
         "status": WhatsAppMessage.Status.SENT,
         "template_name": payload.template_name,
         "media_url": payload.media_url,
+        "mime_type": payload.mime_type,
         "created_by": request.auth,
         "modified_by": request.auth,
     }
@@ -256,6 +333,119 @@ def send_template(request, payload: WhatsAppSendTemplateIn):
         pk=message.pk
     )
     return 201, message
+
+
+# ---------------------------------------------------------------------------
+# Media upload (for outbound media messages)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/upload")
+def upload_media_file(request):
+    """Upload a media file for later sending via WhatsApp.
+
+    Accepts multipart/form-data with a ``file`` field.
+    Returns ``{ "media_url": "/media/whatsapp/...", "mime_type": "..." }``.
+    """
+    import os
+    import uuid
+
+    from django.conf import settings as django_settings
+
+    wa_settings = get_object_or_404(WhatsAppSettings, company=request.company)
+    if not wa_settings.enabled:
+        return 400, {"error": "WhatsApp is not enabled"}
+
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return 400, {"error": "No file provided"}
+
+    mime_type = uploaded.content_type or "application/octet-stream"
+    ext = os.path.splitext(uploaded.name)[1] if uploaded.name else ""
+    if not ext:
+        import mimetypes as _mt
+        ext = _mt.guess_extension(mime_type) or ""
+
+    media_dir = os.path.join(django_settings.MEDIA_ROOT, "whatsapp")
+    os.makedirs(media_dir, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(media_dir, filename)
+
+    with open(filepath, "wb") as f:
+        for chunk in uploaded.chunks():
+            f.write(chunk)
+
+    return {
+        "media_url": f"/media/whatsapp/{filename}",
+        "mime_type": mime_type,
+        "filename": uploaded.name,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Media proxy
+# ---------------------------------------------------------------------------
+
+
+@router.get("/media/{message_id}", auth=None)
+def get_media(request, message_id: int, token: str = ""):
+    """Serve WhatsApp media files.
+
+    Uses HMAC-signed token for auth since <img> tags can't send JWT headers.
+    Local files are served directly; legacy Facebook URLs are proxied.
+    """
+    import hashlib as _hashlib
+    import hmac as _hmac
+    import mimetypes
+    import os
+
+    from django.conf import settings as django_settings
+
+    # Verify the signed token
+    secret = django_settings.SECRET_KEY
+    expected = _hmac.new(
+        secret.encode(), f"wa-media-{message_id}".encode(), _hashlib.sha256
+    ).hexdigest()[:32]
+    if not token or not _hmac.compare_digest(token, expected):
+        return HttpResponse("Forbidden", status=403)
+
+    msg = WhatsAppMessage.unscoped.filter(pk=message_id).first()
+    if not msg or not msg.media_url:
+        return HttpResponse("Not found", status=404)
+
+    # Local file (stored during webhook)
+    if msg.media_url.startswith("/media/"):
+        filepath = os.path.join(
+            django_settings.MEDIA_ROOT,
+            msg.media_url.replace("/media/", "", 1),
+        )
+        if os.path.isfile(filepath):
+            content_type = mimetypes.guess_type(filepath)[0] or "application/octet-stream"
+            with open(filepath, "rb") as f:
+                response = HttpResponse(f.read(), content_type=content_type)
+                response["Cache-Control"] = "public, max-age=86400"
+                return response
+        return HttpResponse("File not found", status=404)
+
+    # Legacy: proxy from Facebook URL (may be expired)
+    wa_settings = WhatsAppSettings.unscoped.filter(company=msg.company).first()
+    if not wa_settings:
+        return HttpResponse("Not configured", status=404)
+
+    try:
+        resp = requests.get(
+            msg.media_url,
+            headers={"Authorization": f"Bearer {wa_settings.access_token}"},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "application/octet-stream")
+        response = HttpResponse(resp.content, content_type=content_type)
+        response["Cache-Control"] = "private, max-age=86400"
+        return response
+    except Exception:
+        logger.exception("Failed to proxy media for message %s", message_id)
+        return HttpResponse("Media unavailable", status=410)
 
 
 # ---------------------------------------------------------------------------

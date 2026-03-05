@@ -101,6 +101,9 @@ export function useSendWhatsAppMessage() {
     mutationFn: (data: {
       to_number: string
       content: string
+      content_type?: string
+      media_url?: string
+      mime_type?: string
       entity_type?: string
       entity_id?: number
     }) => integrationsApi.sendWhatsAppMessage(data),
@@ -115,6 +118,12 @@ export function useSendWhatsAppMessage() {
         })
       }
     },
+  })
+}
+
+export function useUploadWhatsAppMedia() {
+  return useMutation({
+    mutationFn: (file: File) => integrationsApi.uploadWhatsAppMedia(file),
   })
 }
 

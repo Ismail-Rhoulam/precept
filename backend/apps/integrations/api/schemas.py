@@ -1,6 +1,9 @@
+import hashlib
+import hmac
 from datetime import datetime
 from typing import Optional
 
+from django.conf import settings
 from ninja import Schema
 
 
@@ -114,6 +117,15 @@ class WhatsAppSettingsUpdate(Schema):
 # ---------------------------------------------------------------------------
 
 
+def _sign_media_token(message_id: int) -> str:
+    """Generate HMAC token for media proxy URL."""
+    return hmac.new(
+        settings.SECRET_KEY.encode(),
+        f"wa-media-{message_id}".encode(),
+        hashlib.sha256,
+    ).hexdigest()[:32]
+
+
 class WhatsAppMessageOut(Schema):
     id: int
     message_id: str
@@ -125,11 +137,20 @@ class WhatsAppMessageOut(Schema):
     status: str
     template_name: str
     media_url: str
+    mime_type: str = ""
+    media_proxy_url: Optional[str] = None
     reply_to_id: Optional[int] = None
     entity_type: Optional[str] = None
     entity_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
+
+    @staticmethod
+    def resolve_media_proxy_url(obj):
+        if not obj.media_url:
+            return None
+        token = _sign_media_token(obj.id)
+        return f"/api/integrations/whatsapp/media/{obj.id}?token={token}"
 
     @staticmethod
     def resolve_entity_type(obj):
@@ -148,6 +169,7 @@ class WhatsAppMessageCreate(Schema):
     content_type: str = "text"
     template_name: str = ""
     media_url: str = ""
+    mime_type: str = ""
     reply_to_id: Optional[int] = None
     entity_type: Optional[str] = None  # "lead" or "deal"
     entity_id: Optional[int] = None

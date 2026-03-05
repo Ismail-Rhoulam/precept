@@ -41,6 +41,8 @@ export interface WhatsAppMessage {
   status: "Pending" | "Sent" | "Delivered" | "Read" | "Failed"
   template_name: string
   media_url: string
+  mime_type: string
+  media_proxy_url: string | null
   created_at: string
 }
 

@@ -51,9 +51,29 @@ export const integrationsApi = {
   sendWhatsAppMessage: (data: {
     to_number: string
     content: string
+    content_type?: string
+    media_url?: string
+    mime_type?: string
     entity_type?: string
     entity_id?: number
   }) => api.post<WhatsAppMessage>("/integrations/whatsapp/messages", data),
+
+  uploadWhatsAppMedia: async (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+    const resp = await fetch(`${baseUrl}/integrations/whatsapp/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: "Upload failed" }))
+      throw new Error(err.detail || "Upload failed")
+    }
+    return resp.json() as Promise<{ media_url: string; mime_type: string; filename: string }>
+  },
 
   getWhatsAppConversations: (page: number = 1) =>
     api.get<{ results: WhatsAppConversation[]; total: number }>(

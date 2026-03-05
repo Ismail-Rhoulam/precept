@@ -90,7 +90,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
 }
 
 function extractErrorMessage(error: Record<string, unknown>): string {
-  const detail = error.detail
+  const detail = error.detail || error.error
   if (!detail) return `An error occurred`
   if (typeof detail === "string") return detail
   if (Array.isArray(detail)) {

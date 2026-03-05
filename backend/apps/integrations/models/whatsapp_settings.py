@@ -40,7 +40,8 @@ class WhatsAppMessage(TenantMixin, TimestampMixin):
     content_type = models.CharField(max_length=50, default="text")  # text, image, document, template, reaction
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     template_name = models.CharField(max_length=255, blank=True)
-    media_url = models.URLField(blank=True)
+    media_url = models.CharField(max_length=512, blank=True)
+    mime_type = models.CharField(max_length=128, blank=True)
     reply_to = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
 
     # Generic FK to link to Lead/Deal

@@ -90,6 +90,25 @@ function handleNotification(
   queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] })
 }
 
+function handleWhatsAppMessage(data: WebSocketMessage, queryClient: QueryClient) {
+  const phoneNumber = data.phone_number as string | undefined
+
+  // Invalidate conversation list (new message changes order/preview)
+  queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations"] })
+
+  // Invalidate messages for the specific phone number conversation
+  if (phoneNumber) {
+    queryClient.invalidateQueries({
+      queryKey: ["whatsapp-conversation-messages", phoneNumber],
+    })
+  }
+
+  // Invalidate entity-specific message queries (covers lead/deal chat widgets)
+  queryClient.invalidateQueries({
+    queryKey: ["whatsapp-messages"],
+  })
+}
+
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
@@ -112,6 +131,10 @@ export function useWebSocket() {
 
         if (data.type === "notification") {
           handleNotification(data, queryClient, setUnreadCount)
+        }
+
+        if (data.type === "whatsapp_message") {
+          handleWhatsAppMessage(data, queryClient)
         }
       } catch (err) {
         console.error("[WS] Failed to parse message:", err)

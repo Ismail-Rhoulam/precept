@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-03-04 — Docker: Expose PostgreSQL & Explicit Container Names
+
+### Production Docker Compose
+- **`docker-compose.prod.yml`** — Exposed PostgreSQL on `127.0.0.1:5432` for local tooling access (pgAdmin, VSCode extensions)
+- **`docker-compose.prod.yml`** — Added explicit `container_name` to all services, removing the auto-generated `-1` suffix
+
+---
+
+## 2026-03-04 — Auth Redesign, Brand Color Palette & Dark Mode
+
+### Authentication Page Redesign
+Redesigned the login page using the shadcn/ui authentication example pattern.
+
+- **`app/(auth)/layout.tsx`** — Two-column split layout: left panel with brand-black background, logo, and testimonial; right panel with centered form and theme toggle
+- **`app/(auth)/login/page.tsx`** — Minimal auth form (no Card wrapper), sr-only labels, placeholder-driven inputs, loading spinner on submit
+
+### Brand Color Palette
+Introduced a four-color brand palette applied across the entire design system.
+
+| Color  | Hex       | Usage                              |
+|--------|-----------|------------------------------------|
+| Black  | `#010203` | Auth branding panel, foreground     |
+| Violet | `#7e3bed` | Primary (buttons, links, rings)     |
+| White  | `#f0eee9` | Available as `brand-white` utility  |
+| Lime   | `#c6ff34` | Charts, badges, special highlights  |
+
+- **`styles/globals.css`** — Rewired all CSS variables: primary → violet, accent → violet tints, neutrals derived from violet spectrum
+- **`tailwind.config.js`** — Added `brand-black`, `brand-violet`, `brand-white`, `brand-lime` utility classes
+
+### Dark/Light Theme Toggle
+Added full dark mode support with a one-click toggle.
+
+- **`app/providers.tsx`** — Wrapped app with `next-themes` ThemeProvider (class-based, system default)
+- **`app/layout.tsx`** — Added `suppressHydrationWarning` on `<html>`, updated theme-color meta to violet
+- **`components/ui/theme-toggle.tsx`** — Sun/Moon icon button, single click toggles between light and dark
+- **`components/layout/Header.tsx`** — Theme toggle added to dashboard header
+
+### Dark Mode Color Fixes
+Replaced hardcoded gray colors with theme-aware equivalents across 17 files.
+
+| Hardcoded                        | Replaced with              |
+|----------------------------------|----------------------------|
+| `text-gray-900/800`              | `text-foreground`          |
+| `text-gray-700/600/500/400`      | `text-muted-foreground`    |
+| `text-gray-300`                  | `text-muted-foreground/50` |
+| `bg-gray-100/200`                | `bg-muted`                 |
+| `bg-gray-50`                     | `bg-muted/50`              |
+| `bg-white`                       | `bg-card`                  |
+| `border-gray-100/200/300`        | `border-border`            |
+
+**Affected pages:** Leads, Lead Detail, Deals, Deal Detail, Contacts, Tasks, Notes, Call Logs, Calendar, Settings (General, Products, SLA, all Integrations)
+**Affected components:** ActivityTimeline, NotificationPanel, TaskItem, BarChart, LineChart, SLABadge
+
+---
+
 ## 2026-03-04 — WhatsApp Integration UI & Lead/Deal Creation Fix
 
 ### WhatsApp Conversations Page

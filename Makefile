@@ -1,4 +1,4 @@
-.PHONY: up down build migrate seed shell test prod-build prod-up prod-down prod-logs prod-shell reload
+.PHONY: up down build migrate seed shell test prod-build prod-up prod-down prod-logs prod-shell reload-front reload-back
 
 # ── Development ───────────────────────────────────────────────
 up:
@@ -48,6 +48,10 @@ prod-logs:
 prod-shell:
 	docker compose -f docker-compose.prod.yml exec backend python manage.py shell
 
-reload:
+reload-front:
 	docker compose -f docker-compose.prod.yml build frontend
 	docker compose -f docker-compose.prod.yml up -d frontend
+
+reload-back:
+	docker compose -f docker-compose.prod.yml build backend
+	docker compose -f docker-compose.prod.yml up -d backend channels

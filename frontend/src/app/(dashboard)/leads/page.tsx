@@ -271,7 +271,7 @@ function CreateLeadForm({ onClose }: CreateLeadFormProps) {
                 type="text"
                 value={formData.organization}
                 onChange={(e) => handleChange("organization", e.target.value)}
-                placeholder="Acme Inc."
+                placeholder="Precept Inc."
               />
             </div>
           </div>

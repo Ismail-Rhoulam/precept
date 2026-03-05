@@ -283,7 +283,7 @@ export default function SetupPage() {
                   <Label htmlFor="company_name">Company Name</Label>
                   <Input
                     id="company_name"
-                    placeholder="Acme Inc."
+                    placeholder="Precept Inc."
                     autoFocus
                     className="h-12 text-base"
                     disabled={isSubmitting}

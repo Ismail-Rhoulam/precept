@@ -206,7 +206,7 @@ export default function ContactsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, company_name: e.target.value })
                     }
-                    placeholder="Acme Inc."
+                    placeholder="Precept Inc."
                   />
                 </div>
                 <div className="space-y-2">

@@ -166,7 +166,7 @@ export default function OrganizationsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, organization_name: e.target.value })
                     }
-                    placeholder="Acme Inc."
+                    placeholder="Precept Inc."
                   />
                 </div>
                 <div className="space-y-2">

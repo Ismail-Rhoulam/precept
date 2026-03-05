@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-03-05 — Emoji Picker: Dark/Light Theme & Multi-Pick Fix
+
+### Emoji Picker Theme Support
+- **`components/chat/ChatEmojiPicker.tsx`** — Emoji picker now follows the app's dark/light theme using `useTheme()` from `next-themes` and the `Theme` prop from `emoji-picker-react`.
+
+### Emoji Picker No Longer Closes After First Pick
+- **`components/chat/ChatEmojiPicker.tsx`** — Fixed popover closing immediately after selecting an emoji. Internal clicks inside the picker are now intercepted via `onInteractOutside` with a ref-based check, while genuine outside clicks still dismiss the popover. Updated button styling to match WhatsApp chat design (`rounded-full`, `hover:bg-muted/60`, `rounded-2xl` popover).
+
+---
+
+## 2026-03-05 — WhatsApp Chat: Voice Recording, Real-Time Updates & Modern UI
+
+### Voice Recording with Live Waveform
+Added voice note recording to WhatsApp chat with real-time audio visualization.
+
+- **`components/chat/VoiceRecorder.tsx`** — New component using MediaRecorder API + AudioContext/AnalyserNode for live waveform bars. Three states: mic button (default), recording (24 animated bars + timer + cancel/send), sending (spinner). Smooth slide-in/fade-in animations and pulsing red recording indicator.
+- **`components/telephony/WhatsAppChat.tsx`** — Integrated VoiceRecorder with `handleVoiceSend` callback; mic button replaces send when input is empty.
+
+### Custom Inline Audio Player
+Replaced native `<audio>` element with a WhatsApp-style audio player.
+
+- **`components/chat/ChatMediaRenderer.tsx`** — New `AudioPlayer` component with play/pause button, 32-bar waveform progress visualization, click-to-seek, and time display. Colors adapt to outgoing (white-on-green) vs incoming (green-on-white) messages.
+
+### WhatsApp API Audio Fix
+WhatsApp Cloud API rejects `audio/webm` uploads, causing "An error occurred" when sending voice notes.
+
+- **`apps/integrations/api/whatsapp.py`** — Added ffmpeg conversion (webm → ogg/opus) before upload. Added try/except around `upload_media()` and `send_media_message()` with proper error responses. Strips codec params from MIME type before upload.
+- **`backend/Dockerfile.prod`** — Added `ffmpeg` to runtime apt packages.
+
+### Real-Time Message Updates via WebSocket
+Messages now appear instantly without page reload.
+
+- **`.env`** / **`docker-compose.prod.yml`** — Fixed WebSocket URL from `wss://precept.online/ws` to `wss://precept.online/ws/crm/` matching Django Channels routing.
+
+### Modern WhatsApp UI Redesign
+Redesigned the WhatsApp page with shadcn v4-inspired patterns and WhatsApp-green theme.
+
+- **`app/(dashboard)/whatsapp/page.tsx`** — WhatsApp-green (emerald-600) message bubbles, backdrop-blur sticky headers, date separators (Today/Yesterday), content type icons in previews, `data-[active=true]:bg-accent` conversation items. Removed non-functional Call/Search/More buttons.
+- **`apps/integrations/api/schemas.py`** — Updated API schemas for WhatsApp integration.
+- **`apps/integrations/services/whatsapp_service.py`** — WhatsApp service improvements.
+- **`frontend/src/hooks/useWebSocket.ts`** — WebSocket hook updates.
+- **`frontend/src/types/integration.ts`** — Updated WhatsApp type definitions.
+
+### Error Handling Improvements
+- **`lib/api/client.ts`** — `extractErrorMessage` now checks both `error.detail` and `error.error` fields.
+
+---
+
 ## 2026-03-04 — Docker: Expose PostgreSQL & Explicit Container Names
 
 ### Production Docker Compose

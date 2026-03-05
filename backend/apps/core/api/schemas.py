@@ -44,6 +44,18 @@ class CompanyOut(Schema):
     is_active: bool
 
 
+class SetupCheckOut(Schema):
+    needs_setup: bool
+
+
+class SetupIn(Schema):
+    company_name: str
+    first_name: str
+    last_name: str = ""
+    email: str
+    password: str
+
+
 # ---------------------------------------------------------------------------
 # Data Import
 # ---------------------------------------------------------------------------

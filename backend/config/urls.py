@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from ninja import NinjaAPI
 from ninja_jwt.authentication import JWTAuth
 
@@ -28,7 +29,12 @@ api.add_router("/views/", views_router, tags=["Views"])
 api.add_router("/integrations/", integrations_router, tags=["Integrations"])
 api.add_router("/settings/", settings_router, tags=["Settings"])
 
+def health_check(request):
+    return JsonResponse({"status": "ok"})
+
+
 urlpatterns = [
+    path("api/health/", health_check),
     path("admin/", admin.site.urls),
     path("api/", api.urls),
 ]

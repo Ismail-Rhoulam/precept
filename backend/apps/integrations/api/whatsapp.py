@@ -210,11 +210,10 @@ def send_message(request, payload: WhatsAppMessageCreate):
             return 400, {"error": "Media file not found"}
 
         mime = payload.mime_type or mimetypes.guess_type(local_path)[0] or "application/octet-stream"
-        # Strip codec params (e.g. "audio/ogg; codecs=opus" → "audio/ogg") for WA API
-        mime_clean = mime.split(";")[0].strip()
+        mime_base = mime.split(";")[0].strip()
 
-        # WhatsApp rejects audio/webm – convert to OGG with ffmpeg
-        if mime_clean == "audio/webm" and content_type == "audio":
+        # WhatsApp rejects audio/webm – convert to OGG/Opus with ffmpeg
+        if mime_base == "audio/webm" and content_type == "audio":
             import shutil
             import subprocess
 
@@ -226,13 +225,23 @@ def send_message(request, payload: WhatsAppMessageCreate):
                         check=True, capture_output=True, timeout=30,
                     )
                     local_path = ogg_path
-                    mime_clean = "audio/ogg"
+                    mime_base = "audio/ogg"
                 except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
                     logger.warning("ffmpeg conversion failed: %s", exc)
+
+        # Use "audio/ogg; codecs=opus" for OGG audio so WhatsApp renders
+        # it as a voice note (with waveform) instead of a plain audio file.
+        if mime_base == "audio/ogg" and content_type == "audio":
+            mime_clean = "audio/ogg; codecs=opus"
+        else:
+            mime_clean = mime_base
+
+        print(f"[WA-DEBUG] Sending media: type={content_type}, mime_base={mime_base}, mime_clean={mime_clean}, path={local_path}", flush=True)
 
         try:
             # Upload to WhatsApp
             wa_media_id = upload_media(wa_settings, local_path, mime_clean)
+            print(f"[WA-DEBUG] Uploaded media ID: {wa_media_id}", flush=True)
             if not wa_media_id:
                 return 400, {"error": "Failed to upload media to WhatsApp"}
 
@@ -243,6 +252,7 @@ def send_message(request, payload: WhatsAppMessageCreate):
                 wa_media_id,
                 caption=payload.content,
             )
+            print(f"[WA-DEBUG] Send result: {result}", flush=True)
         except requests.HTTPError as exc:
             detail = ""
             try:

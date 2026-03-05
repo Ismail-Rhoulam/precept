@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { useAuthStore } from "@/stores/authStore"
+import { authApi } from "@/lib/api/auth"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,6 +27,14 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>()
+
+  useEffect(() => {
+    authApi.setupCheck().then((res) => {
+      if (res.needs_setup) {
+        router.replace("/setup")
+      }
+    }).catch(() => {})
+  }, [router])
 
   const onSubmit = async (data: LoginForm) => {
     setError(null)

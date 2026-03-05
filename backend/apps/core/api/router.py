@@ -1,6 +1,7 @@
 from typing import List
 
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.utils.text import slugify
 from ninja import Router
 from ninja.errors import HttpError
@@ -12,6 +13,8 @@ from apps.core.api.schemas import (
     CompanyOut,
     LoginIn,
     RegisterIn,
+    SetupCheckOut,
+    SetupIn,
     TokenOut,
     UserOut,
 )
@@ -68,6 +71,97 @@ def register(request, payload: RegisterIn):
         access=str(refresh.access_token),
         refresh=str(refresh),
     )
+
+
+@router.get("/setup-check", response=SetupCheckOut, auth=None)
+def setup_check(request):
+    """Check whether the system needs initial setup (no users exist)."""
+    return {"needs_setup": not User.objects.exists()}
+
+
+@router.post("/setup", response={201: TokenOut}, auth=None)
+def setup(request, payload: SetupIn):
+    """First-time setup: create the initial company + superuser + seed data."""
+    if User.objects.exists():
+        raise HttpError(400, "Setup has already been completed.")
+
+    slug = slugify(payload.company_name)
+    if Company.objects.filter(slug=slug).exists():
+        raise HttpError(409, "A company with this name already exists.")
+
+    with transaction.atomic():
+        company = Company.objects.create(
+            name=payload.company_name, slug=slug, is_active=True
+        )
+
+        user = User.objects.create_superuser(
+            email=payload.email,
+            password=payload.password,
+            first_name=payload.first_name,
+            last_name=payload.last_name or "",
+            company=company,
+            role=User.Role.ADMIN,
+        )
+
+        _seed_lookup_data(company)
+
+    refresh = RefreshToken.for_user(user)
+    refresh["company_id"] = company.pk
+    refresh.access_token["company_id"] = company.pk
+
+    return 201, TokenOut(
+        access=str(refresh.access_token),
+        refresh=str(refresh),
+    )
+
+
+def _seed_lookup_data(company):
+    """Seed default lookup data for a new company."""
+    from django.apps import apps
+
+    lookups = {
+        ("crm", "LeadStatus"): [
+            {"name": "New", "category": "Open", "color": "blue", "order": 1},
+            {"name": "Contacted", "category": "Ongoing", "color": "orange", "order": 2},
+            {"name": "Qualified", "category": "Ongoing", "color": "green", "order": 3},
+            {"name": "Unqualified", "category": "Lost", "color": "red", "order": 4},
+            {"name": "Junk", "category": "Lost", "color": "gray", "order": 5},
+        ],
+        ("crm", "DealStatus"): [
+            {"name": "Qualification", "category": "Open", "probability": 10, "order": 1},
+            {"name": "Demo/Meeting", "category": "Ongoing", "probability": 30, "order": 2},
+            {"name": "Proposal", "category": "Ongoing", "probability": 50, "order": 3},
+            {"name": "Negotiation", "category": "Ongoing", "probability": 70, "order": 4},
+            {"name": "Won", "category": "Won", "probability": 100, "order": 5},
+            {"name": "Lost", "category": "Lost", "probability": 0, "order": 6},
+        ],
+        ("crm", "LeadSource"): [
+            {"name": "Website"},
+            {"name": "Referral"},
+            {"name": "Cold Call"},
+            {"name": "Social Media"},
+            {"name": "Advertisement"},
+        ],
+        ("crm", "Industry"): [
+            {"name": "Technology"},
+            {"name": "Healthcare"},
+            {"name": "Finance"},
+            {"name": "Education"},
+            {"name": "Retail"},
+            {"name": "Manufacturing"},
+        ],
+    }
+
+    for (app_label, model_name), records in lookups.items():
+        try:
+            Model = apps.get_model(app_label, model_name)
+        except LookupError:
+            continue
+        for record in records:
+            defaults = {k: v for k, v in record.items() if k != "name"}
+            Model.unscoped.get_or_create(
+                name=record["name"], company=company, defaults=defaults
+            )
 
 
 @router.get("/me", response=UserOut, auth=JWTAuth())

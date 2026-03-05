@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,16 +53,20 @@ services:
     command: >
       sh -c "python manage.py create_schemas &&
              python manage.py makemigrations &&
-             python manage.py migrate contenttypes --database=infra &&
-             python manage.py migrate auth --database=infra &&
-             python manage.py migrate --database=default &&
              python manage.py migrate --database=infra &&
+             python manage.py migrate --database=default &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --threads 2"
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import socket; s=socket.create_connection((\"localhost\",8000),2); s.close()'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,7 +90,7 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
     command: celery -A config worker -l info --concurrency=2
     depends_on:
-      postgres:
+      backend:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -108,7 +112,7 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
     command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
-      postgres:
+      backend:
         condition: service_healthy
       redis:
         condition: service_healthy

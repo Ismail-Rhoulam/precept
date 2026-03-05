@@ -6,7 +6,6 @@ Database router for Precept CRM multi-schema layout.
 """
 
 INFRA_APPS = {
-    "admin",
     "auth",
     "contenttypes",
     "sessions",

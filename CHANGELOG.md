@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-03-05 — Fix Multi-Schema Migrations & Celery Beat Startup
+
+### Database Migration Order Fix
+Migrations failed on fresh deploy because `core.0001_initial` referenced `auth_group` (in infra schema) before it was created.
+
+- **`docker-compose.prod.yml`** — Swapped migration order: `--database=infra` now runs before `--database=default`, ensuring auth/contenttypes tables exist when core migrations create FK references to them.
+
+### Database Router Fix — Admin Cross-Schema Dependency
+`admin.0001_initial` failed because `admin.LogEntry` has a FK to `core.User` (precept schema), but admin was routed to the infra database where `core_users` doesn't exist.
+
+- **`config/db_router.py`** — Removed `admin` from `INFRA_APPS`. Admin now migrates on the `default` database alongside `core`, resolving the cross-schema FK dependency.
+
+### Celery Beat Race Condition Fix
+Celery beat crashed on startup with `relation "django_celery_beat_crontabschedule" does not exist` because it started before backend finished running migrations.
+
+- **`docker-compose.prod.yml`** — Added TCP socket healthcheck to backend service (checks gunicorn is listening on port 8000). Changed celery-beat and celery-worker to `depends_on: backend: condition: service_healthy` instead of `service_started`.
+
+### Health Check Endpoint
+- **`config/urls.py`** — Added `/api/health/` endpoint returning `{"status": "ok"}` (no auth required) for future monitoring use.
+
+---
+
 ## 2026-03-05 — Emoji Picker: Dark/Light Theme & Multi-Pick Fix
 
 ### Emoji Picker Theme Support

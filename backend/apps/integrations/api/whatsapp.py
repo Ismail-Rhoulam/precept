@@ -181,6 +181,86 @@ def get_conversation_messages(
     }
 
 
+def _compress_animated_sticker(local_path, file_size):
+    """Compress an animated WebP sticker to fit WhatsApp's 500KB limit.
+
+    Uses webpmux/img2webp for proper frame-timing preservation.
+    Returns the path to the compressed file, or None on failure.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not shutil.which("webpmux") or not shutil.which("img2webp"):
+        logger.warning("webp tools not installed, cannot compress animated sticker")
+        return None
+
+    try:
+        # Get frame count
+        info = subprocess.run(
+            ["webpmux", "-info", local_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        frame_count = 0
+        frame_duration = 33  # default ~30fps
+        for line in info.stdout.splitlines():
+            if "Number of frames" in line:
+                frame_count = int(line.split()[-1])
+            # Parse first frame duration from the frame table
+            parts = line.strip().split()
+            if len(parts) >= 8 and parts[0].isdigit() and frame_count and not frame_duration:
+                frame_duration = int(parts[6]) if parts[6].isdigit() else 33
+
+        if frame_count == 0:
+            return None
+
+        # Parse actual frame durations from the info table
+        durations = []
+        in_table = False
+        for line in info.stdout.splitlines():
+            if "duration" in line.lower() and "width" in line.lower():
+                in_table = True
+                continue
+            if in_table:
+                parts = line.strip().split()
+                if len(parts) >= 7 and parts[0].isdigit():
+                    durations.append(parts[6] if parts[6].isdigit() else "33")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Extract all frames
+            for i in range(1, frame_count + 1):
+                subprocess.run(
+                    ["webpmux", "-get", "frame", str(i), local_path,
+                     "-o", f"{tmpdir}/f{i}.webp"],
+                    capture_output=True, timeout=10,
+                )
+
+            # Try decreasing quality until under 500KB
+            for quality in (50, 48, 45, 40, 35):
+                cmd = ["img2webp", "-loop", "0", "-lossy", "-q", str(quality)]
+                for i in range(1, frame_count + 1):
+                    dur = durations[i - 1] if i - 1 < len(durations) else "33"
+                    cmd.extend(["-d", dur, f"{tmpdir}/f{i}.webp"])
+
+                out_path = local_path.rsplit(".", 1)[0] + "_compressed.webp"
+                cmd.extend(["-o", out_path])
+
+                subprocess.run(cmd, capture_output=True, timeout=60)
+
+                if os.path.isfile(out_path) and os.path.getsize(out_path) <= 500_000:
+                    logger.info(
+                        "Compressed animated sticker from %dKB to %dKB (q=%d)",
+                        file_size // 1024, os.path.getsize(out_path) // 1024, quality,
+                    )
+                    return out_path
+
+        logger.warning("Could not compress animated sticker under 500KB")
+        return None
+    except Exception:
+        logger.exception("Failed to compress animated sticker")
+        return None
+
+
 @router.post("/messages", response={201: WhatsAppMessageOut})
 def send_message(request, payload: WhatsAppMessageCreate):
     """Send a WhatsApp message (text or media).
@@ -212,6 +292,14 @@ def send_message(request, payload: WhatsAppMessageCreate):
         mime = payload.mime_type or mimetypes.guess_type(local_path)[0] or "application/octet-stream"
         mime_base = mime.split(";")[0].strip()
 
+        # Animated stickers must be ≤500KB for WhatsApp – compress if needed
+        if content_type == "sticker" and mime_base == "image/webp":
+            file_size = os.path.getsize(local_path)
+            if file_size > 500_000:
+                compressed = _compress_animated_sticker(local_path, file_size)
+                if compressed:
+                    local_path = compressed
+
         # WhatsApp rejects audio/webm – convert to OGG/Opus with ffmpeg
         if mime_base == "audio/webm" and content_type == "audio":
             import shutil
@@ -236,12 +324,9 @@ def send_message(request, payload: WhatsAppMessageCreate):
         else:
             mime_clean = mime_base
 
-        print(f"[WA-DEBUG] Sending media: type={content_type}, mime_base={mime_base}, mime_clean={mime_clean}, path={local_path}", flush=True)
-
         try:
             # Upload to WhatsApp
             wa_media_id = upload_media(wa_settings, local_path, mime_clean)
-            print(f"[WA-DEBUG] Uploaded media ID: {wa_media_id}", flush=True)
             if not wa_media_id:
                 return 400, {"error": "Failed to upload media to WhatsApp"}
 
@@ -252,7 +337,6 @@ def send_message(request, payload: WhatsAppMessageCreate):
                 wa_media_id,
                 caption=payload.content,
             )
-            print(f"[WA-DEBUG] Send result: {result}", flush=True)
         except requests.HTTPError as exc:
             detail = ""
             try:

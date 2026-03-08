@@ -1,0 +1,19 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postfix \
+    opendkim \
+    opendkim-tools \
+    ca-certificates \
+    python3-minimal \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint.sh /entrypoint.sh
+COPY opendkim.conf /etc/opendkim.conf
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 25
+
+ENTRYPOINT ["/entrypoint.sh"]

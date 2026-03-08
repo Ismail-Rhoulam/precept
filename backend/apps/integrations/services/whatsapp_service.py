@@ -241,6 +241,7 @@ def handle_webhook(payload, wa_settings):
 
                 wa_msg = WhatsAppMessage(
                     company=wa_settings.company,
+                    whatsapp_account=wa_settings,
                     message_id=wa_message_id,
                     message_type=WhatsAppMessage.MessageType.INCOMING,
                     from_number=msg.get("from", ""),
@@ -264,6 +265,7 @@ def handle_webhook(payload, wa_settings):
                     "phone_number": wa_msg.from_number,
                     "message_id": wa_msg.id,
                     "content_type": wa_msg.content_type,
+                    "whatsapp_account_id": wa_settings.id,
                 })
 
             # Handle status updates
@@ -294,6 +296,7 @@ def handle_webhook(payload, wa_settings):
                                 "message_id": wa_msg_obj.id,
                                 "wa_message_id": msg_id,
                                 "status": mapped_status,
+                                "whatsapp_account_id": wa_settings.id,
                             })
 
     return created_messages

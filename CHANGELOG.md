@@ -1,5 +1,166 @@
 # Changelog
 
+## 2026-03-08 — Built-in SMTP Server (Self-hosted Postfix with DKIM)
+
+Added the option to send emails through a self-hosted Postfix container instead of requiring an external SMTP relay. The built-in mode auto-generates DKIM keys for email authentication and exposes DNS setup guidance in the UI.
+
+### Docker — Postfix Container
+
+- **`docker/postfix/Dockerfile`** — New container image: Ubuntu 22.04 + Postfix + OpenDKIM + opendkim-tools. Exposes port 25 internally (Docker network only).
+- **`docker/postfix/entrypoint.sh`** — Reads mail domain from shared config file (`postfix_config.json` written by Django) or falls back to `MAIL_DOMAIN` env var. Polls every 10s if no domain configured yet. Auto-generates 2048-bit DKIM key, writes OpenDKIM tables (KeyTable, SigningTable, TrustedHosts), configures Postfix `main.cf` with Docker-internal `mynetworks`, opportunistic outbound TLS, and DKIM milter.
+- **`docker/postfix/opendkim.conf`** — OpenDKIM base config: relaxed/simple canonicalization, sv mode, socket `inet:8891@localhost`.
+- **`docker-compose.yml`** / **`docker-compose.prod.yml`** — Added `postfix` service with `dkim_keys` named volume. Volume mounted read-write on Postfix, read-only on backend/celery-worker for DKIM record access. Added `POSTFIX_HOST=postfix` and `POSTFIX_PORT=25` env vars to backend and celery services.
+
+### Backend — Model
+
+- **`apps/integrations/models/email_account.py`** — Added `SmtpMode` choices (`external`, `builtin`), `smtp_mode` field (default `external`), and `mail_domain` field for the sending domain when using builtin mode.
+
+### Backend — Service Layer
+
+- **`apps/integrations/services/email_service.py`** — `test_smtp_connection()` and `send_email()` now branch on `smtp_mode`: builtin connects to `postfix:25` without auth/TLS (trusted Docker network), external uses the existing configured SMTP host.
+
+### Backend — API
+
+- **`apps/integrations/api/email.py`** — Added `_sync_postfix_config()` helper that writes the active builtin mail domain to the shared volume as `postfix_config.json`. Called on account create/update when smtp_mode is builtin. Added two new endpoints:
+  - `GET /builtin-smtp-status` — Checks Postfix reachability via socket connect, returns `{available, mail_domain}`.
+  - `GET /dkim-record` — Reads DKIM public key from shared volume, parses BIND format, returns `{selector, domain, dns_name, record}` for DNS setup.
+- **`apps/integrations/api/schemas.py`** — Added `smtp_mode` and `mail_domain` to `EmailAccountOut`, `EmailAccountCreate`, and `EmailAccountUpdate` schemas.
+
+### Frontend — Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — Added SMTP mode selector (External vs Built-in toggle buttons). When "Built-in" selected: hides SMTP host/port/credentials fields, shows `BuiltinSmtpInfo` component with Postfix status indicator, editable mail domain input, and collapsible DNS Setup panel with SPF, DKIM, and DMARC record templates. Account list shows "Built-in" badge for builtin accounts.
+
+### Frontend — API & Hooks
+
+- **`lib/api/integrations.ts`** — Added `getBuiltinSmtpStatus()` and `getDkimRecord()` API methods.
+- **`hooks/useIntegrations.ts`** — Added `useBuiltinSmtpStatus()` and `useDkimRecord()` hooks.
+- **`types/integration.ts`** — Added `smtp_mode: "external" | "builtin"` and `mail_domain: string` to `EmailAccount` interface.
+
+### Documentation
+
+- **`backend/apps/integrations/MAILING.md`** — Updated with built-in SMTP architecture, Postfix container details, DNS setup guidance, new API endpoints, and updated file inventory.
+
+---
+
+## 2026-03-08 — Email Integration (SMTP/IMAP, Compose, Inbox Sync, Campaigns)
+
+Added a complete Brevo-style email integration covering multi-account SMTP/IMAP configuration, compose & send from CRM, automatic inbox sync with entity auto-linking, threaded conversations, email templates, and bulk campaigns with per-recipient variable substitution.
+
+### Backend — Models
+
+- **`apps/integrations/models/email_account.py`** — New `EmailAccount` model with SMTP credentials (host, port, username, password, TLS/SSL), IMAP credentials (host, port, username, password, SSL, folder), sync state (`last_synced_uid`, `last_synced_at`, `sync_frequency`), and multi-account support (`display_name`, `is_default`, unique constraint on `(company, email_address)`).
+- **`apps/integrations/models/email_message.py`** — New `EmailMessage` model with RFC 2822 threading headers (`message_id_header`, `in_reply_to`, `references_header`, `thread_id`), direction/status enums, HTML+text body, and Generic FK to link to Lead/Deal/Contact. New `EmailAttachment` model with file storage in `email_attachments/`.
+- **`apps/integrations/models/email_campaign.py`** — New `EmailTemplate` model (name, subject, body with `{{variable}}` placeholders). New `EmailCampaign` model with status workflow (Draft → Scheduled → Sending → Sent), JSON recipients list, and delivery stats. New `EmailCampaignLog` for per-recipient tracking.
+- **`apps/integrations/models/__init__.py`** — Exports all six new models.
+
+### Backend — API Endpoints
+
+- **`apps/integrations/api/email.py`** — 22 endpoints covering:
+  - **Settings CRUD**: `GET/POST/PATCH/DELETE /settings`, `POST /settings/{id}/test` (test SMTP or IMAP connection). First account auto-promoted to default; default promoted on delete.
+  - **Compose**: `POST /compose` with async Celery send, `POST /upload-attachment` for pre-upload. Account resolution cascade: explicit `account_id` → conversation history → default → any enabled.
+  - **Messages**: `GET /messages/{entity_type}/{entity_id}` for entity emails, `GET /messages/detail/{id}`.
+  - **Threads**: `GET /threads` groups messages by `thread_id` with participant list and entity linking. `GET /threads/{thread_id}/messages` returns full thread. `POST /sync/{account_id}` triggers manual IMAP sync.
+  - **Templates**: Full CRUD + `POST /templates/{id}/preview` with sample context rendering.
+  - **Campaigns**: Full CRUD + `POST /campaigns/{id}/send` queues async send + `GET /campaigns/{id}/logs` for delivery logs.
+- **`apps/integrations/api/schemas.py`** — Added `EmailAccountOut/Create/Update`, `EmailAccountTestIn`, `EmailMessageOut`, `EmailAttachmentOut`, `EmailComposeIn`, `EmailTemplateOut/Create/Update`, `EmailCampaignOut/Create/Update`, `EmailCampaignLogOut`, `EmailTemplatePreviewIn`. Added `email_enabled: bool` to `IntegrationStatusOut`.
+- **`apps/integrations/api/router.py`** — Mounted email router at `/email/`.
+- **`apps/integrations/api/telephony.py`** — Added `email_enabled` check to integration status endpoint.
+
+### Backend — Service Layer
+
+- **`apps/integrations/services/email_service.py`** — New service with:
+  - `test_smtp_connection()` / `test_imap_connection()` — credential verification.
+  - `send_email()` — builds `MIMEMultipart` with HTML+text alternatives, file attachments, and RFC threading headers (`Message-ID`, `In-Reply-To`, `References`).
+  - `sync_imap_inbox()` — incremental IMAP sync using UID watermark, parses RFC822 messages, extracts bodies and attachments, computes `thread_id` from References chain, auto-links to Lead/Contact/Deal by email address matching, broadcasts WebSocket events.
+  - `render_template()` — simple `{{variable}}` regex substitution for campaign templates.
+
+### Backend — Celery Tasks
+
+- **`apps/integrations/tasks.py`** — Three new tasks:
+  - `send_email_task(email_message_id)` — async SMTP send with status tracking (Queued → Sending → Sent/Failed).
+  - `sync_email_inboxes(frequency_label)` — syncs all enabled accounts matching the given frequency.
+  - `send_campaign_task(campaign_id)` — iterates recipients, renders templates per-recipient, sends individually with `time.sleep(0.1)` rate limiting, creates `EmailCampaignLog` entries, updates campaign stats.
+- **`config/celery.py`** — Added three beat schedule entries: `sync-email-5min` (*/5), `sync-email-15min` (*/15), `sync-email-hourly` (top of hour).
+
+### Backend — Docker
+
+- **`backend/Dockerfile.prod`** — Added `email_attachments` to the media directory creation.
+
+### Frontend — Email Inbox Page
+
+- **`app/(dashboard)/email/page.tsx`** — Split-view email inbox mirroring WhatsApp layout: thread list on left, email panel on right. Account selector, search, manual sync button, compose modal. Blue theme for email (vs green for WhatsApp).
+
+### Frontend — Email on Lead/Deal Detail
+
+- **`components/email/EmailChat.tsx`** — Email timeline component showing emails linked to an entity. Chronological display with from/to, subject, HTML body, attachments, timestamp, and status. Inline compose form with reply pre-fill. Collapsible view showing last 3 messages.
+- **`app/(dashboard)/leads/[id]/page.tsx`** — Added `EmailChat` component below WhatsApp chat, shown when email is enabled and lead has an email address.
+- **`app/(dashboard)/deals/[id]/page.tsx`** — Same `EmailChat` integration for deals.
+
+### Frontend — Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — Multi-account email settings page with SMTP config (host, port, username, password, TLS/SSL), IMAP config (toggled by enable_incoming), sync frequency selector, and "Test SMTP" / "Test IMAP" buttons. Account list with enable indicator, default badge, set-default/edit/delete actions.
+- **`app/(dashboard)/settings/integrations/page.tsx`** — Added Email card with `Mail` icon and `email_enabled` status key.
+
+### Frontend — Campaign Pages
+
+- **`app/(dashboard)/email/templates/page.tsx`** — Template CRUD with inline HTML editor and live preview toggle. Variable hint display.
+- **`app/(dashboard)/email/campaigns/page.tsx`** — Campaign list with status badges (Draft, Sending, Sent, Failed) and delivery stats.
+- **`app/(dashboard)/email/campaigns/[id]/page.tsx`** — Campaign detail with stats cards (recipients, sent, failed), recipient list, send log with per-recipient status, and email body preview.
+- **`app/(dashboard)/email/campaigns/new/page.tsx`** — 3-step campaign wizard: (1) name + account + template selection, (2) subject + body editor with preview, (3) recipients via single add or bulk paste.
+
+### Frontend — API & Hooks
+
+- **`lib/api/integrations.ts`** — Added `composeEmail`, `uploadEmailAttachment`, `getEntityEmails`, `getEmailDetail`, `getEmailThreads`, `getThreadMessages`, `triggerEmailSync` methods.
+- **`hooks/useIntegrations.ts`** — Added `useEntityEmails`, `useComposeEmail`, `useUploadEmailAttachment`, `useEmailThreads`, `useThreadMessages`, `useTriggerEmailSync` hooks with proper query key invalidation.
+- **`types/integration.ts`** — Added `EmailMessage`, `EmailAttachment`, `EmailThread` interfaces. Added `email_enabled` to `IntegrationStatus`.
+- **`components/layout/Sidebar.tsx`** — Added Email nav item with `Mail` icon, conditionally shown when `email_enabled`.
+
+### Documentation
+
+- **`backend/apps/integrations/MAILING.md`** — Module reference documenting database tables, API endpoints, service layer, IMAP sync flow, auto-linking logic, campaign send flow, multi-account resolution, and file inventory.
+
+---
+
+## 2026-03-08 — Multi WhatsApp Business Account Support
+
+Added support for multiple WhatsApp Business Accounts per company. Each company can now configure multiple phone numbers (e.g. "Sales", "Support"), with conversations separated per account and automatic outgoing number selection based on conversation history.
+
+### Backend — Model Changes
+- **`apps/integrations/models/whatsapp_settings.py`** — Added `display_name` (human label), `is_default` (default account flag), and `unique_together` constraint on `(company, phone_number_id)` to `WhatsAppSettings`. Added `whatsapp_account` FK on `WhatsAppMessage` linking each message to the account that sent/received it.
+
+### Backend — API (Singleton → CRUD)
+- **`apps/integrations/api/whatsapp.py`** — Converted settings endpoints from singleton `get_or_create` to full CRUD list: `GET /settings` returns array, `POST /settings` creates new account, `PATCH /settings/{id}` updates, `DELETE /settings/{id}` removes (with default promotion). Added `_resolve_wa_account()` helper that selects the outgoing account by priority: explicit `account_id` → conversation history → default account → any enabled account. Conversations endpoint accepts optional `account_id` filter and includes `whatsapp_account_id`/`whatsapp_account_name` in results. Removed dangerous webhook fallback that could route messages to the wrong company — unknown `phone_number_id` values are now logged and ignored.
+- **`apps/integrations/api/schemas.py`** — Added `display_name`, `is_default` to settings schemas. Added `whatsapp_account_id` to message output. Added `account_id` to message create and send-template schemas.
+
+### Backend — Service Layer
+- **`apps/integrations/services/whatsapp_service.py`** — `handle_webhook()` now sets `whatsapp_account=wa_settings` on created messages. WebSocket broadcasts include `whatsapp_account_id` for frontend routing.
+
+### Backend — Data Migration
+- **`apps/integrations/management/commands/backfill_whatsapp_accounts.py`** — New management command (runs at startup, idempotent) that backfills `is_default` and `display_name` on existing accounts, and links orphaned messages to their accounts by `company_id`.
+- **`docker-compose.yml`** / **`docker-compose.prod.yml`** — Added `backfill_whatsapp_accounts` to startup command sequence after migrations.
+
+### Frontend — Settings Page
+- **`app/(dashboard)/settings/integrations/whatsapp/page.tsx`** — Redesigned from single-form to multi-account list with add/edit/delete dialogs, "Set as Default" action, and shared webhook URL display.
+
+### Frontend — Conversations Page
+- **`app/(dashboard)/whatsapp/page.tsx`** — Added account selector dropdown in header. Conversations filtered by selected account. `account_id` passed when sending messages.
+
+### Frontend — Chat Component
+- **`components/telephony/WhatsAppChat.tsx`** — Accepts optional `accountId` prop, passes it in all send operations (text, sticker, voice).
+
+### Frontend — Lead/Deal Detail
+- **`app/(dashboard)/leads/[id]/page.tsx`** / **`app/(dashboard)/deals/[id]/page.tsx`** — Updated WhatsApp enabled check from `whatsAppSettings?.enabled` to `whatsAppSettings?.some((a) => a.enabled)` since settings is now an array.
+
+### Frontend — API & Hooks
+- **`lib/api/integrations.ts`** — `getWhatsAppSettings` returns array. Added `createWhatsAppAccount`, `updateWhatsAppAccount`, `deleteWhatsAppAccount`. Conversations and messages accept optional `accountId` param.
+- **`hooks/useIntegrations.ts`** — Updated hooks for array-based settings. Added create/update/delete mutations. Query keys include `accountId` for proper cache separation.
+- **`types/integration.ts`** — Added `display_name`, `is_default` to `WhatsAppSettings`. Added `whatsapp_account_id` to `WhatsAppMessage` and `WhatsAppConversation`.
+
+### Documentation
+- **`backend/apps/integrations/WHATSAPP.md`** — New module reference documenting database tables, API endpoints, webhook flow, account resolution logic, media handling, and architectural decisions.
+
+---
+
 ## 2026-03-05 — Fix Setup Wizard Seed Data Crash
 
 ### Setup Endpoint 500 Error

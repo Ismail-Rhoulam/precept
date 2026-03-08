@@ -4,6 +4,7 @@ import Link from "next/link"
 import {
   Phone,
   MessageCircle,
+  Mail,
   Facebook,
   Users,
   ArrowLeft,
@@ -36,6 +37,13 @@ const integrationCards = [
     href: "/settings/integrations/whatsapp",
     icon: MessageCircle,
     statusKey: "whatsapp_enabled" as const,
+  },
+  {
+    name: "Email",
+    description: "SMTP/IMAP email send, receive, and campaigns",
+    href: "/settings/integrations/email",
+    icon: Mail,
+    statusKey: "email_enabled" as const,
   },
   {
     name: "Facebook",

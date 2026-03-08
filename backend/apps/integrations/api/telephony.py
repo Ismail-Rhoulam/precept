@@ -11,6 +11,7 @@ from apps.integrations.api.schemas import (
     TelephonyAgentUpdate,
 )
 from apps.integrations.models import (
+    EmailAccount,
     ExotelSettings,
     TelephonyAgent,
     TwilioSettings,
@@ -91,6 +92,9 @@ def integration_status(request):
     whatsapp_enabled = WhatsAppSettings.objects.filter(
         company=request.company, enabled=True
     ).exists()
+    email_enabled = EmailAccount.objects.filter(
+        company=request.company, enabled=True
+    ).exists()
 
     # Determine default calling medium
     default_calling_medium = ""
@@ -103,5 +107,6 @@ def integration_status(request):
         twilio_enabled=twilio_enabled,
         exotel_enabled=exotel_enabled,
         whatsapp_enabled=whatsapp_enabled,
+        email_enabled=email_enabled,
         default_calling_medium=default_calling_medium,
     )

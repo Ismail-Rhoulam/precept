@@ -1,9 +1,11 @@
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from ninja import Router
@@ -44,31 +46,111 @@ def _get_content_type(entity_type: str):
     return ContentType.objects.get(app_label=app_label, model=model)
 
 
-# ---------------------------------------------------------------------------
-# Settings
-# ---------------------------------------------------------------------------
+def _resolve_wa_account(company, to_number, account_id=None):
+    """Resolve which WhatsApp account to use for sending.
 
+    Priority:
+    1. Explicit account_id (if provided)
+    2. Most recent conversation history with to_number
+    3. Company's default account (is_default=True)
+    """
+    if account_id:
+        return get_object_or_404(
+            WhatsAppSettings, pk=account_id, company=company, enabled=True
+        )
 
-@router.get("/settings", response=WhatsAppSettingsOut)
-def get_whatsapp_settings(request):
-    """Get WhatsApp settings for the current tenant."""
-    settings, _ = WhatsAppSettings.objects.get_or_create(
-        company=request.company,
+    # Auto-select: find the account used in the most recent message to/from this number
+    recent_msg = (
+        WhatsAppMessage.objects.filter(company=company, whatsapp_account__isnull=False)
+        .filter(Q(to_number=to_number) | Q(from_number=to_number))
+        .select_related("whatsapp_account")
+        .order_by("-created_at")
+        .first()
     )
-    return settings
+    if recent_msg and recent_msg.whatsapp_account and recent_msg.whatsapp_account.enabled:
+        return recent_msg.whatsapp_account
+
+    # Fallback: default account
+    default = WhatsAppSettings.objects.filter(
+        company=company, enabled=True, is_default=True
+    ).first()
+    if default:
+        return default
+
+    # Last resort: any enabled account
+    any_account = WhatsAppSettings.objects.filter(company=company, enabled=True).first()
+    if any_account:
+        return any_account
+
+    return None
 
 
-@router.post("/settings", response=WhatsAppSettingsOut)
-def upsert_whatsapp_settings(request, payload: WhatsAppSettingsCreate):
-    """Create or update WhatsApp settings (upsert)."""
-    settings, created = WhatsAppSettings.objects.get_or_create(
-        company=request.company,
-    )
+# ---------------------------------------------------------------------------
+# Settings (CRUD list)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/settings", response=List[WhatsAppSettingsOut])
+def list_whatsapp_settings(request):
+    """List all WhatsApp accounts for the current tenant."""
+    return list(WhatsAppSettings.objects.filter(company=request.company))
+
+
+@router.post("/settings", response={201: WhatsAppSettingsOut})
+def create_whatsapp_settings(request, payload: WhatsAppSettingsCreate):
+    """Create a new WhatsApp account."""
     data = payload.dict(exclude_unset=True)
-    for attr, value in data.items():
-        setattr(settings, attr, value)
-    settings.save()
+    data["company"] = request.company
+
+    # If this is the first account, make it default
+    if not WhatsAppSettings.objects.filter(company=request.company).exists():
+        data["is_default"] = True
+
+    settings = WhatsAppSettings.objects.create(**data)
+    return 201, settings
+
+
+@router.get("/settings/{account_id}", response=WhatsAppSettingsOut)
+def get_whatsapp_settings(request, account_id: int):
+    """Get a single WhatsApp account."""
+    return get_object_or_404(WhatsAppSettings, pk=account_id, company=request.company)
+
+
+@router.patch("/settings/{account_id}", response=WhatsAppSettingsOut)
+def update_whatsapp_settings(request, account_id: int, payload: WhatsAppSettingsUpdate):
+    """Update a WhatsApp account."""
+    settings = get_object_or_404(WhatsAppSettings, pk=account_id, company=request.company)
+    data = payload.dict(exclude_unset=True)
+
+    with transaction.atomic():
+        # If setting as default, unset other defaults
+        if data.get("is_default"):
+            WhatsAppSettings.objects.filter(company=request.company).exclude(
+                pk=account_id
+            ).update(is_default=False)
+
+        for attr, value in data.items():
+            setattr(settings, attr, value)
+        settings.save()
+
     return settings
+
+
+@router.delete("/settings/{account_id}", response={204: None})
+def delete_whatsapp_settings(request, account_id: int):
+    """Delete a WhatsApp account."""
+    settings = get_object_or_404(WhatsAppSettings, pk=account_id, company=request.company)
+    was_default = settings.is_default
+    settings.delete()
+
+    # If deleted account was default, promote another one
+    if was_default:
+        next_account = WhatsAppSettings.objects.filter(company=request.company).first()
+        if next_account:
+            next_account.is_default = True
+            next_account.save(update_fields=["is_default"])
+
+    return 204, None
 
 
 # ---------------------------------------------------------------------------
@@ -106,22 +188,44 @@ def get_messages(
 
 
 @router.get("/conversations", response=Dict[str, Any])
-def get_conversations(request, page: int = 1, page_size: int = 20):
+def get_conversations(
+    request,
+    page: int = 1,
+    page_size: int = 20,
+    account_id: Optional[int] = None,
+):
     """Get all WhatsApp conversations grouped by remote phone number."""
-    from django.db.models import Max, Q
-
-    wa_settings = WhatsAppSettings.objects.filter(company=request.company).first()
-    our_number = wa_settings.phone_number_id if wa_settings else ""
-
     qs = WhatsAppMessage.objects.filter(company=request.company)
 
-    # Get all unique remote phone numbers with their latest message time
+    if account_id:
+        wa_settings = get_object_or_404(
+            WhatsAppSettings, pk=account_id, company=request.company
+        )
+        our_number = wa_settings.phone_number_id
+        qs = qs.filter(whatsapp_account=wa_settings)
+    else:
+        # No account filter — use all accounts; determine "our number" per-message
+        wa_settings = None
+        our_number = ""
+
+    # Collect all our phone numbers for identifying the remote side
+    our_numbers = set(
+        WhatsAppSettings.objects.filter(company=request.company)
+        .values_list("phone_number_id", flat=True)
+    )
+
     seen: Dict[str, dict] = {}
-    for msg in qs.order_by("-created_at").select_related("content_type_fk"):
-        remote = msg.to_number if msg.from_number == our_number else msg.from_number
+    for msg in qs.order_by("-created_at").select_related("content_type_fk", "whatsapp_account"):
+        if account_id:
+            remote = msg.to_number if msg.from_number == our_number else msg.from_number
+        else:
+            remote = (
+                msg.to_number if msg.from_number in our_numbers else msg.from_number
+            )
         if not remote:
             continue
         if remote not in seen:
+            acct = msg.whatsapp_account
             seen[remote] = {
                 "phone_number": remote,
                 "last_message": WhatsAppMessageOut.from_orm(msg).dict(),
@@ -129,6 +233,8 @@ def get_conversations(request, page: int = 1, page_size: int = 20):
                 "entity_type": None,
                 "entity_id": None,
                 "entity_name": None,
+                "whatsapp_account_id": acct.id if acct else None,
+                "whatsapp_account_name": (acct.display_name or acct.phone_number_id) if acct else None,
             }
             if msg.content_type_fk and msg.object_id:
                 seen[remote]["entity_type"] = msg.content_type_fk.model
@@ -158,16 +264,18 @@ def get_conversation_messages(
     phone_number: str,
     page: int = 1,
     page_size: int = 50,
+    account_id: Optional[int] = None,
 ):
     """Get all messages for a specific phone number conversation."""
-    from django.db.models import Q
-
     qs = (
         WhatsAppMessage.objects.filter(company=request.company)
         .filter(Q(to_number=phone_number) | Q(from_number=phone_number))
         .select_related("content_type_fk")
         .order_by("created_at")
     )
+
+    if account_id:
+        qs = qs.filter(whatsapp_account_id=account_id)
 
     total = qs.count()
     offset = (page - 1) * page_size
@@ -187,6 +295,7 @@ def _compress_animated_sticker(local_path, file_size):
     Uses webpmux/img2webp for proper frame-timing preservation.
     Returns the path to the compressed file, or None on failure.
     """
+    import os
     import shutil
     import subprocess
     import tempfile
@@ -269,9 +378,9 @@ def send_message(request, payload: WhatsAppMessageCreate):
     and provide ``media_url`` pointing to a local file under /media/ that was
     previously uploaded via the ``/upload`` endpoint.
     """
-    wa_settings = get_object_or_404(WhatsAppSettings, company=request.company)
-    if not wa_settings.enabled:
-        return 400, {"error": "WhatsApp is not enabled"}
+    wa_settings = _resolve_wa_account(request.company, payload.to_number, payload.account_id)
+    if not wa_settings:
+        return 400, {"error": "No enabled WhatsApp account found"}
 
     import mimetypes
     import os
@@ -361,6 +470,7 @@ def send_message(request, payload: WhatsAppMessageCreate):
     # Create message record
     msg_data = {
         "company": request.company,
+        "whatsapp_account": wa_settings,
         "message_id": result.get("messages", [{}])[0].get("id", ""),
         "message_type": WhatsAppMessage.MessageType.OUTGOING,
         "from_number": wa_settings.phone_number_id,
@@ -394,9 +504,9 @@ def send_message(request, payload: WhatsAppMessageCreate):
 @router.post("/send-template", response={201: WhatsAppMessageOut})
 def send_template(request, payload: WhatsAppSendTemplateIn):
     """Send a WhatsApp template message."""
-    wa_settings = get_object_or_404(WhatsAppSettings, company=request.company)
-    if not wa_settings.enabled:
-        return 400, {"error": "WhatsApp is not enabled"}
+    wa_settings = _resolve_wa_account(request.company, payload.to_number, payload.account_id)
+    if not wa_settings:
+        return 400, {"error": "No enabled WhatsApp account found"}
 
     result = send_template_message(
         wa_settings, payload.to_number, payload.template_name, payload.language
@@ -404,6 +514,7 @@ def send_template(request, payload: WhatsAppSendTemplateIn):
 
     msg_data = {
         "company": request.company,
+        "whatsapp_account": wa_settings,
         "message_id": result.get("messages", [{}])[0].get("id", ""),
         "message_type": WhatsAppMessage.MessageType.OUTGOING,
         "from_number": wa_settings.phone_number_id,
@@ -446,9 +557,9 @@ def upload_media_file(request):
 
     from django.conf import settings as django_settings
 
-    wa_settings = get_object_or_404(WhatsAppSettings, company=request.company)
-    if not wa_settings.enabled:
-        return 400, {"error": "WhatsApp is not enabled"}
+    # Just verify at least one enabled account exists
+    if not WhatsAppSettings.objects.filter(company=request.company, enabled=True).exists():
+        return 400, {"error": "No enabled WhatsApp account"}
 
     uploaded = request.FILES.get("file")
     if not uploaded:
@@ -521,8 +632,12 @@ def get_media(request, message_id: int, token: str = ""):
                 return response
         return HttpResponse("File not found", status=404)
 
-    # Legacy: proxy from Facebook URL (may be expired)
-    wa_settings = WhatsAppSettings.unscoped.filter(company=msg.company).first()
+    # Legacy: proxy from Facebook URL — prefer the message's linked account
+    wa_settings = None
+    if msg.whatsapp_account_id:
+        wa_settings = WhatsAppSettings.unscoped.filter(pk=msg.whatsapp_account_id).first()
+    if not wa_settings:
+        wa_settings = WhatsAppSettings.unscoped.filter(company=msg.company).first()
     if not wa_settings:
         return HttpResponse("Not configured", status=404)
 
@@ -599,10 +714,12 @@ def whatsapp_webhook_receive(request):
         ).first()
 
     if not wa_settings:
-        # Fallback: try to find any enabled WhatsApp settings
-        wa_settings = WhatsAppSettings.unscoped.filter(enabled=True).first()
+        logger.warning(
+            "No WhatsApp account found for phone_number_id=%s, ignoring webhook",
+            phone_number_id,
+        )
+        return {"status": "ok"}
 
-    if wa_settings:
-        handle_webhook(payload, wa_settings)
+    handle_webhook(payload, wa_settings)
 
     return {"status": "ok"}

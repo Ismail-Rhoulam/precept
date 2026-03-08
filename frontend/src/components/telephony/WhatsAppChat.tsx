@@ -43,6 +43,7 @@ interface WhatsAppChatProps {
   entityType: "lead" | "deal"
   entityId: number
   phoneNumber: string
+  accountId?: number
 }
 
 function formatTime(dateStr: string): string {
@@ -93,6 +94,7 @@ export default function WhatsAppChat({
   entityType,
   entityId,
   phoneNumber,
+  accountId,
 }: WhatsAppChatProps) {
   const {
     data: messages,
@@ -148,6 +150,7 @@ export default function WhatsAppChat({
         content_type: contentType,
         media_url: mediaUrl,
         mime_type: mimeType,
+        account_id: accountId,
         entity_type: entityType,
         entity_id: entityId,
       })
@@ -185,6 +188,7 @@ export default function WhatsAppChat({
           content_type: "sticker",
           media_url: sticker.mediaPath,
           mime_type: "image/webp",
+          account_id: accountId,
           entity_type: entityType,
           entity_id: entityId,
         })
@@ -192,7 +196,7 @@ export default function WhatsAppChat({
         // Error surfaced via mutation state
       }
     },
-    [phoneNumber, entityType, entityId, sendMessage]
+    [phoneNumber, entityType, entityId, accountId, sendMessage]
   )
 
   const handleVoiceSend = useCallback(
@@ -204,11 +208,12 @@ export default function WhatsAppChat({
         content_type: "audio",
         media_url: uploaded.media_url,
         mime_type: uploaded.mime_type,
+        account_id: accountId,
         entity_type: entityType,
         entity_id: entityId,
       })
     },
-    [phoneNumber, entityType, entityId, sendMessage, uploadMedia]
+    [phoneNumber, entityType, entityId, accountId, sendMessage, uploadMedia]
   )
 
   const hasContent = input.trim() || attachment

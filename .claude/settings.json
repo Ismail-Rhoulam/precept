@@ -168,12 +168,29 @@
       "Read(//var/log/nginx/**)",
       "Read(//opt/frappe_docker/**)",
       "Bash(docker exec precept-backend bash -c \":*)",
-      "Bash(docker exec precept-backend rm -rf /tmp/sticker_test /tmp/sticker_*.webp)"
+      "Bash(docker exec precept-backend rm -rf /tmp/sticker_test /tmp/sticker_*.webp)",
+      "Bash(docker exec precept-backend python manage.py makemigrations integrations --name multi_whatsapp_accounts)",
+      "Bash(docker exec precept-backend python manage.py showmigrations integrations)",
+      "Bash(docker exec precept-backend cat /app/apps/integrations/migrations/0001_initial.py)",
+      "Bash(docker compose build backend)",
+      "Bash(make rebuild-all)",
+      "Bash(docker exec precept-backend python -c \"from apps.integrations.models import WhatsAppSettings, WhatsAppMessage; print\\(''Fields:'', [f.name for f in WhatsAppSettings._meta.get_fields\\(\\)]\\); print\\(''Msg fields:'', [f.name for f in WhatsAppMessage._meta.get_fields\\(\\) if f.name in \\(''whatsapp_account'',\\)]\\)\")",
+      "Bash(docker exec precept-backend python manage.py shell -c \"from apps.integrations.models import WhatsAppSettings, WhatsAppMessage; print\\(''WhatsAppSettings fields:'', [f.name for f in WhatsAppSettings._meta.get_fields\\(\\)]\\)\")",
+      "Bash(ls -la /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/settings/integrations/)",
+      "Bash(cat /opt/frappe_docker/precept/frontend/src/app/'\\(dashboard\\)'/settings/integrations/page.tsx)",
+      "Bash(cat /opt/frappe_docker/precept/frontend/src/app/'\\(dashboard\\)'/settings/integrations/whatsapp/page.tsx)",
+      "Bash(cat /opt/frappe_docker/precept/frontend/src/app/'\\(dashboard\\)'/settings/integrations/twilio/page.tsx)",
+      "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/settings/)",
+      "Bash(cat /opt/frappe_docker/precept/frontend/src/app/'\\(dashboard\\)'/settings/integrations/exotel/page.tsx)",
+      "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/settings/integrations/)",
+      "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/email/)",
+      "Bash(python3 manage.py makemigrations integrations --name email_integration)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",
       "/opt/frappe_docker/precept/backend",
-      "/tmp"
+      "/tmp",
+      "/opt/frappe_docker/precept/backend/apps/integrations/migrations"
     ]
   }
 }

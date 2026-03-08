@@ -10,6 +10,7 @@ import {
   Building2,
   CheckSquare,
   StickyNote,
+  Mail,
   Phone,
   Calendar,
   Settings,
@@ -56,6 +57,7 @@ const navigation: NavigationItem[] = [
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
   { name: "Notes", href: "/notes", icon: StickyNote },
   { name: "WhatsApp", href: "/whatsapp", icon: WhatsAppIcon },
+  { name: "Email", href: "/email", icon: Mail },
   { name: "Call Logs", href: "/call-logs", icon: Phone },
   { name: "Calendar", href: "/calendar", icon: Calendar },
 ]
@@ -69,10 +71,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const { data: integrationStatus } = useIntegrationStatus()
 
-  const visibleNavigation = navigation.filter(
-    (item) =>
-      item.name !== "WhatsApp" || integrationStatus?.whatsapp_enabled
-  )
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.name === "WhatsApp") return integrationStatus?.whatsapp_enabled
+    if (item.name === "Email") return integrationStatus?.email_enabled
+    return true
+  })
 
   return (
     <div className="flex flex-col h-full">

@@ -18,6 +18,7 @@ import {
   Mic as MicIcon,
   FileText,
   Film,
+  ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -27,7 +28,7 @@ import {
   useUploadWhatsAppMedia,
   useWhatsAppSettings,
 } from "@/hooks/useIntegrations"
-import type { WhatsAppMessage, WhatsAppConversation } from "@/types/integration"
+import type { WhatsAppMessage, WhatsAppConversation, WhatsAppSettings } from "@/types/integration"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -54,7 +55,7 @@ function resolveProxyUrl(msg: WhatsAppMessage): string {
   return ""
 }
 
-/* ── Date helpers ─────────────────────────────────────────────── */
+/* -- Date helpers -------------------------------------------------------- */
 
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr)
@@ -101,7 +102,7 @@ function isSameDay(a: string, b: string): boolean {
   )
 }
 
-/* ── Status icon ──────────────────────────────────────────────── */
+/* -- Status icon --------------------------------------------------------- */
 
 function StatusIcon({ status }: { status: WhatsAppMessage["status"] }) {
   switch (status) {
@@ -120,7 +121,7 @@ function StatusIcon({ status }: { status: WhatsAppMessage["status"] }) {
   }
 }
 
-/* ── Helpers ───────────────────────────────────────────────────── */
+/* -- Helpers ------------------------------------------------------------- */
 
 function mimeToContentType(mime: string): string {
   if (mime.startsWith("image/")) return "image"
@@ -174,7 +175,95 @@ function getInitials(name: string): string {
     .slice(0, 2)
 }
 
-/* ── Conversation list ─────────────────────────────────────────── */
+/* -- Account selector ---------------------------------------------------- */
+
+function AccountSelector({
+  accounts,
+  selectedId,
+  onSelect,
+}: {
+  accounts: WhatsAppSettings[]
+  selectedId: number | undefined
+  onSelect: (id: number | undefined) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const selected = accounts.find((a) => a.id === selectedId)
+  const label = selected
+    ? selected.display_name || selected.phone_number_id
+    : "All Accounts"
+
+  if (accounts.length <= 1) return null
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
+      >
+        <span className="truncate max-w-[140px]">{label}</span>
+        <ChevronDown className="size-3 shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border rounded-lg shadow-lg py-1 min-w-[180px]">
+          <button
+            onClick={() => {
+              onSelect(undefined)
+              setOpen(false)
+            }}
+            className={cn(
+              "w-full text-left px-3 py-1.5 text-sm hover:bg-accent/50 transition-colors",
+              !selectedId && "bg-accent text-accent-foreground"
+            )}
+          >
+            All Accounts
+          </button>
+          {accounts.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => {
+                onSelect(a.id)
+                setOpen(false)
+              }}
+              className={cn(
+                "w-full text-left px-3 py-1.5 text-sm hover:bg-accent/50 transition-colors flex items-center gap-2",
+                selectedId === a.id && "bg-accent text-accent-foreground"
+              )}
+            >
+              <div
+                className={cn(
+                  "size-1.5 rounded-full shrink-0",
+                  a.enabled ? "bg-green-500" : "bg-muted-foreground/30"
+                )}
+              />
+              <span className="truncate">
+                {a.display_name || a.phone_number_id}
+              </span>
+              {a.is_default && (
+                <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-auto">
+                  Default
+                </Badge>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* -- Conversation list --------------------------------------------------- */
 
 function ConversationList({
   conversations,
@@ -279,6 +368,11 @@ function ConversationList({
                         {lastMessagePreview(conv.last_message)}
                       </p>
                     </div>
+                    {conv.whatsapp_account_name && (
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5 truncate">
+                        via {conv.whatsapp_account_name}
+                      </p>
+                    )}
                   </div>
                 </button>
               )
@@ -290,18 +384,20 @@ function ConversationList({
   )
 }
 
-/* ── Chat panel ────────────────────────────────────────────────── */
+/* -- Chat panel ---------------------------------------------------------- */
 
 function ChatPanel({
   phoneNumber,
   entityName,
+  accountId,
   onBack,
 }: {
   phoneNumber: string
   entityName?: string
+  accountId?: number
   onBack: () => void
 }) {
-  const { data, isLoading, isError } = useConversationMessages(phoneNumber)
+  const { data, isLoading, isError } = useConversationMessages(phoneNumber, accountId)
   const sendMessage = useSendWhatsAppMessage()
   const uploadMedia = useUploadWhatsAppMedia()
   const queryClient = useQueryClient()
@@ -345,9 +441,10 @@ function ChatPanel({
         content_type: contentType,
         media_url: mediaUrl,
         mime_type: mimeType,
+        account_id: accountId,
       })
       queryClient.invalidateQueries({
-        queryKey: ["whatsapp-conversation-messages", phoneNumber],
+        queryKey: ["whatsapp-conversation-messages", phoneNumber, accountId],
       })
       queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations"] })
     } catch {
@@ -386,16 +483,17 @@ function ChatPanel({
           content_type: "sticker",
           media_url: sticker.mediaPath,
           mime_type: "image/webp",
+          account_id: accountId,
         })
         queryClient.invalidateQueries({
-          queryKey: ["whatsapp-conversation-messages", phoneNumber],
+          queryKey: ["whatsapp-conversation-messages", phoneNumber, accountId],
         })
         queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations"] })
       } catch {
         // Error surfaced via mutation state
       }
     },
-    [phoneNumber, sendMessage, queryClient]
+    [phoneNumber, accountId, sendMessage, queryClient]
   )
 
   const handleVoiceSend = useCallback(
@@ -407,20 +505,21 @@ function ChatPanel({
         content_type: "audio",
         media_url: uploaded.media_url,
         mime_type: uploaded.mime_type,
+        account_id: accountId,
       })
       queryClient.invalidateQueries({
-        queryKey: ["whatsapp-conversation-messages", phoneNumber],
+        queryKey: ["whatsapp-conversation-messages", phoneNumber, accountId],
       })
       queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations"] })
     },
-    [phoneNumber, sendMessage, uploadMedia, queryClient]
+    [phoneNumber, accountId, sendMessage, uploadMedia, queryClient]
   )
 
   const hasContent = input.trim() || attachment
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Header ─────────────────────────────────────────── */}
+      {/* Header */}
       <div className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
         <Button
           variant="ghost"
@@ -449,7 +548,7 @@ function ChatPanel({
         </div>
       </div>
 
-      {/* ── Messages ───────────────────────────────────────── */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 bg-muted/30">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -595,7 +694,7 @@ function ChatPanel({
         )}
       </div>
 
-      {/* ── Input area ─────────────────────────────────────── */}
+      {/* Input area */}
       <div className="border-t bg-background px-3 py-2 space-y-2">
         {sendMessage.isError && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs">
@@ -705,15 +804,17 @@ function ChatPanel({
   )
 }
 
-/* ── Main page ─────────────────────────────────────────────────── */
+/* -- Main page ----------------------------------------------------------- */
 
 export default function WhatsAppPage() {
-  const { data: settings, isLoading: settingsLoading } = useWhatsAppSettings()
+  const { data: accounts, isLoading: settingsLoading } = useWhatsAppSettings()
+  const [selectedAccountId, setSelectedAccountId] = useState<number | undefined>(undefined)
   const { data: conversationsData, isLoading: convsLoading } =
-    useWhatsAppConversations()
+    useWhatsAppConversations(selectedAccountId)
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
+  const enabledAccounts = (accounts ?? []).filter((a) => a.enabled)
   const conversations = conversationsData?.results ?? []
   const selectedConv = conversations.find(
     (c) => c.phone_number === selectedPhone
@@ -727,7 +828,7 @@ export default function WhatsAppPage() {
     )
   }
 
-  if (!settings?.enabled) {
+  if (enabledAccounts.length === 0) {
     return (
       <div className="flex items-center justify-center h-[calc(100svh-4rem)]">
         <div className="flex flex-col items-center gap-4 text-center px-4">
@@ -753,7 +854,7 @@ export default function WhatsAppPage() {
 
   return (
     <div className="h-[calc(100svh-4rem)] flex">
-      {/* ── Sidebar: conversation list ───────────────────── */}
+      {/* Sidebar: conversation list */}
       <div
         className={cn(
           "w-full md:w-[340px] lg:w-[380px] shrink-0 border-r flex flex-col bg-background",
@@ -764,12 +865,22 @@ export default function WhatsAppPage() {
         <div className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
           <MessageCircle className="size-5 text-primary" />
           <h1 className="text-base font-semibold">Messages</h1>
-          <Badge
-            variant="secondary"
-            className="ml-auto text-xs tabular-nums"
-          >
-            {conversations.length}
-          </Badge>
+          <div className="ml-auto flex items-center gap-2">
+            <AccountSelector
+              accounts={enabledAccounts}
+              selectedId={selectedAccountId}
+              onSelect={(id) => {
+                setSelectedAccountId(id)
+                setSelectedPhone(null)
+              }}
+            />
+            <Badge
+              variant="secondary"
+              className="text-xs tabular-nums"
+            >
+              {conversations.length}
+            </Badge>
+          </div>
         </div>
 
         <ConversationList
@@ -782,7 +893,7 @@ export default function WhatsAppPage() {
         />
       </div>
 
-      {/* ── Main: chat area ──────────────────────────────── */}
+      {/* Main: chat area */}
       <div
         className={cn(
           "flex-1 flex flex-col bg-background",
@@ -793,6 +904,7 @@ export default function WhatsAppPage() {
           <ChatPanel
             phoneNumber={selectedPhone}
             entityName={selectedConv?.entity_name || undefined}
+            accountId={selectedAccountId ?? selectedConv?.whatsapp_account_id ?? undefined}
             onBack={() => setSelectedPhone(null)}
           />
         ) : (

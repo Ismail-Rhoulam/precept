@@ -16,7 +16,8 @@ import { ActivityTimeline } from "@/components/activities/ActivityTimeline"
 import { ProductLineItems } from "@/components/products/ProductLineItems"
 import { SLABadge } from "@/components/sla/SLABadge"
 import WhatsAppChat from "@/components/telephony/WhatsAppChat"
-import { useWhatsAppSettings } from "@/hooks/useIntegrations"
+import EmailChat from "@/components/email/EmailChat"
+import { useWhatsAppSettings, useEmailAccounts } from "@/hooks/useIntegrations"
 import type { DealCreate } from "@/types/deal"
 
 import { Badge } from "@/components/ui/badge"
@@ -86,6 +87,7 @@ export default function DealDetailPage() {
   const updateDeal = useUpdateDeal()
   const deleteDeal = useDeleteDeal()
   const { data: whatsAppSettings } = useWhatsAppSettings()
+  const { data: emailAccounts } = useEmailAccounts()
 
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -677,11 +679,20 @@ export default function DealDetailPage() {
       <ActivityTimeline entityType="deal" entityId={dealId} />
 
       {/* WhatsApp Chat */}
-      {whatsAppSettings?.enabled && deal.mobile_no && (
+      {whatsAppSettings?.some((a) => a.enabled) && deal.mobile_no && (
         <WhatsAppChat
           entityType="deal"
           entityId={dealId}
           phoneNumber={deal.mobile_no}
+        />
+      )}
+
+      {/* Email Chat */}
+      {emailAccounts?.some((a) => a.enabled) && deal.email && (
+        <EmailChat
+          entityType="deal"
+          entityId={dealId}
+          emailAddress={deal.email}
         />
       )}
     </div>

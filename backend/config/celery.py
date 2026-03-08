@@ -45,4 +45,19 @@ app.conf.beat_schedule = {
         "schedule": crontab(hour=2, minute=0),
         "args": ("Daily",),
     },
+    "sync-email-5min": {
+        "task": "apps.integrations.tasks.sync_email_inboxes",
+        "schedule": crontab(minute="*/5"),
+        "args": ("Every 5 minutes",),
+    },
+    "sync-email-15min": {
+        "task": "apps.integrations.tasks.sync_email_inboxes",
+        "schedule": crontab(minute="*/15"),
+        "args": ("Every 15 minutes",),
+    },
+    "sync-email-hourly": {
+        "task": "apps.integrations.tasks.sync_email_inboxes",
+        "schedule": crontab(minute=0),
+        "args": ("Hourly",),
+    },
 }

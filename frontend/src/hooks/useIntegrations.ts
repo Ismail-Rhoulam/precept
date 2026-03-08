@@ -6,6 +6,7 @@ import type {
   WhatsAppSettings,
   TelephonyAgent,
   LeadSyncSource,
+  EmailAccount,
   CRMSettingsData,
 } from "@/types/integration"
 
@@ -60,11 +61,11 @@ export function useWhatsAppSettings() {
   })
 }
 
-export function useSaveWhatsAppSettings() {
+export function useCreateWhatsAppAccount() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: Partial<WhatsAppSettings>) =>
-      integrationsApi.saveWhatsAppSettings(data),
+      integrationsApi.createWhatsAppAccount(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-settings"] })
       queryClient.invalidateQueries({ queryKey: ["integration-status"] })
@@ -72,17 +73,40 @@ export function useSaveWhatsAppSettings() {
   })
 }
 
-export function useWhatsAppConversations() {
-  return useQuery({
-    queryKey: ["whatsapp-conversations"],
-    queryFn: () => integrationsApi.getWhatsAppConversations(),
+export function useUpdateWhatsAppAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<WhatsAppSettings> }) =>
+      integrationsApi.updateWhatsAppAccount(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-settings"] })
+      queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+    },
   })
 }
 
-export function useConversationMessages(phoneNumber: string) {
+export function useDeleteWhatsAppAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => integrationsApi.deleteWhatsAppAccount(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-settings"] })
+      queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+    },
+  })
+}
+
+export function useWhatsAppConversations(accountId?: number) {
   return useQuery({
-    queryKey: ["whatsapp-conversation-messages", phoneNumber],
-    queryFn: () => integrationsApi.getConversationMessages(phoneNumber),
+    queryKey: ["whatsapp-conversations", accountId],
+    queryFn: () => integrationsApi.getWhatsAppConversations(1, accountId),
+  })
+}
+
+export function useConversationMessages(phoneNumber: string, accountId?: number) {
+  return useQuery({
+    queryKey: ["whatsapp-conversation-messages", phoneNumber, accountId],
+    queryFn: () => integrationsApi.getConversationMessages(phoneNumber, 1, accountId),
     enabled: !!phoneNumber,
   })
 }
@@ -104,6 +128,7 @@ export function useSendWhatsAppMessage() {
       content_type?: string
       media_url?: string
       mime_type?: string
+      account_id?: number
       entity_type?: string
       entity_id?: number
     }) => integrationsApi.sendWhatsAppMessage(data),
@@ -216,6 +241,139 @@ export function useDeleteAgent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["telephony-agents"] })
     },
+  })
+}
+
+// --- Email ---
+
+export function useEmailAccounts() {
+  return useQuery({
+    queryKey: ["email-accounts"],
+    queryFn: () => integrationsApi.getEmailAccounts(),
+  })
+}
+
+export function useCreateEmailAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<EmailAccount>) =>
+      integrationsApi.createEmailAccount(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+    },
+  })
+}
+
+export function useUpdateEmailAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<EmailAccount> }) =>
+      integrationsApi.updateEmailAccount(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+    },
+  })
+}
+
+export function useDeleteEmailAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => integrationsApi.deleteEmailAccount(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
+      queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+    },
+  })
+}
+
+export function useTestEmailConnection() {
+  return useMutation({
+    mutationFn: ({ id, testType }: { id: number; testType: string }) =>
+      integrationsApi.testEmailConnection(id, testType),
+  })
+}
+
+// --- Email Compose & Messages ---
+
+export function useEntityEmails(entityType: string, entityId: number) {
+  return useQuery({
+    queryKey: ["email-messages", entityType, entityId],
+    queryFn: () => integrationsApi.getEntityEmails(entityType, entityId),
+    enabled: !!entityType && !!entityId,
+  })
+}
+
+export function useComposeEmail() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: {
+      to_emails: string[]
+      cc_emails?: string[]
+      bcc_emails?: string[]
+      subject?: string
+      body_html?: string
+      body_text?: string
+      account_id?: number
+      entity_type?: string
+      entity_id?: number
+      in_reply_to_id?: number
+      attachment_ids?: number[]
+    }) => integrationsApi.composeEmail(data),
+    onSuccess: (_data, variables) => {
+      if (variables.entity_type && variables.entity_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["email-messages", variables.entity_type, variables.entity_id],
+        })
+      }
+      queryClient.invalidateQueries({ queryKey: ["email-threads"] })
+    },
+  })
+}
+
+export function useUploadEmailAttachment() {
+  return useMutation({
+    mutationFn: (file: File) => integrationsApi.uploadEmailAttachment(file),
+  })
+}
+
+export function useEmailThreads(accountId?: number) {
+  return useQuery({
+    queryKey: ["email-threads", accountId],
+    queryFn: () => integrationsApi.getEmailThreads(1, accountId),
+  })
+}
+
+export function useThreadMessages(threadId: string, accountId?: number) {
+  return useQuery({
+    queryKey: ["email-thread-messages", threadId, accountId],
+    queryFn: () => integrationsApi.getThreadMessages(threadId, 1, accountId),
+    enabled: !!threadId,
+  })
+}
+
+export function useTriggerEmailSync() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (accountId: number) => integrationsApi.triggerEmailSync(accountId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-threads"] })
+    },
+  })
+}
+
+export function useBuiltinSmtpStatus() {
+  return useQuery({
+    queryKey: ["builtin-smtp-status"],
+    queryFn: () => integrationsApi.getBuiltinSmtpStatus(),
+  })
+}
+
+export function useDkimRecord() {
+  return useQuery({
+    queryKey: ["dkim-record"],
+    queryFn: () => integrationsApi.getDkimRecord(),
   })
 }
 

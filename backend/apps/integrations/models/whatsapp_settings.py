@@ -7,6 +7,8 @@ from apps.core.models.mixins import TenantMixin, TimestampMixin
 
 class WhatsAppSettings(TenantMixin):
     enabled = models.BooleanField(default=False)
+    display_name = models.CharField(max_length=255, blank=True)
+    is_default = models.BooleanField(default=False)
     phone_number_id = models.CharField(max_length=255, blank=True)
     access_token = models.CharField(max_length=512, blank=True)
     business_account_id = models.CharField(max_length=255, blank=True)
@@ -15,9 +17,11 @@ class WhatsAppSettings(TenantMixin):
 
     class Meta:
         db_table = "integration_whatsapp_settings"
+        unique_together = [("company", "phone_number_id")]
 
     def __str__(self):
-        return f"WhatsAppSettings (company={self.company_id})"
+        name = self.display_name or self.phone_number_id or self.company_id
+        return f"WhatsAppSettings ({name})"
 
 
 class WhatsAppMessage(TenantMixin, TimestampMixin):
@@ -43,6 +47,13 @@ class WhatsAppMessage(TenantMixin, TimestampMixin):
     media_url = models.CharField(max_length=512, blank=True)
     mime_type = models.CharField(max_length=128, blank=True)
     reply_to = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
+    whatsapp_account = models.ForeignKey(
+        "integrations.WhatsAppSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="messages",
+    )
 
     # Generic FK to link to Lead/Deal
     content_type_fk = models.ForeignKey(

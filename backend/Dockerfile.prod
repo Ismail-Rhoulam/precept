@@ -38,7 +38,7 @@ COPY --from=builder /usr/local/bin/celery /usr/local/bin/celery
 COPY --from=builder /usr/local/bin/daphne /usr/local/bin/daphne
 COPY --from=builder /app /app
 
-RUN mkdir -p /app/media/whatsapp && chown -R app:app /app
+RUN mkdir -p /app/media/whatsapp /app/media/email_attachments && chown -R app:app /app
 USER app
 
 EXPOSE 8000

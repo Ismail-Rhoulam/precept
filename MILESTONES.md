@@ -1,6 +1,6 @@
-# Precept CRM — Milestones
+# Precept — Milestones
 
-Track of every completed task during the build of Precept CRM.
+Track of every completed task during the build of Precept.
 
 ---
 

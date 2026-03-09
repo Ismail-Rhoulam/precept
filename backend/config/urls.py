@@ -15,7 +15,7 @@ from apps.integrations.api.router import router as integrations_router
 from apps.settings.api.router import router as settings_router
 
 api = NinjaAPI(
-    title="Precept CRM API",
+    title="Precept API",
     version="0.1.0",
     auth=JWTAuth(),
     docs_url="/docs",

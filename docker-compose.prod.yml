@@ -64,7 +64,7 @@ services:
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media
-      - dkim_keys:/etc/opendkim/keys:ro
+      - dkim_keys:/etc/opendkim/keys
     healthcheck:
       test: ["CMD-SHELL", "python -c 'import socket; s=socket.create_connection((\"localhost\",8000),2); s.close()'"]
       interval: 10s

@@ -25,12 +25,12 @@ export default function AuthLayout({
           >
             <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
           </svg>
-          Precept CRM
+          Precept
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;Precept CRM has transformed how we manage our customer relationships.
+              &ldquo;Precept has transformed how we manage our customer relationships.
               The intuitive interface and powerful features help us close deals faster than ever.&rdquo;
             </p>
             <footer className="text-sm text-brand-white/60">— Happy Customer</footer>

@@ -1,4 +1,4 @@
-# Precept CRM: Django + Next.js (Inspired by Frappe CRM)
+# Precept: Django + Next.js (Inspired by Frappe CRM)
 
 ## Context
 

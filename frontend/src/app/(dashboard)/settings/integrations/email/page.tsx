@@ -17,6 +17,8 @@ import {
   X,
   CheckCircle2,
   XCircle,
+  Copy,
+  Check,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -27,6 +29,7 @@ import {
   useTestEmailConnection,
   useBuiltinSmtpStatus,
   useDkimRecord,
+  useVerifyDns,
 } from "@/hooks/useIntegrations"
 import type { EmailAccount } from "@/types/integration"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -143,6 +146,33 @@ function PasswordField({
   )
 }
 
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="shrink-0 text-muted-foreground hover:text-foreground"
+      title={`Copy ${label}`}
+    >
+      {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+    </button>
+  )
+}
+
+function DnsStatusBadge({ status }: { status?: "verified" | "pending" | "error" }) {
+  if (status === "verified")
+    return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-[10px] px-1.5 py-0">Verified</Badge>
+  if (status === "error")
+    return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Error</Badge>
+  return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Pending</Badge>
+}
+
 function BuiltinSmtpInfo({
   mailDomain,
   onMailDomainChange,
@@ -153,7 +183,52 @@ function BuiltinSmtpInfo({
   const { data: status } = useBuiltinSmtpStatus()
   const { data: dkim } = useDkimRecord()
   const [showDns, setShowDns] = useState(false)
+  const [dnsCheckActive, setDnsCheckActive] = useState(false)
+  const { data: dnsStatus, isFetching: dnsChecking, refetch: recheckDns } = useVerifyDns(dnsCheckActive)
   const displayDomain = mailDomain || "yourdomain.com"
+
+  const dkimRecords = dkim?.records || []
+  const dkim1 = dkimRecords[0]
+  const dkim2 = dkimRecords[1]
+
+  const allVerified =
+    dnsStatus?.spf === "verified" &&
+    dnsStatus?.dkim1 === "verified" &&
+    dnsStatus?.dkim2 === "verified" &&
+    dnsStatus?.dmarc === "verified"
+
+  const dnsRows = [
+    {
+      label: "SPF",
+      type: "TXT",
+      name: "@",
+      value: `v=spf1 a mx${status?.server_ip ? ` ip4:${status.server_ip}` : ""} -all`,
+      status: dnsStatus?.spf,
+    },
+    {
+      label: "DKIM 1",
+      type: "TXT",
+      name: dkim1?.dns_name || `mail._domainkey.${displayDomain}`,
+      value: dkim1?.record || "",
+      error: dkim1?.error,
+      status: dnsStatus?.dkim1,
+    },
+    {
+      label: "DKIM 2",
+      type: "TXT",
+      name: dkim2?.dns_name || `mail2._domainkey.${displayDomain}`,
+      value: dkim2?.record || "",
+      error: dkim2?.error,
+      status: dnsStatus?.dkim2,
+    },
+    {
+      label: "DMARC",
+      type: "TXT",
+      name: `_dmarc.${displayDomain}`,
+      value: `v=DMARC1; p=none; rua=mailto:rua@${displayDomain}`,
+      status: dnsStatus?.dmarc,
+    },
+  ]
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
@@ -197,47 +272,87 @@ function BuiltinSmtpInfo({
       </Button>
       {showDns && (
         <div className="space-y-3 pt-2 text-xs">
-          <p className="font-medium text-foreground">
-            Add these DNS records to your domain:
-          </p>
-          {/* SPF */}
-          <div className="space-y-1">
-            <p className="font-medium">1. SPF Record (TXT)</p>
-            <p className="text-muted-foreground">
-              Name: <span className="font-mono">@</span> (root domain)
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-foreground">
+              Add these DNS records to your domain:
             </p>
-            <code className="block bg-muted rounded px-2 py-1 text-[11px] break-all">
-              v=spf1 a mx ip4:YOUR_SERVER_IP -all
-            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDnsCheckActive(true)
+                recheckDns()
+              }}
+              disabled={dnsChecking}
+              className="h-7 text-xs"
+            >
+              {dnsChecking ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <CheckCircle2 className="size-3" />
+              )}
+              {dnsChecking ? "Checking..." : "Re-check DNS"}
+            </Button>
           </div>
-          {/* DKIM */}
-          <div className="space-y-1">
-            <p className="font-medium">2. DKIM Record (TXT)</p>
-            {dkim?.record ? (
-              <>
-                <p className="text-muted-foreground">
-                  Name: <span className="font-mono">{dkim.dns_name || `${dkim.selector}._domainkey.${dkim.domain}`}</span>
-                </p>
-                <code className="block bg-muted rounded px-2 py-1 text-[11px] break-all">
-                  {dkim.record}
-                </code>
-              </>
-            ) : (
-              <p className="text-muted-foreground italic">
-                {dkim?.error || "Save the account and restart the Postfix container to generate the DKIM key."}
-              </p>
-            )}
+
+          {allVerified && (
+            <Alert className="border-green-200 bg-green-50 text-green-700">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>All DNS records are verified. Your domain is ready to send email.</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="rounded-lg border border-border overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Record</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Type</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Name</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Value</th>
+                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dnsRows.map((row) => (
+                  <tr key={row.label} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2 font-medium whitespace-nowrap">{row.label}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono">{row.name}</span>
+                        <CopyButton text={row.name} label="name" />
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 max-w-[300px]">
+                      {row.value ? (
+                        <div className="flex items-start gap-1">
+                          <code className="bg-muted rounded px-1.5 py-0.5 break-all leading-relaxed">
+                            {row.value}
+                          </code>
+                          <CopyButton text={row.value} label="value" />
+                        </div>
+                      ) : (
+                        <span className="italic text-muted-foreground">
+                          {row.error || "Key not generated yet"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <DnsStatusBadge status={row.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          {/* DMARC */}
-          <div className="space-y-1">
-            <p className="font-medium">3. DMARC Record (TXT)</p>
+
+          {dnsCheckActive && !allVerified && dnsStatus && !dnsChecking && (
             <p className="text-muted-foreground">
-              Name: <span className="font-mono">_dmarc.{displayDomain}</span>
+              Polling every 10 seconds until all records are verified...
             </p>
-            <code className="block bg-muted rounded px-2 py-1 text-[11px] break-all">
-              v=DMARC1; p=none; rua=mailto:postmaster@{displayDomain}
-            </code>
-          </div>
+          )}
         </div>
       )}
     </div>

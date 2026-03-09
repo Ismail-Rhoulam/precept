@@ -4,11 +4,14 @@ set -e
 CONFIG_FILE="/etc/opendkim/keys/postfix_config.json"
 DKIM_SELECTOR="${DKIM_SELECTOR:-mail}"
 
+# ── Ensure the shared volume is writable by the backend (uid 100) ──
+chmod 777 /etc/opendkim/keys
+
 # ── Resolve mail domain: config file (set by Django) → env var → wait ──
 resolve_domain() {
     # Try the config file written by Django when user sets domain in UI
     if [ -f "$CONFIG_FILE" ]; then
-        domain=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE')).get('mail_domain',''))" 2>/dev/null || true)
+        domain=$(sed -n 's/.*"mail_domain"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFIG_FILE" 2>/dev/null || true)
         if [ -n "$domain" ]; then
             echo "$domain"
             return
@@ -35,18 +38,23 @@ if [ -z "$MAIL_DOMAIN" ]; then
 fi
 
 DKIM_KEY_DIR="/etc/opendkim/keys/${MAIL_DOMAIN}"
+DKIM_SELECTOR2="mail2"
 
-# ── Generate DKIM key if not present ──
+# ── Generate DKIM keys (2 selectors for rotation) ──
 mkdir -p "$DKIM_KEY_DIR"
-if [ ! -f "${DKIM_KEY_DIR}/${DKIM_SELECTOR}.private" ]; then
-    echo "Generating DKIM key for ${MAIL_DOMAIN} (selector: ${DKIM_SELECTOR})..."
-    opendkim-genkey -b 2048 -d "$MAIL_DOMAIN" -D "$DKIM_KEY_DIR" -s "$DKIM_SELECTOR" -v
-    chown -R opendkim:opendkim /etc/opendkim/keys
-fi
+for sel in "$DKIM_SELECTOR" "$DKIM_SELECTOR2"; do
+    if [ ! -f "${DKIM_KEY_DIR}/${sel}.private" ]; then
+        echo "Generating DKIM key for ${MAIL_DOMAIN} (selector: ${sel})..."
+        opendkim-genkey -b 2048 -d "$MAIL_DOMAIN" -D "$DKIM_KEY_DIR" -s "$sel" -v
+    fi
+done
+chown -R opendkim:opendkim "$DKIM_KEY_DIR"
+chmod 644 "${DKIM_KEY_DIR}"/*.txt 2>/dev/null || true
 
-# ── OpenDKIM tables ──
+# ── OpenDKIM tables (both selectors, primary used for signing) ──
 cat > /etc/opendkim/KeyTable <<EOF
 ${DKIM_SELECTOR}._domainkey.${MAIL_DOMAIN} ${MAIL_DOMAIN}:${DKIM_SELECTOR}:${DKIM_KEY_DIR}/${DKIM_SELECTOR}.private
+${DKIM_SELECTOR2}._domainkey.${MAIL_DOMAIN} ${MAIL_DOMAIN}:${DKIM_SELECTOR2}:${DKIM_KEY_DIR}/${DKIM_SELECTOR2}.private
 EOF
 
 cat > /etc/opendkim/SigningTable <<EOF

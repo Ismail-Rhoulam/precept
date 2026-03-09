@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "precept-crm"
 version = "0.1.0"
-description = "Precept CRM — Django + Next.js CRM"
+description = "Precept — Django + Next.js CRM"
 requires-python = ">=3.12"
 dependencies = [
     "django>=5.1,<5.2",
@@ -23,6 +23,7 @@ dependencies = [
     "phonenumbers>=8.13,<9",
     "twilio>=8.5,<9",
     "gunicorn>=22,<23",
+    "dnspython>=2.6,<3",
 ]
 
 [project.optional-dependencies]

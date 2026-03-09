@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     opendkim \
     opendkim-tools \
     ca-certificates \
-    python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.sh /entrypoint.sh

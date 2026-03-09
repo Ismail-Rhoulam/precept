@@ -1,5 +1,5 @@
 """
-Database router for Precept CRM multi-schema layout.
+Database router for Precept multi-schema layout.
 
 - Business models → 'default' database (precept schema)
 - Django internals (migrations, content types, admin log) → 'infra' database (infra schema)

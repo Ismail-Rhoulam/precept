@@ -183,7 +183,7 @@ export default function SetupPage() {
         >
           <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
         </svg>
-        <span className="text-lg font-medium">Precept CRM</span>
+        <span className="text-lg font-medium">Precept</span>
       </div>
 
       {/* Step indicator */}
@@ -303,7 +303,7 @@ export default function SetupPage() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This will be the name of your workspace in Precept CRM
+                  This will be the name of your workspace in Precept
                 </p>
               </motion.div>
             )}

@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-03-09 — Fix DKIM key generation: volume permissions, sed parsing, dual keys
+
+Fixed three issues preventing DKIM keys from being generated and displayed in the DNS Setup panel.
+
+### Docker — Postfix Container
+
+- **`docker/postfix/entrypoint.sh`** — Three fixes:
+  - Added `chmod 777 /etc/opendkim/keys` at startup so the backend user (uid 100) can write `postfix_config.json` to the shared volume.
+  - Replaced `python3 -c "import json; ..."` config parsing with `sed` — the `python3-minimal` package in the container lacks the `json` module, causing `resolve_domain()` to silently return empty and Postfix to poll forever.
+  - Changed `chown -R opendkim:opendkim /etc/opendkim/keys` (which removed write perms on the volume root) to only chown the domain subdirectory. Added `chmod 644` on `.txt` public key files so the backend can read them.
+- **`docker/postfix/Dockerfile`** — Removed `python3-minimal` from apt packages (no longer needed since config parsing uses `sed`).
+
+### Docker Compose
+
+- **`docker-compose.prod.yml`** / **`docker-compose.yml`** — Removed `:ro` from the backend `dkim_keys` volume mount. The backend needs read-write access to write `postfix_config.json` when a builtin email account is created.
+
+### Frontend — Hooks
+
+- **`hooks/useIntegrations.ts`** — `useCreateEmailAccount` and `useUpdateEmailAccount` now invalidate `dkim-record` and `builtin-smtp-status` queries after a 15-second delay, allowing Postfix time to detect the config and generate keys before the UI refetches.
+
+### Documentation
+
+- **`backend/apps/integrations/MAILING.md`** — Updated configuration flow (chmod, sed, dual keys, verify-dns step), Docker services table (no python3, sed-based parsing, chmod), and volume mount description (read-write).
+
+---
+
+## 2026-03-08 — Dual DKIM Key Rotation & DNS Verification
+
+Enhanced the built-in SMTP integration with dual DKIM key rotation for improved deliverability and a live DNS verification system so users can confirm their records are correctly published.
+
+### Docker — Postfix Container
+
+- **`docker/postfix/entrypoint.sh`** — Now generates **two** 2048-bit DKIM key pairs on startup (selectors `mail` and `mail2`) in a loop. Both selectors are registered in the OpenDKIM `KeyTable`; the primary selector (`mail`) is used for signing via `SigningTable`. The second key is available for DNS publication and future rotation.
+
+### Backend — API
+
+- **`apps/integrations/api/email.py`** — Refactored DKIM record reading:
+  - Extracted `_read_dkim_record()` helper to parse a single DKIM `.txt` file from the shared volume.
+  - `GET /dkim-record` now returns `{records: [{selector, domain, dns_name, record}, ...]}` with both `mail` and `mail2` selectors (was single record).
+  - Added `GET /verify-dns` endpoint that performs live DNS lookups (via `dnspython`) for SPF, DKIM1, DKIM2, and DMARC TXT records, returning per-record status: `verified` / `pending` / `error`.
+- **`backend/pyproject.toml`** — Added `dnspython>=2.6,<3` dependency.
+
+### Frontend — Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — Redesigned the DNS Setup panel:
+  - Replaced inline `DnsRecord` component with a structured DNS table showing all 4 records (SPF, DKIM 1, DKIM 2, DMARC) with Record/Type/Name/Value/Status columns.
+  - Added `CopyButton` component for copying Name and Value fields.
+  - Added `DnsStatusBadge` component showing `Pending` / `Verified` / `Error` per record.
+  - Added "Re-check DNS" button that triggers `GET /verify-dns` and auto-polls every 10 seconds until all records are verified.
+  - Shows success alert when all 4 records are verified.
+
+### Frontend — API & Hooks
+
+- **`lib/api/integrations.ts`** — Updated `getDkimRecord()` return type to `{records: [...]}`. Added `verifyDns()` API method.
+- **`hooks/useIntegrations.ts`** — Added `useVerifyDns(enabled)` hook with `refetchInterval` that polls every 10s and stops when all records are verified.
+
+### Documentation
+
+- **`backend/apps/integrations/MAILING.md`** — Updated shared volume diagram (2 key pairs), API table (new `/verify-dns` endpoint), DNS setup section (4 records), DNS verification docs, and hooks table.
+
+---
+
 ## 2026-03-08 — Built-in SMTP Server (Self-hosted Postfix with DKIM)
 
 Added the option to send emails through a self-hosted Postfix container instead of requiring an external SMTP relay. The built-in mode auto-generates DKIM keys for email authentication and exposes DNS setup guidance in the UI.
@@ -9,7 +71,7 @@ Added the option to send emails through a self-hosted Postfix container instead 
 - **`docker/postfix/Dockerfile`** — New container image: Ubuntu 22.04 + Postfix + OpenDKIM + opendkim-tools. Exposes port 25 internally (Docker network only).
 - **`docker/postfix/entrypoint.sh`** — Reads mail domain from shared config file (`postfix_config.json` written by Django) or falls back to `MAIL_DOMAIN` env var. Polls every 10s if no domain configured yet. Auto-generates 2048-bit DKIM key, writes OpenDKIM tables (KeyTable, SigningTable, TrustedHosts), configures Postfix `main.cf` with Docker-internal `mynetworks`, opportunistic outbound TLS, and DKIM milter.
 - **`docker/postfix/opendkim.conf`** — OpenDKIM base config: relaxed/simple canonicalization, sv mode, socket `inet:8891@localhost`.
-- **`docker-compose.yml`** / **`docker-compose.prod.yml`** — Added `postfix` service with `dkim_keys` named volume. Volume mounted read-write on Postfix, read-only on backend/celery-worker for DKIM record access. Added `POSTFIX_HOST=postfix` and `POSTFIX_PORT=25` env vars to backend and celery services.
+- **`docker-compose.yml`** / **`docker-compose.prod.yml`** — Added `postfix` service with `dkim_keys` named volume. Volume mounted read-write on both Postfix and backend (backend writes config, reads DKIM public keys). Added `POSTFIX_HOST=postfix` and `POSTFIX_PORT=25` env vars to backend and celery services.
 
 ### Backend — Model
 

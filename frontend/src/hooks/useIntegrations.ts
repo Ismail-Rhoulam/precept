@@ -261,6 +261,11 @@ export function useCreateEmailAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
       queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+      // Refetch DKIM records after a delay (Postfix needs ~10s to pick up config and generate keys)
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
+        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
+      }, 15_000)
     },
   })
 }
@@ -273,6 +278,10 @@ export function useUpdateEmailAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
       queryClient.invalidateQueries({ queryKey: ["integration-status"] })
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
+        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
+      }, 15_000)
     },
   })
 }
@@ -374,6 +383,24 @@ export function useDkimRecord() {
   return useQuery({
     queryKey: ["dkim-record"],
     queryFn: () => integrationsApi.getDkimRecord(),
+  })
+}
+
+export function useVerifyDns(enabled: boolean = false) {
+  return useQuery({
+    queryKey: ["verify-dns"],
+    queryFn: () => integrationsApi.verifyDns(),
+    enabled,
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data) return false
+      const allVerified =
+        data.spf === "verified" &&
+        data.dkim1 === "verified" &&
+        data.dkim2 === "verified" &&
+        data.dmarc === "verified"
+      return allVerified ? false : 10_000
+    },
   })
 }
 

@@ -6,13 +6,13 @@ import { Providers } from "./providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Precept CRM",
+  title: "Precept",
   description: "Modern CRM built with Django + Next.js",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Precept CRM",
+    title: "Precept",
   },
   other: {
     "theme-color": "#7e3bed",
@@ -31,7 +31,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#7e3bed" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Precept CRM" />
+        <meta name="apple-mobile-web-app-title" content="Precept" />
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>

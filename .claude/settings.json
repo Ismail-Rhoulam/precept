@@ -184,7 +184,18 @@
       "Bash(cat /opt/frappe_docker/precept/frontend/src/app/'\\(dashboard\\)'/settings/integrations/exotel/page.tsx)",
       "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/settings/integrations/)",
       "Bash(ls /opt/frappe_docker/precept/frontend/src/app/\\\\\\(dashboard\\\\\\)/email/)",
-      "Bash(python3 manage.py makemigrations integrations --name email_integration)"
+      "Bash(python3 manage.py makemigrations integrations --name email_integration)",
+      "Bash(pip install \"dnspython>=2.6,<3\" -q)",
+      "Bash(pip install \"dnspython>=2.6,<3\" --break-system-packages -q)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml logs postfix --tail 20)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec backend ls -la /etc/opendkim/keys/)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec backend id)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec backend stat -c '%U:%G %a' /etc/opendkim/keys/)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix chmod 777 /etc/opendkim/keys)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix python3 --version)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix python3 -c \"import json; print\\(json.load\\(open\\(''/etc/opendkim/keys/postfix_config.json''\\)\\).get\\(''mail_domain'',''''\\)\\)\")",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix which jq)",
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix which sed)"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

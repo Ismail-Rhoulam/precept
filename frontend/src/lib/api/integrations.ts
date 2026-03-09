@@ -227,14 +227,26 @@ export const integrationsApi = {
     ),
 
   getBuiltinSmtpStatus: () =>
-    api.get<{ available: boolean; mail_domain: string }>(
+    api.get<{ available: boolean; mail_domain: string; server_ip: string }>(
       "/integrations/email/builtin-smtp-status"
     ),
 
   getDkimRecord: () =>
-    api.get<{ selector: string; domain: string; dns_name?: string; record: string; error?: string }>(
-      "/integrations/email/dkim-record"
-    ),
+    api.get<{
+      records: { selector: string; domain: string; dns_name: string; record: string; error?: string }[]
+      error?: string
+    }>("/integrations/email/dkim-record"),
+
+  verifyDns: () =>
+    api.get<{
+      spf: "verified" | "pending" | "error"
+      dkim1: "verified" | "pending" | "error"
+      dkim2: "verified" | "pending" | "error"
+      dmarc: "verified" | "pending" | "error"
+      mail_domain?: string
+      server_ip?: string
+      error?: string
+    }>("/integrations/email/verify-dns"),
 
   // CRM Settings
   getCRMSettings: () =>

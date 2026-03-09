@@ -210,33 +210,38 @@ def test_email_connection(request, account_id: int, payload: EmailAccountTestIn)
 # ---------------------------------------------------------------------------
 
 
+def _get_server_public_ip():
+    """Detect the server's public IPv4 address."""
+    try:
+        import urllib.request
+        return urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode().strip()
+    except Exception:
+        return ""
+
+
 @router.get("/builtin-smtp-status")
 def builtin_smtp_status(request):
     """Check if the built-in Postfix SMTP container is reachable."""
     host = os.environ.get("POSTFIX_HOST", "postfix")
     port = int(os.environ.get("POSTFIX_PORT", "25"))
     mail_domain = _get_builtin_mail_domain()
+    server_ip = _get_server_public_ip()
     try:
         s = socket.create_connection((host, port), timeout=3)
         s.close()
-        return {"available": True, "mail_domain": mail_domain}
+        return {"available": True, "mail_domain": mail_domain, "server_ip": server_ip}
     except Exception:
-        return {"available": False, "mail_domain": mail_domain}
+        return {"available": False, "mail_domain": mail_domain, "server_ip": server_ip}
 
 
-@router.get("/dkim-record")
-def get_dkim_record(request):
-    """Return the DKIM DNS TXT record for the configured mail domain."""
-    mail_domain = _get_builtin_mail_domain()
-    selector = os.environ.get("DKIM_SELECTOR", "mail")
-    if not mail_domain:
-        return {"selector": "", "domain": "", "record": "", "error": "Set a mail domain on a Built-in email account first."}
+def _read_dkim_record(mail_domain: str, selector: str) -> dict:
+    """Read a single DKIM public key file and return its parsed record."""
+    import re
 
     key_path = f"/etc/opendkim/keys/{mail_domain}/{selector}.txt"
     try:
         with open(key_path) as f:
             raw = f.read()
-        import re
         parts = re.findall(r'"([^"]*)"', raw)
         record_value = "".join(parts)
         return {
@@ -246,9 +251,82 @@ def get_dkim_record(request):
             "record": record_value,
         }
     except FileNotFoundError:
-        return {"selector": selector, "domain": mail_domain, "record": "", "error": "DKIM key not generated yet. Restart the Postfix container after setting the domain."}
+        return {
+            "selector": selector,
+            "domain": mail_domain,
+            "dns_name": f"{selector}._domainkey.{mail_domain}",
+            "record": "",
+            "error": "DKIM key not generated yet. Restart the Postfix container after setting the domain.",
+        }
     except Exception as e:
-        return {"selector": selector, "domain": mail_domain, "record": "", "error": str(e)}
+        return {
+            "selector": selector,
+            "domain": mail_domain,
+            "dns_name": f"{selector}._domainkey.{mail_domain}",
+            "record": "",
+            "error": str(e),
+        }
+
+
+@router.get("/dkim-record")
+def get_dkim_record(request):
+    """Return both DKIM DNS TXT records for the configured mail domain."""
+    mail_domain = _get_builtin_mail_domain()
+    if not mail_domain:
+        return {
+            "records": [],
+            "error": "Set a mail domain on a Built-in email account first.",
+        }
+
+    selectors = ["mail", "mail2"]
+    records = [_read_dkim_record(mail_domain, s) for s in selectors]
+    return {"records": records}
+
+
+@router.get("/verify-dns")
+def verify_dns(request):
+    """Check SPF, DKIM (x2), and DMARC DNS records for the configured mail domain."""
+    import dns.resolver
+
+    mail_domain = _get_builtin_mail_domain()
+    if not mail_domain:
+        return {"error": "No mail domain configured.", "spf": "error", "dkim1": "error", "dkim2": "error", "dmarc": "error"}
+
+    server_ip = _get_server_public_ip()
+
+    def _check_txt(name: str, must_contain: str) -> str:
+        """Return 'verified' if a TXT record containing must_contain exists, else 'pending'."""
+        try:
+            answers = dns.resolver.resolve(name, "TXT")
+            for rdata in answers:
+                txt = b"".join(rdata.strings).decode()
+                if must_contain in txt:
+                    return "verified"
+            return "pending"
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers):
+            return "pending"
+        except Exception:
+            return "error"
+
+    # SPF — look for v=spf1 containing our IP (or just v=spf1 if IP unknown)
+    spf_check = "v=spf1"
+    spf_status = _check_txt(mail_domain, spf_check)
+
+    # DKIM selectors
+    dkim1_status = _check_txt(f"mail._domainkey.{mail_domain}", "v=DKIM1")
+    dkim2_status = _check_txt(f"mail2._domainkey.{mail_domain}", "v=DKIM1")
+
+    # DMARC
+    dmarc_status = _check_txt(f"_dmarc.{mail_domain}", "v=DMARC1")
+
+    return {
+        "spf": spf_status,
+        "dkim1": dkim1_status,
+        "dkim2": dkim2_status,
+        "dmarc": dmarc_status,
+        "mail_domain": mail_domain,
+        "server_ip": server_ip,
+    }
 
 
 # ---------------------------------------------------------------------------

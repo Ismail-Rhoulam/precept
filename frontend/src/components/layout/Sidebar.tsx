@@ -80,7 +80,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center h-16 px-6">
-        <h1 className="text-xl font-bold text-primary">Precept CRM</h1>
+        <h1 className="text-xl font-bold text-primary">Precept</h1>
       </div>
 
       <Separator />

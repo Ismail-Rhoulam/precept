@@ -65,7 +65,7 @@ export default function LoginPage() {
         >
           <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
         </svg>
-        <span className="text-lg font-medium">Precept CRM</span>
+        <span className="text-lg font-medium">Precept</span>
       </div>
 
       <div className="flex flex-col space-y-2 text-center">

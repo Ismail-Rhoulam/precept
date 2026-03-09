@@ -1,5 +1,5 @@
 """
-Base Django settings for Precept CRM.
+Base Django settings for Precept.
 """
 import os
 from pathlib import Path

@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 import { useState } from "react"
 
+import { CustomPointer } from "@/components/ui/custom-pointer"
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -22,7 +24,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="system"
       enableSystem
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <CustomPointer />
+        {children}
+      </QueryClientProvider>
     </NextThemesProvider>
   )
 }

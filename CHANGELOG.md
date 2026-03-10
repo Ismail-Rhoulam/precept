@@ -10,13 +10,17 @@ Redesigned the sidebar navigation from a single flat list to a two-panel layout 
 
 ---
 
-## 2026-03-10 — Custom animated pointer on theme toggle
+## 2026-03-10 — Custom animated pointer cursor (global)
 
-Added an animated custom cursor to the theme toggle button using Framer Motion. When hovering over the Sun/Moon toggle, the default cursor is hidden and replaced with a secondary-colored pointer SVG that smoothly scales in/out.
+Replaced the default browser cursor with a custom animated pointer across the entire frontend. The pointer is a secondary-colored (violet) SVG arrow with a white stroke that smoothly scales in/out using Framer Motion.
 
-### Frontend — Theme Toggle
+### Frontend — New Component
 
-- **`components/ui/theme-toggle.tsx`** — Added `Pointer` component using `framer-motion` (`useMotionValue`, `AnimatePresence`, `motion.div`). Tracks mouse position via `mousemove`/`mouseenter`/`mouseleave` on the parent element, hides the native cursor, and renders a fixed-position animated SVG pointer styled with `text-secondary` (violet) fill and white stroke. Integrated as a child of the theme toggle `Button`.
+- **`components/ui/custom-pointer.tsx`** — New `CustomPointer` component using `framer-motion` (`useMotionValue`, `AnimatePresence`, `motion.div`). Listens to `mousemove`/`mouseleave` on `document`, hides the native cursor via `document.body.style.cursor = "none"`, and renders a fixed-position animated SVG pointer styled with `text-secondary` fill and white stroke.
+
+### Frontend — Providers
+
+- **`app/providers.tsx`** — Added `<CustomPointer />` inside the root providers so it is active on every page.
 
 ---
 

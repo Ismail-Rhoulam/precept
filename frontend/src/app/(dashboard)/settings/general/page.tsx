@@ -118,7 +118,7 @@ export default function GeneralSettingsPage() {
         </div>
       </div>
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-5xl">
         <CardContent className="p-6 space-y-5">
           {/* Brand Name */}
           <div className="space-y-2">

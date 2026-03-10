@@ -237,6 +237,12 @@ export const integrationsApi = {
       error?: string
     }>("/integrations/email/dkim-record"),
 
+  provisionDomain: (mailDomain: string) =>
+    api.post<{ status?: string; mail_domain?: string; error?: string }>(
+      "/integrations/email/provision-domain",
+      { mail_domain: mailDomain }
+    ),
+
   verifyDns: () =>
     api.get<{
       spf: "verified" | "pending" | "error"

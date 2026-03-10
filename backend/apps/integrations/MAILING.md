@@ -56,11 +56,11 @@ Shared volume: dkim_keys
 
 **Configuration flow:**
 1. User sets `smtp_mode = "builtin"` and enters `mail_domain` in the UI
-2. Django writes `postfix_config.json` to the shared `dkim_keys` volume (volume is `chmod 777` by the Postfix entrypoint on startup so the backend user can write)
+2. User clicks "Generate DKIM Keys" — calls `POST /provision-domain` which writes `postfix_config.json` to the shared `dkim_keys` volume (volume is `chmod 777` by the Postfix entrypoint on startup so the backend user can write). This can happen before the account is saved.
 3. Postfix entrypoint reads the config file via `sed` (polls every 10s if not yet available)
 4. Postfix generates both DKIM key pairs and starts accepting mail for that domain
-5. User retrieves DKIM public keys via `/dkim-record` endpoint and adds DNS records
-6. User clicks "Re-check DNS" to verify all 4 records (SPF, DKIM 1, DKIM 2, DMARC) via `/verify-dns`
+5. UI auto-refetches DKIM records after ~15 seconds and displays them in the DNS Setup table
+6. User adds DNS records and clicks "Re-check DNS" to verify all 4 records (SPF, DKIM 1, DKIM 2, DMARC) via `/verify-dns`
 
 Transport is Python stdlib only (`smtplib`, `imaplib`, `email.mime`). No external API dependencies.
 
@@ -219,6 +219,7 @@ All endpoints are under `/api/integrations/email/` and require authentication. T
 | Method   | Path                          | Description                                          |
 |----------|-------------------------------|------------------------------------------------------|
 | `GET`    | `/builtin-smtp-status`        | Check if Postfix is reachable, return `{available, mail_domain, server_ip}` |
+| `POST`   | `/provision-domain`           | Write mail domain to Postfix config to trigger DKIM key generation before account save |
 | `GET`    | `/dkim-record`                | Read both DKIM public keys, return `{records: [{selector, domain, dns_name, record}, ...]}` |
 | `GET`    | `/verify-dns`                 | Check SPF, DKIM1, DKIM2, DMARC via DNS lookup, return per-record status (`verified`/`pending`/`error`) |
 
@@ -403,6 +404,7 @@ Available in subject and body: `{{first_name}}`, `{{last_name}}`, `{{email}}`, `
 | `useTriggerEmailSync()`    | Mutation                     |
 | `useBuiltinSmtpStatus()`   | `["builtin-smtp-status"]`    |
 | `useDkimRecord()`          | `["dkim-record"]`            |
+| `useProvisionDomain()`     | Mutation                     |
 | `useVerifyDns()`           | `["verify-dns"]`             |
 
 ---

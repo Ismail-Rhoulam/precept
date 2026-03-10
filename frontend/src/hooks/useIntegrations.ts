@@ -386,6 +386,20 @@ export function useDkimRecord() {
   })
 }
 
+export function useProvisionDomain() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (mailDomain: string) =>
+      integrationsApi.provisionDomain(mailDomain),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
+        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
+      }, 15_000)
+    },
+  })
+}
+
 export function useVerifyDns(enabled: boolean = false) {
   return useQuery({
     queryKey: ["verify-dns"],

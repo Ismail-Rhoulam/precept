@@ -30,6 +30,7 @@ import {
   useBuiltinSmtpStatus,
   useDkimRecord,
   useVerifyDns,
+  useProvisionDomain,
 } from "@/hooks/useIntegrations"
 import type { EmailAccount } from "@/types/integration"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -181,11 +182,29 @@ function BuiltinSmtpInfo({
   onMailDomainChange: (v: string) => void
 }) {
   const { data: status } = useBuiltinSmtpStatus()
-  const { data: dkim } = useDkimRecord()
+  const { data: dkim, refetch: refetchDkim } = useDkimRecord()
   const [showDns, setShowDns] = useState(false)
   const [dnsCheckActive, setDnsCheckActive] = useState(false)
   const { data: dnsStatus, isFetching: dnsChecking, refetch: recheckDns } = useVerifyDns(dnsCheckActive)
+  const provisionDomain = useProvisionDomain()
+  const [provisioning, setProvisioning] = useState(false)
   const displayDomain = mailDomain || "yourdomain.com"
+
+  const handleProvisionDomain = async () => {
+    const domain = mailDomain.trim().toLowerCase()
+    if (!domain) return
+    setProvisioning(true)
+    try {
+      await provisionDomain.mutateAsync(domain)
+      // Wait for Postfix to generate keys (~12s), then refetch
+      setTimeout(() => {
+        refetchDkim()
+        setProvisioning(false)
+      }, 15_000)
+    } catch {
+      setProvisioning(false)
+    }
+  }
 
   const dkimRecords = dkim?.records || []
   const dkim1 = dkimRecords[0]
@@ -248,11 +267,29 @@ function BuiltinSmtpInfo({
 
       <div className="space-y-2">
         <Label>Mail Domain</Label>
-        <Input
-          value={mailDomain}
-          onChange={(e) => onMailDomainChange(e.target.value)}
-          placeholder="example.com"
-        />
+        <div className="flex gap-2">
+          <Input
+            value={mailDomain}
+            onChange={(e) => onMailDomainChange(e.target.value)}
+            placeholder="example.com"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleProvisionDomain}
+            disabled={!mailDomain.trim() || provisioning}
+            className="shrink-0"
+          >
+            {provisioning ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Mail className="size-3" />
+            )}
+            {provisioning ? "Generating..." : "Generate DKIM Keys"}
+          </Button>
+        </div>
         <p className="text-xs text-muted-foreground">
           Your sending domain. Emails will be sent as <span className="font-mono">you@{displayDomain}</span>
         </p>
@@ -400,7 +437,7 @@ function AccountForm({
   }
 
   return (
-    <Card className="max-w-2xl">
+    <Card className="max-w-6xl">
       <CardContent className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
@@ -950,7 +987,7 @@ export default function EmailSettingsPage() {
 
       {/* Success message */}
       {successMessage && (
-        <Alert className="border-green-200 bg-green-50 text-green-700 mb-4 max-w-2xl">
+        <Alert className="border-green-200 bg-green-50 text-green-700 mb-4 max-w-6xl">
           <AlertDescription>{successMessage}</AlertDescription>
         </Alert>
       )}
@@ -973,7 +1010,7 @@ export default function EmailSettingsPage() {
 
       {/* Accounts list */}
       {accounts && accounts.length > 0 ? (
-        <div className="space-y-3 max-w-2xl">
+        <div className="space-y-3 max-w-6xl">
           {accounts.map((account) => (
             <Card
               key={account.id}
@@ -1070,7 +1107,7 @@ export default function EmailSettingsPage() {
         </div>
       ) : (
         !editingId && (
-          <Card className="max-w-2xl">
+          <Card className="max-w-6xl">
             <CardContent className="py-12 text-center">
               <Mail className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-sm font-medium text-muted-foreground">

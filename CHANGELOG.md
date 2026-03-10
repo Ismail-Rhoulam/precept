@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-03-10 — Two-level sidebar with icon rail and detail panel
+
+Redesigned the sidebar navigation from a single flat list to a two-panel layout inspired by modern project management tools. The left panel is a narrow icon rail for top-level section switching; the right panel shows contextual sub-navigation with expandable dropdown sections, inline search, and a user footer.
+
+### Frontend — Sidebar
+
+- **`components/layout/Sidebar.tsx`** — Full rewrite. Added `IconNavigation` rail (60px, icon-only buttons with tooltips) and `DetailSidebar` panel (256px, collapsible to 60px). Each CRM section (Dashboard, Leads, Deals, Contacts, Organizations, Tasks, Notes, WhatsApp, Email, Call Logs, Calendar, Settings) has its own detail content with categorized menu sections and expandable dropdown items. Preserved integration-aware visibility (WhatsApp/Email shown only when enabled), mobile Sheet drawer, and existing route paths. Added search input, user avatar footer with name display, and smooth collapse/expand transitions.
+
+---
+
+## 2026-03-10 — Custom animated pointer on theme toggle
+
+Added an animated custom cursor to the theme toggle button using Framer Motion. When hovering over the Sun/Moon toggle, the default cursor is hidden and replaced with a secondary-colored pointer SVG that smoothly scales in/out.
+
+### Frontend — Theme Toggle
+
+- **`components/ui/theme-toggle.tsx`** — Added `Pointer` component using `framer-motion` (`useMotionValue`, `AnimatePresence`, `motion.div`). Tracks mouse position via `mousemove`/`mouseenter`/`mouseleave` on the parent element, hides the native cursor, and renders a fixed-position animated SVG pointer styled with `text-secondary` (violet) fill and white stroke. Integrated as a child of the theme toggle `Button`.
+
+---
+
+## 2026-03-10 — Add "Generate DKIM Keys" button and provision-domain endpoint
+
+Users needed to see DKIM key values before saving an email account, but keys were only generated after Postfix received the domain config (which happened on account save). Added a way to trigger key generation from the UI before the account exists.
+
+### Backend — API
+
+- **`apps/integrations/api/email.py`** — Added `_sync_postfix_config_for_domain()` helper and `POST /provision-domain` endpoint. Writes `postfix_config.json` to the shared volume immediately when called, so Postfix can detect it and generate DKIM keys within ~10 seconds — without requiring an email account to be saved first.
+
+### Frontend — Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — Added "Generate DKIM Keys" button next to the Mail Domain input in the `BuiltinSmtpInfo` component. Calls `POST /provision-domain`, shows "Generating..." spinner for ~15 seconds while Postfix generates keys, then auto-refetches DKIM records.
+
+### Frontend — API & Hooks
+
+- **`lib/api/integrations.ts`** — Added `provisionDomain()` API method.
+- **`hooks/useIntegrations.ts`** — Added `useProvisionDomain()` mutation hook with delayed `dkim-record` and `builtin-smtp-status` query invalidation (15s).
+
+---
+
 ## 2026-03-09 — Fix DKIM key generation: volume permissions, sed parsing, dual keys
 
 Fixed three issues preventing DKIM keys from being generated and displayed in the DNS Setup panel.

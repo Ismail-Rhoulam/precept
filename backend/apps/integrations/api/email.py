@@ -234,6 +234,37 @@ def builtin_smtp_status(request):
         return {"available": False, "mail_domain": mail_domain, "server_ip": server_ip}
 
 
+def _sync_postfix_config_for_domain(domain: str):
+    """Write a specific domain to the shared config file so Postfix can generate DKIM keys."""
+    config_path = "/etc/opendkim/keys/postfix_config.json"
+    try:
+        with open(config_path, "w") as f:
+            json.dump({"mail_domain": domain, "dkim_selector": "mail"}, f)
+        logger.info("Wrote postfix config: mail_domain=%s", domain)
+        return True
+    except Exception:
+        logger.exception("Could not write postfix config")
+        return False
+
+
+@router.post("/provision-domain")
+def provision_domain(request, payload: dict):
+    """Write the mail domain to Postfix config so DKIM keys get generated.
+
+    Call this when the user enters a mail domain, before saving the account.
+    Postfix polls the config file every 10s and generates keys automatically.
+    """
+    domain = (payload.get("mail_domain") or "").strip().lower()
+    if not domain:
+        return {"error": "No mail_domain provided."}
+
+    ok = _sync_postfix_config_for_domain(domain)
+    if not ok:
+        return {"error": "Could not write config. Volume may not be mounted."}
+
+    return {"status": "ok", "mail_domain": domain, "message": "Postfix will generate DKIM keys within ~10 seconds."}
+
+
 def _read_dkim_record(mail_domain: str, selector: str) -> dict:
     """Read a single DKIM public key file and return its parsed record."""
     import re

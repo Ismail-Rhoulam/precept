@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-03-10 — Fix sidebar layout, click handling, and hash navigation
+
+Fixed three issues breaking the two-level sidebar: CSS `cursor: none !important` interfering with click targets, Next.js `<Link>` not triggering `hashchange` for same-page navigation, and layout overflow causing the sidebar to stretch beyond viewport.
+
+### Frontend — CSS
+
+- **`styles/globals.css`** — Removed `*, *::before, *::after { cursor: none !important; }` rule. The `CustomPointer` component already hides the cursor programmatically; the CSS rule was redundant and blocked clicks on some elements.
+
+### Frontend — Sidebar
+
+- **`components/layout/Sidebar.tsx`** — Replaced `<Link>` with `onClick` handlers using a new `useHashNavigate()` hook for all menu items. The hook detects hash fragments, and when already on the target page, manually sets `window.location.hash` and dispatches `hashchange` (Next.js `<Link>` silently skips same-pathname navigation). Changed detail sidebar from `<aside>` to `<div>` with `overflow-hidden` and `shrink-0`. Changed icon rail from `<aside>` to `<nav>`. All menu items now use `role="button"` divs with proper `onClick`/`onKeyDown` handlers instead of `<Link>`.
+
+### Frontend — Layout
+
+- **`app/(dashboard)/layout.tsx`** — Changed outer container from `min-h-screen flex` to `h-screen flex overflow-hidden`. Made `<main>` use `overflow-y-auto` so the sidebar has a bounded height and content scrolls independently.
+
+---
+
 ## 2026-03-10 — Wire up sidebar buttons with navigation and page actions
 
 Connected all sidebar detail panel buttons to real functionality. Icon rail buttons now navigate to the corresponding page. Detail items link to actual routes. "New" buttons trigger create forms via URL hash. Removed phantom sub-items that had no backing page. Added user dropdown with Settings and Sign out.
@@ -22,11 +40,11 @@ Connected all sidebar detail panel buttons to real functionality. Icon rail butt
 
 ## 2026-03-10 — Custom animated pointer cursor (global)
 
-Replaced the default browser cursor with a custom animated pointer across the entire frontend. The pointer is a secondary-colored (violet) SVG arrow with a white stroke that smoothly scales in/out using Framer Motion.
+Replaced the default browser cursor with a custom animated pointer across the entire frontend. The pointer is a lime-colored (`brand-lime`) 16px SVG arrow with a black stroke that smoothly scales in/out using Framer Motion.
 
 ### Frontend — New Component
 
-- **`components/ui/custom-pointer.tsx`** — New `CustomPointer` component using `framer-motion` (`useMotionValue`, `AnimatePresence`, `motion.div`). Listens to `mousemove`/`mouseleave` on `document`, hides the native cursor via `document.body.style.cursor = "none"`, and renders a fixed-position animated SVG pointer styled with `text-secondary` fill and white stroke.
+- **`components/ui/custom-pointer.tsx`** — New `CustomPointer` component using `framer-motion` (`useMotionValue`, `AnimatePresence`, `motion.div`). Listens to `mousemove`/`mouseleave` on `document`, hides the native cursor via `document.body.style.cursor = "none"`, and renders a fixed-position animated 16px SVG pointer styled with `text-brand-lime` fill and black stroke.
 
 ### Frontend — Providers
 

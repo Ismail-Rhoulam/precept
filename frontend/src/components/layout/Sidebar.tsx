@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -88,7 +88,7 @@ interface MenuSectionT {
   items: MenuItemT[]
 }
 
-interface SidebarContent {
+interface SidebarContentData {
   title: string
   sections: MenuSectionT[]
 }
@@ -129,10 +129,47 @@ function getNavItems(integrationStatus: { whatsapp_enabled?: boolean; email_enab
   return items
 }
 
+/* ========================= Hash Navigation Helper ========================= */
+
+/**
+ * Navigate to a URL that may contain a hash fragment (e.g. /leads#new).
+ * Next.js <Link> doesn't trigger hashchange when already on the same page,
+ * so we handle it manually.
+ */
+function useHashNavigate() {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  return useCallback((href: string) => {
+    const hashIndex = href.indexOf("#")
+    if (hashIndex === -1) {
+      // No hash — normal navigation
+      router.push(href)
+      return
+    }
+
+    const targetPath = href.slice(0, hashIndex)
+    const hash = href.slice(hashIndex + 1)
+
+    if (pathname === targetPath) {
+      // Already on this page — set hash and fire event manually
+      window.location.hash = hash
+      window.dispatchEvent(new HashChangeEvent("hashchange"))
+      // Clean up hash from URL after a tick
+      setTimeout(() => {
+        window.history.replaceState(null, "", pathname)
+      }, 100)
+    } else {
+      // Different page — navigate, the page's useEffect will pick up the hash
+      router.push(href)
+    }
+  }, [router, pathname])
+}
+
 /* ========================= Detail Content Map ========================= */
 
-function getSidebarContent(activeSection: string): SidebarContent {
-  const contentMap: Record<string, SidebarContent> = {
+function getSidebarContent(activeSection: string): SidebarContentData {
+  const contentMap: Record<string, SidebarContentData> = {
     dashboard: {
       title: "Dashboard",
       sections: [
@@ -332,7 +369,7 @@ function getSidebarContent(activeSection: string): SidebarContent {
             { icon: <Plug className="h-4 w-4" />, label: "All Integrations", href: "/settings/integrations" },
             {
               icon: <Plug className="h-4 w-4" />,
-              label: "Integrations",
+              label: "By Service",
               hasDropdown: true,
               children: [
                 { label: "Email", href: "/settings/integrations/email" },
@@ -413,16 +450,16 @@ function IconNavigation({
   }
 
   return (
-    <aside className="bg-background flex flex-col gap-1 items-center py-4 px-2 w-[60px] min-w-[60px] border-r border-border">
+    <nav className="bg-background flex flex-col gap-1 items-center py-4 px-2 w-[60px] min-w-[60px] shrink-0 border-r border-border overflow-y-auto">
       {/* Logo */}
-      <div className="mb-3 flex items-center justify-center">
+      <div className="mb-3 flex items-center justify-center shrink-0">
         <Link href="/dashboard" className="text-lg font-bold text-primary">
           P
         </Link>
       </div>
 
       {/* Navigation Icons */}
-      <div className="flex flex-col gap-1 w-full items-center flex-1 overflow-y-auto">
+      <div className="flex flex-col gap-1 w-full items-center flex-1">
         {navItems.map((item) => (
           <IconNavButton
             key={item.id}
@@ -436,7 +473,7 @@ function IconNavigation({
       </div>
 
       {/* Bottom section */}
-      <div className="flex flex-col gap-1 w-full items-center mt-2">
+      <div className="flex flex-col gap-1 w-full items-center mt-2 shrink-0">
         <IconNavButton
           isActive={activeSection === "settings"}
           onClick={() => {
@@ -448,7 +485,7 @@ function IconNavigation({
           <Settings className="h-5 w-5" />
         </IconNavButton>
       </div>
-    </aside>
+    </nav>
   )
 }
 
@@ -460,18 +497,15 @@ function SearchInput({ isCollapsed = false }: { isCollapsed?: boolean }) {
   if (isCollapsed) {
     return (
       <div className="w-full flex justify-center">
-        <button
-          type="button"
-          className="flex items-center justify-center rounded-lg size-10 min-w-10 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-        >
+        <div className="flex items-center justify-center rounded-lg size-10 min-w-10 text-muted-foreground">
           <Search className="h-4 w-4" />
-        </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
@@ -494,93 +528,98 @@ function MenuItem({
   onToggle,
   isCollapsed,
   pathname,
+  navigate,
 }: {
   item: MenuItemT
   isExpanded?: boolean
   onToggle?: () => void
   isCollapsed?: boolean
   pathname: string
+  navigate: (href: string) => void
 }) {
-  const isActive = item.href ? pathname === item.href : false
+  // For active detection, strip the hash
+  const itemPath = item.href?.split("#")[0]
+  const isActive = itemPath ? pathname === itemPath : false
 
-  const handleClick = () => {
-    if (item.hasDropdown && onToggle) onToggle()
-  }
-
-  const content = (
-    <div
-      className={cn(
-        "rounded-lg cursor-pointer transition-colors duration-200 flex items-center",
-        isActive
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        isCollapsed
-          ? "size-10 min-w-10 justify-center"
-          : "w-full h-9 px-3 py-1.5 gap-3"
-      )}
-      onClick={item.hasDropdown ? handleClick : undefined}
-      title={isCollapsed ? item.label : undefined}
-    >
-      <div className="flex items-center justify-center shrink-0">
-        {item.icon}
-      </div>
-
-      {!isCollapsed && (
-        <>
-          <span className="flex-1 text-sm truncate">{item.label}</span>
-          {item.hasDropdown && (
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 shrink-0 transition-transform duration-200",
-                isExpanded && "rotate-180"
-              )}
-            />
-          )}
-        </>
-      )}
-    </div>
-  )
-
-  if (item.href && !item.hasDropdown) {
-    return (
-      <div className={cn("shrink-0", isCollapsed ? "w-full flex justify-center" : "w-full px-2")}>
-        <Link href={item.href}>{content}</Link>
-      </div>
-    )
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (item.hasDropdown && onToggle) {
+      onToggle()
+    } else if (item.href) {
+      navigate(item.href)
+    }
   }
 
   return (
     <div className={cn("shrink-0", isCollapsed ? "w-full flex justify-center" : "w-full px-2")}>
-      {content}
+      <div
+        role="button"
+        tabIndex={0}
+        className={cn(
+          "rounded-lg cursor-pointer transition-colors duration-200 flex items-center select-none",
+          isActive
+            ? "bg-accent text-accent-foreground"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+          isCollapsed
+            ? "size-10 min-w-10 justify-center"
+            : "w-full h-9 px-3 py-1.5 gap-3"
+        )}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter") handleClick(e as unknown as React.MouseEvent) }}
+        title={isCollapsed ? item.label : undefined}
+      >
+        {item.icon && (
+          <div className="flex items-center justify-center shrink-0">
+            {item.icon}
+          </div>
+        )}
+
+        {!isCollapsed && (
+          <>
+            <span className="flex-1 text-sm truncate">{item.label}</span>
+            {item.hasDropdown && (
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
-function SubMenuItem({ item, pathname }: { item: MenuItemT; pathname: string }) {
+function SubMenuItem({ item, pathname, navigate }: { item: MenuItemT; pathname: string; navigate: (href: string) => void }) {
   const isActive = item.href ? pathname === item.href : false
 
-  const content = (
-    <div className={cn(
-      "h-8 w-full rounded-lg cursor-pointer transition-colors flex items-center px-3",
-      isActive
-        ? "bg-accent text-accent-foreground"
-        : "hover:bg-accent text-muted-foreground hover:text-accent-foreground"
-    )}>
-      <span className="text-sm truncate">
-        {item.label}
-      </span>
-    </div>
-  )
-
-  if (item.href) {
-    return (
-      <div className="w-full pl-10 pr-2">
-        <Link href={item.href}>{content}</Link>
-      </div>
-    )
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (item.href) navigate(item.href)
   }
 
-  return <div className="w-full pl-10 pr-2">{content}</div>
+  return (
+    <div className="w-full pl-10 pr-2">
+      <div
+        role="button"
+        tabIndex={0}
+        className={cn(
+          "h-8 w-full rounded-lg cursor-pointer transition-colors flex items-center px-3 select-none",
+          isActive
+            ? "bg-accent text-accent-foreground"
+            : "hover:bg-accent text-muted-foreground hover:text-accent-foreground"
+        )}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter") handleClick(e as unknown as React.MouseEvent) }}
+      >
+        <span className="text-sm truncate">
+          {item.label}
+        </span>
+      </div>
+    </div>
+  )
 }
 
 function MenuSection({
@@ -589,12 +628,14 @@ function MenuSection({
   onToggleExpanded,
   isCollapsed,
   pathname,
+  navigate,
 }: {
   section: MenuSectionT
   expandedItems: Set<string>
   onToggleExpanded: (itemKey: string) => void
   isCollapsed?: boolean
   pathname: string
+  navigate: (href: string) => void
 }) {
   return (
     <div className="flex flex-col w-full gap-0.5">
@@ -617,6 +658,7 @@ function MenuSection({
               onToggle={() => onToggleExpanded(itemKey)}
               isCollapsed={isCollapsed}
               pathname={pathname}
+              navigate={navigate}
             />
             {isExpanded && item.children && !isCollapsed && (
               <div className="flex flex-col gap-0.5 my-1">
@@ -625,6 +667,7 @@ function MenuSection({
                     key={`${itemKey}-${childIndex}`}
                     item={child}
                     pathname={pathname}
+                    navigate={navigate}
                   />
                 ))}
               </div>
@@ -647,6 +690,7 @@ function DetailSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { user, logout } = useAuthStore()
   const pathname = usePathname()
+  const navigate = useHashNavigate()
   const content = getSidebarContent(activeSection)
 
   const toggleExpanded = (itemKey: string) => {
@@ -659,9 +703,9 @@ function DetailSidebar({
   }
 
   return (
-    <aside
+    <div
       className={cn(
-        "bg-background flex flex-col border-r border-border transition-all duration-300 h-full",
+        "bg-background flex flex-col border-r border-border transition-all duration-300 shrink-0 overflow-hidden",
         isCollapsed ? "w-[60px] min-w-[60px]" : "w-64 min-w-64"
       )}
       style={{ transitionTimingFunction: softSpring }}
@@ -715,6 +759,7 @@ function DetailSidebar({
             onToggleExpanded={toggleExpanded}
             isCollapsed={isCollapsed}
             pathname={pathname}
+            navigate={navigate}
           />
         ))}
       </div>
@@ -773,7 +818,7 @@ function DetailSidebar({
           </div>
         </div>
       )}
-    </aside>
+    </div>
   )
 }
 
@@ -784,8 +829,7 @@ function TwoLevelSidebarContent() {
   const { data: integrationStatus } = useIntegrationStatus()
   const navItems = getNavItems(integrationStatus)
 
-  // Determine active section from pathname
-  const getActiveSection = (): string => {
+  const getActiveSection = useCallback((): string => {
     for (const item of navItems) {
       if (pathname === item.href || pathname.startsWith(item.href + "/")) {
         return item.id
@@ -793,19 +837,18 @@ function TwoLevelSidebarContent() {
     }
     if (pathname.startsWith("/settings")) return "settings"
     return "dashboard"
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, navItems.length])
 
   const [activeSection, setActiveSection] = useState(getActiveSection)
 
-  // Update active section when pathname changes
   React.useEffect(() => {
     setActiveSection(getActiveSection())
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [getActiveSection])
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-full">
+      <div className="flex h-full w-full">
         <IconNavigation
           activeSection={activeSection}
           onSectionChange={setActiveSection}
@@ -827,18 +870,20 @@ interface SidebarProps {
 export function Sidebar({ sidebarOpen = false, onClose }: SidebarProps) {
   return (
     <>
-      {/* Desktop sidebar - always visible on md+ */}
-      <div className="hidden md:flex h-full">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex h-full shrink-0">
         <TwoLevelSidebarContent />
-      </div>
+      </aside>
 
-      {/* Mobile drawer using Sheet */}
+      {/* Mobile drawer */}
       <Sheet open={sidebarOpen} onOpenChange={(open) => !open && onClose?.()}>
-        <SheetContent side="left" className="w-80 p-0">
+        <SheetContent side="left" className="w-[320px] p-0">
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation</SheetTitle>
           </SheetHeader>
-          <TwoLevelSidebarContent />
+          <div className="h-full">
+            <TwoLevelSidebarContent />
+          </div>
         </SheetContent>
       </Sheet>
     </>

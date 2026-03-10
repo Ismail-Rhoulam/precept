@@ -64,14 +64,14 @@ export default function DashboardLayout({
 
   return (
     <WebSocketProvider>
-      <div className="min-h-screen flex relative">
+      <div className="h-screen flex overflow-hidden">
         <Sidebar
           sidebarOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-          <main className="flex-1 p-4 md:p-6 bg-muted/50">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-muted/50">{children}</main>
         </div>
       </div>
     </WebSocketProvider>

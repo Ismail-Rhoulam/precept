@@ -17,11 +17,11 @@ Added a reusable `Autocomplete` component to the UI library. Built from scratch 
 
 ## 2026-03-10 — Hide native cursor on all elements including portals and dropdowns
 
-The native cursor was still appearing on portal-rendered elements (autocomplete dropdowns, popovers) because the `cursor: none !important` rule was inside `@layer base`, which has lower specificity than unlayered styles. Moved the rule to the top level so it wins over all component-level and portal cursor styles.
+The native cursor was still appearing on portal-rendered elements (autocomplete dropdowns, popovers) and on interactive elements with Tailwind cursor utilities (`cursor-default`, `cursor-pointer`). Moved the `cursor: none` rule to the end of the stylesheet with an `html`-prefixed selector for maximum specificity.
 
 ### Frontend — CSS
 
-- **`styles/globals.css`** — Moved `*, *::before, *::after { cursor: none !important; }` from `@layer base` to the top level (unlayered). Unlayered `!important` rules have the highest specificity, ensuring native cursors (pointer, text, default) are hidden everywhere including portal-rendered dropdowns and popovers.
+- **`styles/globals.css`** — Moved `cursor: none !important` rule to the very end of the file as `html, html *, html *::before, html *::after { cursor: none !important; }`. The `html` prefix gives higher specificity than any Tailwind utility class, and placement at EOF ensures it comes after all generated styles. This hides the native cursor everywhere including autocomplete dropdowns, popovers, and elements with `cursor-default`/`cursor-not-allowed`.
 
 ---
 

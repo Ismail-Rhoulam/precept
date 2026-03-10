@@ -1,12 +1,27 @@
 # Changelog
 
-## 2026-03-10 — Re-add global cursor: none to hide native cursors on all elements
+## 2026-03-10 — Add Autocomplete component matching project design system
 
-The native pointer (`cursor: pointer`) and text (`cursor: text`) cursors were still appearing on clickable elements and inputs, causing a dual-cursor effect alongside the custom animated pointer. Re-added the `cursor: none !important` rule inside `@layer base` to force-hide the native cursor on all elements. The previous removal was a misdiagnosis — `cursor: none` does not block click events.
+Added a reusable `Autocomplete` component to the UI library. Built from scratch using the same design tokens and patterns as the existing `Input`, `Select`, and `Popover` components — no new dependencies.
+
+### Frontend — New Component
+
+- **`components/ui/autocomplete.tsx`** — New `Autocomplete` component with:
+  - **Trigger**: Same `h-9`, `rounded-md`, `border-input`, `shadow-sm`, `focus-within:ring-1 ring-ring` styling as `Input` and `SelectTrigger`.
+  - **Dropdown**: Same `rounded-md`, `border`, `bg-popover`, `shadow-md`, `z-50`, and `animate-in` entrance animations as `SelectContent` and `PopoverContent`.
+  - **List items**: Same `rounded-sm`, `py-1.5 pl-2 pr-8`, `bg-accent` highlight, and `Check` icon positioning as `SelectItem`.
+  - **Features**: Inline search with `Search` icon, keyboard navigation (Arrow keys, Enter, Escape), clear button, loading spinner, empty state, async search via `onSearchChange` callback, `role="listbox"` / `aria-selected` accessibility.
+  - **Icons**: Lucide (`Search`, `ChevronsUpDown`, `Check`, `X`, `Loader2`) — same icon library used throughout.
+
+---
+
+## 2026-03-10 — Hide native cursor on all elements including portals and dropdowns
+
+The native cursor was still appearing on portal-rendered elements (autocomplete dropdowns, popovers) because the `cursor: none !important` rule was inside `@layer base`, which has lower specificity than unlayered styles. Moved the rule to the top level so it wins over all component-level and portal cursor styles.
 
 ### Frontend — CSS
 
-- **`styles/globals.css`** — Re-added `*, *::before, *::after { cursor: none !important; }` inside `@layer base` to suppress native cursors (pointer, text, default) on buttons, links, inputs, and all other elements.
+- **`styles/globals.css`** — Moved `*, *::before, *::after { cursor: none !important; }` from `@layer base` to the top level (unlayered). Unlayered `!important` rules have the highest specificity, ensuring native cursors (pointer, text, default) are hidden everywhere including portal-rendered dropdowns and popovers.
 
 ---
 

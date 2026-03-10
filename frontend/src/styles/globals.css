@@ -2,11 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  *, *::before, *::after {
-    cursor: none !important;
-  }
+*, *::before, *::after {
+  cursor: none !important;
+}
 
+@layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 210 50% 1%;

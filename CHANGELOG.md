@@ -32,6 +32,10 @@ Replaced the default browser cursor with a custom animated pointer across the en
 
 - **`app/providers.tsx`** — Added `<CustomPointer />` inside the root providers so it is active on every page.
 
+### Frontend — CSS
+
+- **`styles/globals.css`** — Added `*, *::before, *::after { cursor: none !important; }` to force-hide the native cursor on all elements, preventing the default `pointer` cursor from appearing on clickable elements (buttons, links, inputs) alongside the custom pointer.
+
 ---
 
 ## 2026-03-10 — Add "Generate DKIM Keys" button and provision-domain endpoint

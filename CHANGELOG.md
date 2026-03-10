@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-03-10 — Re-add global cursor: none to hide native cursors on all elements
+
+The native pointer (`cursor: pointer`) and text (`cursor: text`) cursors were still appearing on clickable elements and inputs, causing a dual-cursor effect alongside the custom animated pointer. Re-added the `cursor: none !important` rule inside `@layer base` to force-hide the native cursor on all elements. The previous removal was a misdiagnosis — `cursor: none` does not block click events.
+
+### Frontend — CSS
+
+- **`styles/globals.css`** — Re-added `*, *::before, *::after { cursor: none !important; }` inside `@layer base` to suppress native cursors (pointer, text, default) on buttons, links, inputs, and all other elements.
+
+---
+
 ## 2026-03-10 — Fix sidebar layout, click handling, and hash navigation
 
 Fixed three issues breaking the two-level sidebar: CSS `cursor: none !important` interfering with click targets, Next.js `<Link>` not triggering `hashchange` for same-page navigation, and layout overflow causing the sidebar to stretch beyond viewport.
@@ -53,6 +63,30 @@ Replaced the default browser cursor with a custom animated pointer across the en
 ### Frontend — CSS
 
 - **`styles/globals.css`** — Added `*, *::before, *::after { cursor: none !important; }` to force-hide the native cursor on all elements, preventing the default `pointer` cursor from appearing on clickable elements (buttons, links, inputs) alongside the custom pointer.
+
+---
+
+## 2026-03-10 — Switch SPF to include-based, fix DKIM key display with pending state
+
+Switched SPF record from `ip4:<server-ip>` to `include:precept.online ~all` so users don't need to know their server IP. Fixed DKIM keys showing "Key not generated yet" by making `/dkim-record` read the domain from the provisioned config file (not only from DB), adding a `status` field (`ready`/`pending`/`error`) to each DKIM record, and auto-polling every 5 seconds until keys are ready. Removed all `server_ip` auto-detection logic.
+
+### Backend — API
+
+- **`apps/integrations/api/email.py`**:
+  - Removed `_get_server_public_ip()` helper entirely.
+  - `GET /builtin-smtp-status` now returns `{available, mail_domain}` only (removed `server_ip`).
+  - `_get_builtin_mail_domain()` now falls back to reading `postfix_config.json` from the shared volume when no builtin account exists in the DB yet — fixes the chicken-and-egg problem where `/dkim-record` returned empty before account save.
+  - `_read_dkim_record()` now returns a `status` field: `ready` (key file exists and parsed), `pending` (file not found, Postfix still generating), or `error`.
+  - `GET /verify-dns` — SPF check now looks for `include:precept.online` instead of `v=spf1`. Removed `server_ip` from response.
+
+### Frontend — Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — SPF record value changed to `v=spf1 include:precept.online ~all`. DKIM rows with `status: "pending"` now show a spinner with "Waiting for key generation..." instead of static "Key not generated yet" text. Removed all `server_ip` references.
+
+### Frontend — API & Hooks
+
+- **`lib/api/integrations.ts`** — Removed `server_ip` from `getBuiltinSmtpStatus` and `verifyDns` types. Added `status` field to DKIM record type.
+- **`hooks/useIntegrations.ts`** — `useDkimRecord()` now auto-polls every 5 seconds when any record has `status: "pending"`, stopping when all are `ready`.
 
 ---
 

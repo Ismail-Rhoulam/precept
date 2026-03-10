@@ -227,13 +227,13 @@ export const integrationsApi = {
     ),
 
   getBuiltinSmtpStatus: () =>
-    api.get<{ available: boolean; mail_domain: string; server_ip: string }>(
+    api.get<{ available: boolean; mail_domain: string }>(
       "/integrations/email/builtin-smtp-status"
     ),
 
   getDkimRecord: () =>
     api.get<{
-      records: { selector: string; domain: string; dns_name: string; record: string; error?: string }[]
+      records: { selector: string; domain: string; dns_name: string; record: string; status: "ready" | "pending" | "error"; error?: string }[]
       error?: string
     }>("/integrations/email/dkim-record"),
 
@@ -250,7 +250,6 @@ export const integrationsApi = {
       dkim2: "verified" | "pending" | "error"
       dmarc: "verified" | "pending" | "error"
       mail_domain?: string
-      server_ip?: string
       error?: string
     }>("/integrations/email/verify-dns"),
 

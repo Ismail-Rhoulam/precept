@@ -383,6 +383,12 @@ export function useDkimRecord() {
   return useQuery({
     queryKey: ["dkim-record"],
     queryFn: () => integrationsApi.getDkimRecord(),
+    refetchInterval: (query) => {
+      const records = query.state.data?.records
+      if (!records || records.length === 0) return false
+      const hasPending = records.some((r) => r.status === "pending")
+      return hasPending ? 5_000 : false
+    },
   })
 }
 

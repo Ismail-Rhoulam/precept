@@ -221,8 +221,9 @@ function BuiltinSmtpInfo({
       label: "SPF",
       type: "TXT",
       name: "@",
-      value: `v=spf1 a mx${status?.server_ip ? ` ip4:${status.server_ip}` : ""} -all`,
+      value: "v=spf1 include:precept.online ~all",
       status: dnsStatus?.spf,
+      keyStatus: "ready" as const,
     },
     {
       label: "DKIM 1",
@@ -231,6 +232,7 @@ function BuiltinSmtpInfo({
       value: dkim1?.record || "",
       error: dkim1?.error,
       status: dnsStatus?.dkim1,
+      keyStatus: (dkim1?.status || "pending") as "ready" | "pending" | "error",
     },
     {
       label: "DKIM 2",
@@ -239,6 +241,7 @@ function BuiltinSmtpInfo({
       value: dkim2?.record || "",
       error: dkim2?.error,
       status: dnsStatus?.dkim2,
+      keyStatus: (dkim2?.status || "pending") as "ready" | "pending" | "error",
     },
     {
       label: "DMARC",
@@ -246,6 +249,7 @@ function BuiltinSmtpInfo({
       name: `_dmarc.${displayDomain}`,
       value: `v=DMARC1; p=none; rua=mailto:rua@${displayDomain}`,
       status: dnsStatus?.dmarc,
+      keyStatus: "ready" as const,
     },
   ]
 
@@ -370,9 +374,14 @@ function BuiltinSmtpInfo({
                           </code>
                           <CopyButton text={row.value} label="value" />
                         </div>
+                      ) : row.keyStatus === "pending" ? (
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <Loader2 className="size-3 animate-spin" />
+                          Waiting for key generation...
+                        </span>
                       ) : (
                         <span className="italic text-muted-foreground">
-                          {row.error || "Key not generated yet"}
+                          {row.error || "Click \"Generate DKIM Keys\" to create keys"}
                         </span>
                       )}
                     </td>

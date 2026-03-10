@@ -105,7 +105,7 @@ def _sync_postfix_config():
 
 
 def _get_builtin_mail_domain():
-    """Return the active built-in mail domain from the DB, falling back to env."""
+    """Return the active built-in mail domain from DB, config file, or env."""
     account = (
         EmailAccount.unscoped
         .filter(smtp_mode="builtin", enabled=True)
@@ -114,6 +114,18 @@ def _get_builtin_mail_domain():
     )
     if account and account.mail_domain:
         return account.mail_domain
+
+    # Fall back to the provisioned config file (domain set before account saved)
+    config_path = "/etc/opendkim/keys/postfix_config.json"
+    try:
+        with open(config_path) as f:
+            data = json.load(f)
+        domain = data.get("mail_domain", "")
+        if domain:
+            return domain
+    except Exception:
+        pass
+
     return os.environ.get("MAIL_DOMAIN", "")
 
 
@@ -210,28 +222,18 @@ def test_email_connection(request, account_id: int, payload: EmailAccountTestIn)
 # ---------------------------------------------------------------------------
 
 
-def _get_server_public_ip():
-    """Detect the server's public IPv4 address."""
-    try:
-        import urllib.request
-        return urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode().strip()
-    except Exception:
-        return ""
-
-
 @router.get("/builtin-smtp-status")
 def builtin_smtp_status(request):
     """Check if the built-in Postfix SMTP container is reachable."""
     host = os.environ.get("POSTFIX_HOST", "postfix")
     port = int(os.environ.get("POSTFIX_PORT", "25"))
     mail_domain = _get_builtin_mail_domain()
-    server_ip = _get_server_public_ip()
     try:
         s = socket.create_connection((host, port), timeout=3)
         s.close()
-        return {"available": True, "mail_domain": mail_domain, "server_ip": server_ip}
+        return {"available": True, "mail_domain": mail_domain}
     except Exception:
-        return {"available": False, "mail_domain": mail_domain, "server_ip": server_ip}
+        return {"available": False, "mail_domain": mail_domain}
 
 
 def _sync_postfix_config_for_domain(domain: str):
@@ -280,6 +282,7 @@ def _read_dkim_record(mail_domain: str, selector: str) -> dict:
             "domain": mail_domain,
             "dns_name": f"{selector}._domainkey.{mail_domain}",
             "record": record_value,
+            "status": "ready",
         }
     except FileNotFoundError:
         return {
@@ -287,7 +290,7 @@ def _read_dkim_record(mail_domain: str, selector: str) -> dict:
             "domain": mail_domain,
             "dns_name": f"{selector}._domainkey.{mail_domain}",
             "record": "",
-            "error": "DKIM key not generated yet. Restart the Postfix container after setting the domain.",
+            "status": "pending",
         }
     except Exception as e:
         return {
@@ -295,6 +298,7 @@ def _read_dkim_record(mail_domain: str, selector: str) -> dict:
             "domain": mail_domain,
             "dns_name": f"{selector}._domainkey.{mail_domain}",
             "record": "",
+            "status": "error",
             "error": str(e),
         }
 
@@ -323,8 +327,6 @@ def verify_dns(request):
     if not mail_domain:
         return {"error": "No mail domain configured.", "spf": "error", "dkim1": "error", "dkim2": "error", "dmarc": "error"}
 
-    server_ip = _get_server_public_ip()
-
     def _check_txt(name: str, must_contain: str) -> str:
         """Return 'verified' if a TXT record containing must_contain exists, else 'pending'."""
         try:
@@ -339,9 +341,8 @@ def verify_dns(request):
         except Exception:
             return "error"
 
-    # SPF — look for v=spf1 containing our IP (or just v=spf1 if IP unknown)
-    spf_check = "v=spf1"
-    spf_status = _check_txt(mail_domain, spf_check)
+    # SPF — check for include:precept.online
+    spf_status = _check_txt(mail_domain, "include:precept.online")
 
     # DKIM selectors
     dkim1_status = _check_txt(f"mail._domainkey.{mail_domain}", "v=DKIM1")
@@ -356,7 +357,6 @@ def verify_dns(request):
         "dkim2": dkim2_status,
         "dmarc": dmarc_status,
         "mail_domain": mail_domain,
-        "server_ip": server_ip,
     }
 
 

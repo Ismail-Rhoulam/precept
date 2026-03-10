@@ -218,9 +218,9 @@ All endpoints are under `/api/integrations/email/` and require authentication. T
 
 | Method   | Path                          | Description                                          |
 |----------|-------------------------------|------------------------------------------------------|
-| `GET`    | `/builtin-smtp-status`        | Check if Postfix is reachable, return `{available, mail_domain, server_ip}` |
+| `GET`    | `/builtin-smtp-status`        | Check if Postfix is reachable, return `{available, mail_domain}` |
 | `POST`   | `/provision-domain`           | Write mail domain to Postfix config to trigger DKIM key generation before account save |
-| `GET`    | `/dkim-record`                | Read both DKIM public keys, return `{records: [{selector, domain, dns_name, record}, ...]}` |
+| `GET`    | `/dkim-record`                | Read both DKIM public keys, return `{records: [{selector, domain, dns_name, record, status}, ...]}` (`status`: `ready`/`pending`/`error`) |
 | `GET`    | `/verify-dns`                 | Check SPF, DKIM1, DKIM2, DMARC via DNS lookup, return per-record status (`verified`/`pending`/`error`) |
 
 ### Compose & Messages
@@ -432,7 +432,7 @@ When using built-in SMTP mode, four DNS records are required for email deliverab
 
 | Record | Type | Name | Value |
 |--------|------|------|-------|
-| **SPF** | TXT | `@` | `v=spf1 a mx ip4:<auto-detected> -all` (IP from `/builtin-smtp-status`) |
+| **SPF** | TXT | `@` | `v=spf1 include:precept.online ~all` |
 | **DKIM 1** | TXT | `mail._domainkey` | Retrieved from `GET /dkim-record` → `records[0]` |
 | **DKIM 2** | TXT | `mail2._domainkey` | Retrieved from `GET /dkim-record` → `records[1]` |
 | **DMARC** | TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@yourdomain.com` |
@@ -449,8 +449,7 @@ The `GET /verify-dns` endpoint performs live DNS lookups using `dnspython` and r
   "dkim1": "verified",
   "dkim2": "pending",
   "dmarc": "verified",
-  "mail_domain": "example.com",
-  "server_ip": "1.2.3.4"
+  "mail_domain": "example.com"
 }
 ```
 

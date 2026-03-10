@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   CheckSquare,
   Plus,
@@ -40,6 +40,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function TasksPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
+
+  // Handle URL hash for sidebar navigation (#new)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "new") {
+        setShowCreateForm(true)
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    }
+    handleHash()
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
+
   const [statusFilter, setStatusFilter] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("")
   const [searchQuery, setSearchQuery] = useState("")

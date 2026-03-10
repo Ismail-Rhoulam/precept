@@ -319,6 +319,26 @@ export default function LeadsListPage() {
   const [groupByField, setGroupByField] = useState("source")
   const [showShortcutsModal, setShowShortcutsModal] = useState(false)
 
+  // Handle URL hash for sidebar navigation (#new, #kanban, #group_by)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "new") {
+        setShowCreateForm(true)
+        window.history.replaceState(null, "", window.location.pathname)
+      } else if (hash === "kanban") {
+        setViewType("kanban")
+        window.history.replaceState(null, "", window.location.pathname)
+      } else if (hash === "group_by") {
+        setViewType("group_by")
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    }
+    handleHash()
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
+
   // Keyboard shortcuts
   useKeyboardShortcuts([
     {

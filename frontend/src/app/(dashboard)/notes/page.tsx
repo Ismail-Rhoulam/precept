@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   StickyNote,
   Plus,
@@ -24,6 +24,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 export default function NotesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Handle URL hash for sidebar navigation (#new)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "new") {
+        setShowCreateForm(true)
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    }
+    handleHash()
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editContent, setEditContent] = useState("")

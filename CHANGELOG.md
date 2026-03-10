@@ -1,12 +1,22 @@
 # Changelog
 
-## 2026-03-10 — Two-level sidebar with icon rail and detail panel
+## 2026-03-10 — Wire up sidebar buttons with navigation and page actions
 
-Redesigned the sidebar navigation from a single flat list to a two-panel layout inspired by modern project management tools. The left panel is a narrow icon rail for top-level section switching; the right panel shows contextual sub-navigation with expandable dropdown sections, inline search, and a user footer.
+Connected all sidebar detail panel buttons to real functionality. Icon rail buttons now navigate to the corresponding page. Detail items link to actual routes. "New" buttons trigger create forms via URL hash. Removed phantom sub-items that had no backing page. Added user dropdown with Settings and Sign out.
 
 ### Frontend — Sidebar
 
-- **`components/layout/Sidebar.tsx`** — Full rewrite. Added `IconNavigation` rail (60px, icon-only buttons with tooltips) and `DetailSidebar` panel (256px, collapsible to 60px). Each CRM section (Dashboard, Leads, Deals, Contacts, Organizations, Tasks, Notes, WhatsApp, Email, Call Logs, Calendar, Settings) has its own detail content with categorized menu sections and expandable dropdown items. Preserved integration-aware visibility (WhatsApp/Email shown only when enabled), mobile Sheet drawer, and existing route paths. Added search input, user avatar footer with name display, and smooth collapse/expand transitions.
+- **`components/layout/Sidebar.tsx`** — Icon rail `onClick` now calls `router.push()` to navigate, not just switch the detail panel. All detail items have real `href` links. Removed fake sub-items (dashboard analytics, lead status children, etc.) that pointed nowhere. Settings section now maps to all actual pages (General, Products, SLA, Form Scripts, Fields Layout, and all 6 integration sub-pages). Email section links to Templates, Campaigns, and New Campaign. "New" buttons use `#new` hash fragments. Leads/Deals get `#kanban` and `#group_by` view switchers. Active state highlighting uses `pathname` matching. User footer "..." button replaced with dropdown menu (Settings link + Sign out via `logout()`).
+
+### Frontend — Hash-based State Initialization (7 pages)
+
+- **`app/(dashboard)/leads/page.tsx`** — Added `useEffect` hash handler: `#new` opens create form, `#kanban`/`#group_by` switch view type.
+- **`app/(dashboard)/deals/page.tsx`** — Same hash handler for `#new`, `#kanban`, `#group_by`.
+- **`app/(dashboard)/contacts/page.tsx`** — Added `useEffect` import and `#new` hash handler.
+- **`app/(dashboard)/organizations/page.tsx`** — Same `#new` hash handler.
+- **`app/(dashboard)/tasks/page.tsx`** — Same `#new` hash handler.
+- **`app/(dashboard)/notes/page.tsx`** — Same `#new` hash handler.
+- **`app/(dashboard)/calendar/page.tsx`** — `#new` hash handler opens event creation modal with today's date.
 
 ---
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/hooks/useEvents"
@@ -75,6 +75,22 @@ export default function CalendarPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  // Handle URL hash for sidebar navigation (#new)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "new") {
+        setSelectedEvent(null)
+        setSelectedDate(new Date())
+        setShowModal(true)
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    }
+    handleHash()
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
 
   const { from, to } = useMemo(
     () => getDateRange(currentDate, viewType),

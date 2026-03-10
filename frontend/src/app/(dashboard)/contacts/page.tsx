@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Search,
@@ -46,6 +46,20 @@ export default function ContactsPage() {
   const [page, setPage] = useState(1)
   const [ordering, setOrdering] = useState("-created_at")
   const [showCreateForm, setShowCreateForm] = useState(false)
+
+  // Handle URL hash for sidebar navigation (#new)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "new") {
+        setShowCreateForm(true)
+        window.history.replaceState(null, "", window.location.pathname)
+      }
+    }
+    handleHash()
+    window.addEventListener("hashchange", handleHash)
+    return () => window.removeEventListener("hashchange", handleHash)
+  }, [])
 
   const params: ContactListParams = {
     page,

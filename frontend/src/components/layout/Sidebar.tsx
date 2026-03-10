@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -19,21 +19,19 @@ import {
   ChevronDown,
   ChevronLeft,
   Plus,
-  Filter,
-  Clock,
-  Loader2,
-  CheckCircle2,
-  Flag,
-  Archive,
   Eye,
   BarChart3,
-  Star,
-  Share2,
+  Layers,
+  Columns3,
+  Sliders,
+  Package,
   Shield,
-  Bell,
+  Code2,
+  LayoutTemplate,
   Plug,
   User,
   MoreHorizontal,
+  LogOut,
 } from "lucide-react"
 import type { LucideProps } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -51,6 +49,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 function WhatsAppIcon(props: LucideProps) {
   return (
@@ -74,7 +80,6 @@ interface MenuItemT {
   label: string
   href?: string
   hasDropdown?: boolean
-  isActive?: boolean
   children?: MenuItemT[]
 }
 
@@ -132,29 +137,9 @@ function getSidebarContent(activeSection: string): SidebarContent {
       title: "Dashboard",
       sections: [
         {
-          title: "Overview",
+          title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "Overview", href: "/dashboard", isActive: true },
-            {
-              icon: <BarChart3 className="h-4 w-4" />,
-              label: "Sales Pipeline",
-              hasDropdown: true,
-              children: [
-                { label: "Revenue Overview" },
-                { label: "Conversion Rates" },
-                { label: "Win/Loss Analysis" },
-              ],
-            },
-            {
-              icon: <Star className="h-4 w-4" />,
-              label: "Performance",
-              hasDropdown: true,
-              children: [
-                { label: "Team Activity" },
-                { label: "Lead Response Time" },
-                { label: "Deal Velocity" },
-              ],
-            },
+            { icon: <Eye className="h-4 w-4" />, label: "Overview", href: "/dashboard" },
           ],
         },
       ],
@@ -165,35 +150,15 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Lead", href: "/leads?action=new" },
-            { icon: <Filter className="h-4 w-4" />, label: "Filter Leads" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Lead", href: "/leads#new" },
           ],
         },
         {
           title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Leads", href: "/leads", isActive: true },
-            {
-              icon: <Clock className="h-4 w-4" />,
-              label: "Recent",
-              hasDropdown: true,
-              children: [
-                { label: "Added Today" },
-                { label: "Added This Week" },
-                { label: "Updated Recently" },
-              ],
-            },
-            {
-              icon: <Flag className="h-4 w-4" />,
-              label: "By Status",
-              hasDropdown: true,
-              children: [
-                { label: "New" },
-                { label: "Contacted" },
-                { label: "Qualified" },
-                { label: "Unqualified" },
-              ],
-            },
+            { icon: <Eye className="h-4 w-4" />, label: "All Leads", href: "/leads" },
+            { icon: <Columns3 className="h-4 w-4" />, label: "Kanban", href: "/leads#kanban" },
+            { icon: <Layers className="h-4 w-4" />, label: "Group By", href: "/leads#group_by" },
           ],
         },
       ],
@@ -204,29 +169,15 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Deal", href: "/deals?action=new" },
-            { icon: <Filter className="h-4 w-4" />, label: "Filter Deals" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Deal", href: "/deals#new" },
           ],
         },
         {
-          title: "Pipeline",
+          title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Deals", href: "/deals", isActive: true },
-            {
-              icon: <Loader2 className="h-4 w-4" />,
-              label: "In Progress",
-              hasDropdown: true,
-              children: [
-                { label: "Qualification" },
-                { label: "Proposal" },
-                { label: "Negotiation" },
-              ],
-            },
-            {
-              icon: <CheckCircle2 className="h-4 w-4" />,
-              label: "Won",
-            },
-            { icon: <Archive className="h-4 w-4" />, label: "Lost / Archived" },
+            { icon: <Eye className="h-4 w-4" />, label: "All Deals", href: "/deals" },
+            { icon: <Columns3 className="h-4 w-4" />, label: "Kanban", href: "/deals#kanban" },
+            { icon: <Layers className="h-4 w-4" />, label: "Group By", href: "/deals#group_by" },
           ],
         },
       ],
@@ -237,22 +188,13 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Contact", href: "/contacts?action=new" },
-            { icon: <Filter className="h-4 w-4" />, label: "Filter Contacts" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Contact", href: "/contacts#new" },
           ],
         },
         {
           title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Contacts", href: "/contacts", isActive: true },
-            {
-              icon: <Star className="h-4 w-4" />,
-              label: "Favorites",
-            },
-            {
-              icon: <Clock className="h-4 w-4" />,
-              label: "Recently Added",
-            },
+            { icon: <Eye className="h-4 w-4" />, label: "All Contacts", href: "/contacts" },
           ],
         },
       ],
@@ -263,15 +205,13 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Organization", href: "/organizations?action=new" },
-            { icon: <Filter className="h-4 w-4" />, label: "Filter" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Organization", href: "/organizations#new" },
           ],
         },
         {
           title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Organizations", href: "/organizations", isActive: true },
-            { icon: <Building2 className="h-4 w-4" />, label: "By Industry", hasDropdown: true, children: [] },
+            { icon: <Eye className="h-4 w-4" />, label: "All Organizations", href: "/organizations" },
           ],
         },
       ],
@@ -282,37 +222,13 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Task", href: "/tasks?action=new" },
-            { icon: <Filter className="h-4 w-4" />, label: "Filter Tasks" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Task", href: "/tasks#new" },
           ],
         },
         {
-          title: "My Tasks",
+          title: "Views",
           items: [
-            {
-              icon: <Clock className="h-4 w-4" />,
-              label: "Due Today",
-              hasDropdown: true,
-              children: [
-                { label: "Overdue" },
-                { label: "Due This Week" },
-              ],
-            },
-            {
-              icon: <Loader2 className="h-4 w-4" />,
-              label: "In Progress",
-            },
-            {
-              icon: <CheckCircle2 className="h-4 w-4" />,
-              label: "Completed",
-            },
-          ],
-        },
-        {
-          title: "Other",
-          items: [
-            { icon: <Flag className="h-4 w-4" />, label: "Priority" },
-            { icon: <Archive className="h-4 w-4" />, label: "Archived" },
+            { icon: <Eye className="h-4 w-4" />, label: "All Tasks", href: "/tasks" },
           ],
         },
       ],
@@ -323,15 +239,13 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Quick Actions",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Note", href: "/notes?action=new" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Note", href: "/notes#new" },
           ],
         },
         {
           title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Notes", href: "/notes", isActive: true },
-            { icon: <Star className="h-4 w-4" />, label: "Starred" },
-            { icon: <Clock className="h-4 w-4" />, label: "Recent" },
+            { icon: <Eye className="h-4 w-4" />, label: "All Notes", href: "/notes" },
           ],
         },
       ],
@@ -342,9 +256,7 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Conversations",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Chats", href: "/whatsapp", isActive: true },
-            { icon: <Clock className="h-4 w-4" />, label: "Unread" },
-            { icon: <Star className="h-4 w-4" />, label: "Starred" },
+            { icon: <Eye className="h-4 w-4" />, label: "All Chats", href: "/whatsapp" },
           ],
         },
       ],
@@ -355,9 +267,15 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Mailbox",
           items: [
-            { icon: <Mail className="h-4 w-4" />, label: "Inbox", href: "/email", isActive: true },
-            { icon: <Share2 className="h-4 w-4" />, label: "Sent" },
-            { icon: <Archive className="h-4 w-4" />, label: "Archived" },
+            { icon: <Mail className="h-4 w-4" />, label: "Inbox", href: "/email" },
+          ],
+        },
+        {
+          title: "Campaigns",
+          items: [
+            { icon: <BarChart3 className="h-4 w-4" />, label: "Templates", href: "/email/templates" },
+            { icon: <Users className="h-4 w-4" />, label: "Campaigns", href: "/email/campaigns" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Campaign", href: "/email/campaigns/new" },
           ],
         },
       ],
@@ -368,9 +286,7 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "Views",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "All Calls", href: "/call-logs", isActive: true },
-            { icon: <Clock className="h-4 w-4" />, label: "Recent" },
-            { icon: <Phone className="h-4 w-4" />, label: "Missed" },
+            { icon: <Eye className="h-4 w-4" />, label: "All Calls", href: "/call-logs" },
           ],
         },
       ],
@@ -379,18 +295,15 @@ function getSidebarContent(activeSection: string): SidebarContent {
       title: "Calendar",
       sections: [
         {
-          title: "Views",
+          title: "Quick Actions",
           items: [
-            { icon: <Eye className="h-4 w-4" />, label: "Month View", href: "/calendar" },
-            { icon: <Calendar className="h-4 w-4" />, label: "Week View" },
-            { icon: <Clock className="h-4 w-4" />, label: "Day View" },
+            { icon: <Plus className="h-4 w-4" />, label: "New Event", href: "/calendar#new" },
           ],
         },
         {
-          title: "Quick Actions",
+          title: "Views",
           items: [
-            { icon: <Plus className="h-4 w-4" />, label: "New Event" },
-            { icon: <Share2 className="h-4 w-4" />, label: "Share Calendar" },
+            { icon: <Eye className="h-4 w-4" />, label: "Calendar", href: "/calendar" },
           ],
         },
       ],
@@ -399,27 +312,37 @@ function getSidebarContent(activeSection: string): SidebarContent {
       title: "Settings",
       sections: [
         {
-          title: "Account",
+          title: "General",
           items: [
-            { icon: <User className="h-4 w-4" />, label: "Profile", href: "/settings/general" },
-            { icon: <Shield className="h-4 w-4" />, label: "Security" },
-            { icon: <Bell className="h-4 w-4" />, label: "Notifications" },
+            { icon: <Sliders className="h-4 w-4" />, label: "General", href: "/settings/general" },
+            { icon: <Package className="h-4 w-4" />, label: "Products", href: "/settings/products" },
+            { icon: <Shield className="h-4 w-4" />, label: "SLA", href: "/settings/sla" },
           ],
         },
         {
-          title: "Workspace",
+          title: "Customization",
           items: [
+            { icon: <Code2 className="h-4 w-4" />, label: "Form Scripts", href: "/settings/form-scripts" },
+            { icon: <LayoutTemplate className="h-4 w-4" />, label: "Fields Layout", href: "/settings/fields-layout" },
+          ],
+        },
+        {
+          title: "Integrations",
+          items: [
+            { icon: <Plug className="h-4 w-4" />, label: "All Integrations", href: "/settings/integrations" },
             {
-              icon: <Settings className="h-4 w-4" />,
-              label: "Preferences",
-              href: "/settings/general",
+              icon: <Plug className="h-4 w-4" />,
+              label: "Integrations",
               hasDropdown: true,
               children: [
-                { label: "Theme" },
-                { label: "Language" },
+                { label: "Email", href: "/settings/integrations/email" },
+                { label: "WhatsApp", href: "/settings/integrations/whatsapp" },
+                { label: "Twilio", href: "/settings/integrations/twilio" },
+                { label: "Exotel", href: "/settings/integrations/exotel" },
+                { label: "Facebook", href: "/settings/integrations/facebook" },
+                { label: "Telephony", href: "/settings/integrations/telephony" },
               ],
             },
-            { icon: <Plug className="h-4 w-4" />, label: "Integrations", href: "/settings/integrations/email" },
           ],
         },
       ],
@@ -482,6 +405,13 @@ function IconNavigation({
   onSectionChange: (section: string) => void
   navItems: NavItem[]
 }) {
+  const router = useRouter()
+
+  const handleNavClick = (item: NavItem) => {
+    onSectionChange(item.id)
+    router.push(item.href)
+  }
+
   return (
     <aside className="bg-background flex flex-col gap-1 items-center py-4 px-2 w-[60px] min-w-[60px] border-r border-border">
       {/* Logo */}
@@ -497,7 +427,7 @@ function IconNavigation({
           <IconNavButton
             key={item.id}
             isActive={activeSection === item.id}
-            onClick={() => onSectionChange(item.id)}
+            onClick={() => handleNavClick(item)}
             label={item.label}
           >
             {item.icon}
@@ -509,7 +439,10 @@ function IconNavigation({
       <div className="flex flex-col gap-1 w-full items-center mt-2">
         <IconNavButton
           isActive={activeSection === "settings"}
-          onClick={() => onSectionChange("settings")}
+          onClick={() => {
+            onSectionChange("settings")
+            router.push("/settings")
+          }}
           label="Settings"
         >
           <Settings className="h-5 w-5" />
@@ -559,32 +492,33 @@ function MenuItem({
   item,
   isExpanded,
   onToggle,
-  onItemClick,
   isCollapsed,
+  pathname,
 }: {
   item: MenuItemT
   isExpanded?: boolean
   onToggle?: () => void
-  onItemClick?: () => void
   isCollapsed?: boolean
+  pathname: string
 }) {
+  const isActive = item.href ? pathname === item.href : false
+
   const handleClick = () => {
     if (item.hasDropdown && onToggle) onToggle()
-    else onItemClick?.()
   }
 
   const content = (
     <div
       className={cn(
         "rounded-lg cursor-pointer transition-colors duration-200 flex items-center",
-        item.isActive
+        isActive
           ? "bg-accent text-accent-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         isCollapsed
           ? "size-10 min-w-10 justify-center"
           : "w-full h-9 px-3 py-1.5 gap-3"
       )}
-      onClick={handleClick}
+      onClick={item.hasDropdown ? handleClick : undefined}
       title={isCollapsed ? item.label : undefined}
     >
       <div className="flex items-center justify-center shrink-0">
@@ -622,10 +556,17 @@ function MenuItem({
   )
 }
 
-function SubMenuItem({ item }: { item: MenuItemT }) {
+function SubMenuItem({ item, pathname }: { item: MenuItemT; pathname: string }) {
+  const isActive = item.href ? pathname === item.href : false
+
   const content = (
-    <div className="h-8 w-full rounded-lg cursor-pointer transition-colors hover:bg-accent flex items-center px-3">
-      <span className="text-sm text-muted-foreground truncate">
+    <div className={cn(
+      "h-8 w-full rounded-lg cursor-pointer transition-colors flex items-center px-3",
+      isActive
+        ? "bg-accent text-accent-foreground"
+        : "hover:bg-accent text-muted-foreground hover:text-accent-foreground"
+    )}>
+      <span className="text-sm truncate">
         {item.label}
       </span>
     </div>
@@ -647,11 +588,13 @@ function MenuSection({
   expandedItems,
   onToggleExpanded,
   isCollapsed,
+  pathname,
 }: {
   section: MenuSectionT
   expandedItems: Set<string>
   onToggleExpanded: (itemKey: string) => void
   isCollapsed?: boolean
+  pathname: string
 }) {
   return (
     <div className="flex flex-col w-full gap-0.5">
@@ -672,8 +615,8 @@ function MenuSection({
               item={item}
               isExpanded={isExpanded}
               onToggle={() => onToggleExpanded(itemKey)}
-              onItemClick={() => {}}
               isCollapsed={isCollapsed}
+              pathname={pathname}
             />
             {isExpanded && item.children && !isCollapsed && (
               <div className="flex flex-col gap-0.5 my-1">
@@ -681,6 +624,7 @@ function MenuSection({
                   <SubMenuItem
                     key={`${itemKey}-${childIndex}`}
                     item={child}
+                    pathname={pathname}
                   />
                 ))}
               </div>
@@ -701,7 +645,8 @@ function DetailSidebar({
 }) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const pathname = usePathname()
   const content = getSidebarContent(activeSection)
 
   const toggleExpanded = (itemKey: string) => {
@@ -769,6 +714,7 @@ function DetailSidebar({
             expandedItems={expandedItems}
             onToggleExpanded={toggleExpanded}
             isCollapsed={isCollapsed}
+            pathname={pathname}
           />
         ))}
       </div>
@@ -784,14 +730,46 @@ function DetailSidebar({
               <p className="text-sm font-medium text-foreground truncate">
                 {user?.first_name} {user?.last_name}
               </p>
+              {user?.email && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              )}
             </div>
-            <button
-              type="button"
-              className="size-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent transition-colors shrink-0"
-              aria-label="More options"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="size-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-accent transition-colors shrink-0"
+                  aria-label="User menu"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top" className="w-48">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user?.first_name} {user?.last_name}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings/general">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}

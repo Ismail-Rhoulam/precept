@@ -258,7 +258,7 @@ export default function SetupPage() {
       </AnimatePresence>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
         <div className="relative overflow-hidden p-2">
           <AnimatePresence mode="wait" custom={direction}>
             {/* Step 1: Company */}

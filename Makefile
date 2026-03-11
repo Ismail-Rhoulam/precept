@@ -14,8 +14,7 @@ logs:
 	docker compose logs -f
 
 migrate:
-	docker compose exec backend python manage.py migrate --database=infra
-	docker compose exec backend python manage.py migrate --database=default
+	docker compose exec backend python manage.py migrate
 
 seed:
 	docker compose exec backend python manage.py seed_data

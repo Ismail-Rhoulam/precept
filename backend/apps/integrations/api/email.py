@@ -82,13 +82,34 @@ def _resolve_email_account(company, to_email=None, account_id=None):
     return any_account
 
 
+def _write_postfix_config(domain: str) -> bool:
+    """Write a domain to the shared Postfix config file with world-writable permissions.
+
+    Uses a temp file + rename for atomicity, and chmod 666 so any container
+    user (backend uid 100, celery, etc.) can overwrite the file later.
+    """
+    config_path = "/etc/opendkim/keys/postfix_config.json"
+    tmp_path = config_path + ".tmp"
+    try:
+        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o666)
+        with os.fdopen(fd, "w") as f:
+            json.dump({"mail_domain": domain, "dkim_selector": "mail"}, f)
+        os.replace(tmp_path, config_path)
+        # Ensure the final file is also world-writable (replace preserves tmp perms)
+        os.chmod(config_path, 0o666)
+        logger.info("Wrote postfix config: mail_domain=%s", domain)
+        return True
+    except Exception:
+        logger.exception("Could not write postfix config")
+        return False
+
+
 def _sync_postfix_config():
     """Write the active builtin mail domain to a shared config file.
 
     The Postfix entrypoint reads ``/etc/opendkim/keys/postfix_config.json``
     on startup to configure its domain and DKIM keys.
     """
-    config_path = "/etc/opendkim/keys/postfix_config.json"
     try:
         account = (
             EmailAccount.unscoped
@@ -97,9 +118,7 @@ def _sync_postfix_config():
             .first()
         )
         domain = account.mail_domain if account else ""
-        with open(config_path, "w") as f:
-            json.dump({"mail_domain": domain, "dkim_selector": "mail"}, f)
-        logger.info("Wrote postfix config: mail_domain=%s", domain)
+        _write_postfix_config(domain)
     except Exception:
         logger.debug("Could not write postfix config (volume may not be mounted)")
 
@@ -238,15 +257,7 @@ def builtin_smtp_status(request):
 
 def _sync_postfix_config_for_domain(domain: str):
     """Write a specific domain to the shared config file so Postfix can generate DKIM keys."""
-    config_path = "/etc/opendkim/keys/postfix_config.json"
-    try:
-        with open(config_path, "w") as f:
-            json.dump({"mail_domain": domain, "dkim_selector": "mail"}, f)
-        logger.info("Wrote postfix config: mail_domain=%s", domain)
-        return True
-    except Exception:
-        logger.exception("Could not write postfix config")
-        return False
+    return _write_postfix_config(domain)
 
 
 @router.post("/provision-domain")

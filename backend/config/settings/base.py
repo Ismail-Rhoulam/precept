@@ -83,7 +83,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 # ---------------------------------------------------------------------------
-# Database — Row-level multi-tenancy with two schemas
+# Database — Row-level multi-tenancy, single schema
 # ---------------------------------------------------------------------------
 DATABASES = {
     "default": {
@@ -94,23 +94,10 @@ DATABASES = {
         "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
         "PORT": os.environ.get("POSTGRES_PORT", "5432"),
         "OPTIONS": {
-            "options": "-c search_path=precept,infra,public",
-        },
-    },
-    "infra": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "precept"),
-        "USER": os.environ.get("POSTGRES_USER", "precept"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "precept"),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        "OPTIONS": {
-            "options": "-c search_path=infra,precept,public",
+            "options": "-c search_path=precept,public",
         },
     },
 }
-
-DATABASE_ROUTERS = ["config.db_router.PreceptDBRouter"]
 
 # ---------------------------------------------------------------------------
 # Auth

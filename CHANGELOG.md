@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-11 — Consolidate to single-schema database layout
+
+Removed the separate `infra` PostgreSQL schema and database router. All tables (Django internals + business models) now live in the `precept` schema, simplifying migrations and eliminating cross-schema FK issues (e.g. `django_admin_log` → `core_user`).
+
+### Backend — Database Configuration
+
+- **`config/settings/base.py`** — Removed `infra` database alias and `DATABASE_ROUTERS` setting. Single `default` database with `search_path=precept,public`.
+- **`config/settings/test.py`** — Removed `infra` database override.
+- **`config/db_router.py`** — Cleared `PreceptDBRouter` and `INFRA_APPS` (no routing needed with single schema).
+
+### Backend — Management Command
+
+- **`apps/core/management/commands/create_schemas.py`** — Only creates `precept` schema. Removed `infra` schema creation and per-schema `django_migrations` table provisioning.
+
+### Docker
+
+- **`docker/init-db.sql`** — Removed `CREATE SCHEMA IF NOT EXISTS infra`.
+- **`docker-compose.prod.yml`** — Simplified backend startup: single `python manage.py migrate` instead of separate `--database=infra` and `--database=default` runs.
+- **`docker-compose.yml`** — Same migration simplification for dev compose.
+
+### Makefile
+
+- **`Makefile`** — `make migrate` now runs a single `migrate` command instead of two.
+
+---
+
 ## 2026-03-10 — Add Autocomplete component matching project design system
 
 Added a reusable `Autocomplete` component to the UI library. Built from scratch using the same design tokens and patterns as the existing `Input`, `Select`, and `Popover` components — no new dependencies.

@@ -511,10 +511,14 @@ def compose_and_send(request, payload: EmailComposeIn):
     if not email_account:
         return 400, {"error": "No enabled email account found"}
 
+    # Generate a unique message ID
+    import uuid
+    message_id = f"<{uuid.uuid4().hex}@{email_account.mail_domain or 'precept.online'}>"
+
     # Build threading headers for replies
     in_reply_to = ""
     references = ""
-    thread_id = ""
+    thread_id = message_id  # New conversations use their own message_id as thread_id
     if payload.in_reply_to_id:
         parent = EmailMessage.objects.filter(
             pk=payload.in_reply_to_id, company=request.company
@@ -522,7 +526,7 @@ def compose_and_send(request, payload: EmailComposeIn):
         if parent:
             in_reply_to = parent.message_id_header
             references = f"{parent.references_header} {parent.message_id_header}".strip()
-            thread_id = parent.thread_id
+            thread_id = parent.thread_id or message_id
 
     msg = EmailMessage.objects.create(
         company=request.company,
@@ -536,6 +540,7 @@ def compose_and_send(request, payload: EmailComposeIn):
         subject=payload.subject,
         body_html=payload.body_html,
         body_text=payload.body_text,
+        message_id_header=message_id,
         in_reply_to=in_reply_to,
         references_header=references,
         thread_id=thread_id,
@@ -746,12 +751,27 @@ def get_thread_messages(
     account_id: Optional[int] = None,
 ):
     """Get all messages in a thread."""
-    qs = (
-        EmailMessage.objects.filter(company=request.company, thread_id=thread_id)
-        .select_related("content_type_fk")
-        .prefetch_related("attachments")
-        .order_by("created_at")
-    )
+    # Handle synthetic thread IDs (msg-{pk}) for messages with no real thread_id
+    if thread_id.startswith("msg-"):
+        try:
+            msg_pk = int(thread_id[4:])
+        except ValueError:
+            msg_pk = None
+        if msg_pk:
+            qs = (
+                EmailMessage.objects.filter(company=request.company, pk=msg_pk)
+                .select_related("content_type_fk")
+                .prefetch_related("attachments")
+            )
+        else:
+            qs = EmailMessage.objects.none()
+    else:
+        qs = (
+            EmailMessage.objects.filter(company=request.company, thread_id=thread_id)
+            .select_related("content_type_fk")
+            .prefetch_related("attachments")
+            .order_by("created_at")
+        )
 
     if account_id:
         qs = qs.filter(email_account_id=account_id)

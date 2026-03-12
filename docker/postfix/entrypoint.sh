@@ -108,6 +108,9 @@ smtpd_milters = inet:localhost:8891
 non_smtpd_milters = inet:localhost:8891
 EOF
 
+# ── Disable chroot for smtpd (avoids broken DNS resolution inside the jail) ──
+sed -i 's/^smtp      inet  n       -       y/smtp      inet  n       -       n/' /etc/postfix/master.cf
+
 # ── Start services ──
 echo "Starting OpenDKIM..."
 service opendkim start

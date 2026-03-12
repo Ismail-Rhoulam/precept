@@ -50,106 +50,85 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+    <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[380px]">
       {/* Mobile logo */}
-      <div className="flex items-center justify-center lg:hidden">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mr-2 h-6 w-6"
-        >
-          <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-        </svg>
-        <span className="text-lg font-medium">Precept</span>
+      <div className="flex flex-col items-center gap-2 lg:hidden">
+        <div className="flex items-center justify-center size-10 rounded-xl bg-primary text-primary-foreground shadow-md">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 2h6.5a3.5 3.5 0 0 1 0 7H3V2Z" fill="currentColor" fillOpacity="0.9"/>
+            <path d="M3 9h4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+            <circle cx="3" cy="13" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <span className="text-base font-semibold">Precept</span>
       </div>
 
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Sign in to your account
-        </h1>
+      <div className="flex flex-col space-y-1.5 text-center">
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your email and password below to sign in
+          Sign in to your Precept account
         </p>
       </div>
 
-      <div className="grid gap-6">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-            <div className="grid gap-2">
-              <Label className="sr-only" htmlFor="email">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                autoCorrect="off"
-                placeholder="name@example.com"
-                disabled={isSubmitting}
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            placeholder="name@example.com"
+            disabled={isSubmitting}
+            {...register("email", {
+              required: "Email is required",
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: "Invalid email address",
+              },
+            })}
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </div>
 
-            <div className="grid gap-2">
-              <Label className="sr-only" htmlFor="password">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Password"
-                disabled={isSubmitting}
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters",
-                  },
-                })}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            disabled={isSubmitting}
+            {...register("password", {
+              required: "Password is required",
+              minLength: {
+                value: 6,
+                message: "Password must be at least 6 characters",
+              },
+            })}
+          />
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password.message}</p>
+          )}
+        </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Sign In
-            </Button>
-          </div>
-        </form>
-      </div>
+        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isSubmitting ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
 
-      <p className="px-8 text-center text-sm text-muted-foreground">
+      <p className="text-center text-xs text-muted-foreground">
         By signing in, you agree to our Terms of Service and Privacy Policy.
       </p>
     </div>

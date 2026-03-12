@@ -410,10 +410,10 @@ function IconNavButton({
     <button
       type="button"
       className={cn(
-        "flex items-center justify-center rounded-lg size-10 min-w-10 transition-colors duration-200",
+        "relative flex items-center justify-center rounded-xl size-10 min-w-10 transition-all duration-200",
         isActive
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:scale-[1.02] active:scale-95"
       )}
       onClick={onClick}
     >
@@ -450,11 +450,19 @@ function IconNavigation({
   }
 
   return (
-    <nav className="bg-background flex flex-col gap-1 items-center py-4 px-2 w-[60px] min-w-[60px] shrink-0 border-r border-border overflow-y-auto">
+    <nav className="bg-sidebar-background flex flex-col gap-1 items-center py-4 px-2 w-[60px] min-w-[60px] shrink-0 border-r border-sidebar-border overflow-y-auto">
       {/* Logo */}
       <div className="mb-3 flex items-center justify-center shrink-0">
-        <Link href="/dashboard" className="text-lg font-bold text-primary">
-          P
+        <Link
+          href="/dashboard"
+          className="flex items-center justify-center size-9 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+          aria-label="Precept home"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 2h6.5a3.5 3.5 0 0 1 0 7H3V2Z" fill="currentColor" fillOpacity="0.9"/>
+            <path d="M3 9h4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+            <circle cx="3" cy="13" r="1.5" fill="currentColor"/>
+          </svg>
         </Link>
       </div>
 
@@ -513,7 +521,7 @@ function SearchInput({ isCollapsed = false }: { isCollapsed?: boolean }) {
           placeholder="Search..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          className="w-full h-9 rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring transition-colors"
+          className="w-full h-8 rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring focus:bg-background transition-all"
         />
       </div>
     </div>
@@ -556,13 +564,13 @@ function MenuItem({
         role="button"
         tabIndex={0}
         className={cn(
-          "rounded-lg cursor-pointer transition-colors duration-200 flex items-center select-none",
+          "rounded-lg cursor-pointer transition-all duration-150 flex items-center select-none",
           isActive
-            ? "bg-accent text-accent-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+            ? "bg-primary/10 text-primary font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
           isCollapsed
             ? "size-10 min-w-10 justify-center"
-            : "w-full h-9 px-3 py-1.5 gap-3"
+            : "w-full h-9 px-3 py-1.5 gap-2.5"
         )}
         onClick={handleClick}
         onKeyDown={(e) => { if (e.key === "Enter") handleClick(e as unknown as React.MouseEvent) }}
@@ -606,10 +614,10 @@ function SubMenuItem({ item, pathname, navigate }: { item: MenuItemT; pathname: 
         role="button"
         tabIndex={0}
         className={cn(
-          "h-8 w-full rounded-lg cursor-pointer transition-colors flex items-center px-3 select-none",
+          "h-8 w-full rounded-lg cursor-pointer transition-all duration-150 flex items-center px-3 select-none",
           isActive
-            ? "bg-accent text-accent-foreground"
-            : "hover:bg-accent text-muted-foreground hover:text-accent-foreground"
+            ? "bg-primary/10 text-primary font-medium"
+            : "hover:bg-accent text-muted-foreground hover:text-foreground"
         )}
         onClick={handleClick}
         onKeyDown={(e) => { if (e.key === "Enter") handleClick(e as unknown as React.MouseEvent) }}
@@ -640,8 +648,8 @@ function MenuSection({
   return (
     <div className="flex flex-col w-full gap-0.5">
       {!isCollapsed && (
-        <div className="px-4 py-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
             {section.title}
           </span>
         </div>
@@ -705,21 +713,21 @@ function DetailSidebar({
   return (
     <div
       className={cn(
-        "bg-background flex flex-col border-r border-border transition-all duration-300 shrink-0 overflow-hidden",
+        "bg-sidebar-background flex flex-col border-r border-sidebar-border transition-all duration-300 shrink-0 overflow-hidden",
         isCollapsed ? "w-[60px] min-w-[60px]" : "w-64 min-w-64"
       )}
       style={{ transitionTimingFunction: softSpring }}
     >
       {/* Header with title and collapse toggle */}
       <div className={cn(
-        "flex items-center h-14 border-b border-border shrink-0",
+        "flex items-center h-14 border-b border-sidebar-border shrink-0",
         isCollapsed ? "justify-center px-2" : "justify-between px-4"
       )}>
         {isCollapsed ? (
           <button
             type="button"
             onClick={() => setIsCollapsed(false)}
-            className="flex items-center justify-center rounded-lg size-9 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="flex items-center justify-center rounded-lg size-9 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
             aria-label="Expand sidebar"
           >
             <ChevronDown className="h-4 w-4 -rotate-90" />
@@ -732,7 +740,7 @@ function DetailSidebar({
             <button
               type="button"
               onClick={() => setIsCollapsed(true)}
-              className="flex items-center justify-center rounded-lg size-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="flex items-center justify-center rounded-lg size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
               aria-label="Collapse sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -766,7 +774,7 @@ function DetailSidebar({
 
       {/* User footer */}
       {!isCollapsed && (
-        <div className="shrink-0 border-t border-border px-3 py-3">
+        <div className="shrink-0 border-t border-sidebar-border px-3 py-3">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium shrink-0">
               {user?.first_name?.[0] || <User className="h-4 w-4" />}

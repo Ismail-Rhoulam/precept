@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { usePathname } from "next/navigation"
-import { Search, LogOut, User, Menu, X } from "lucide-react"
+import { Search, LogOut, User, Menu, X, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/authStore"
 import { NotificationBell } from "@/components/activities/NotificationBell"
 import { ConnectionStatus } from "@/components/layout/ConnectionStatus"
@@ -38,7 +39,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const breadcrumbs = getBreadcrumbs(pathname)
 
   return (
-    <header className="h-16 bg-background border-b flex items-center justify-between px-4 md:px-6">
+    <header className="h-14 bg-background/95 backdrop-blur-sm border-b border-border/60 flex items-center justify-between px-4 md:px-6 shrink-0">
       <div className="flex items-center gap-3">
         {/* Hamburger menu - mobile only */}
         <Button
@@ -51,23 +52,28 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Breadcrumbs - compact on mobile */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {breadcrumbs.map((crumb, index) => (
-            <span key={index} className="flex items-center gap-2">
-              {index > 0 && <span>/</span>}
-              <span
-                className={
-                  index === breadcrumbs.length - 1
-                    ? "text-foreground font-medium"
-                    : "hidden sm:inline"
-                }
-              >
-                {crumb}
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
+          {breadcrumbs.map((crumb, index) => {
+            const isLast = index === breadcrumbs.length - 1
+            return (
+              <span key={index} className="flex items-center gap-1">
+                {index > 0 && (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" aria-hidden="true" />
+                )}
+                <span
+                  className={cn(
+                    isLast
+                      ? "text-foreground font-semibold"
+                      : "text-muted-foreground hidden sm:inline hover:text-foreground transition-colors"
+                  )}
+                >
+                  {crumb}
+                </span>
               </span>
-            </span>
-          ))}
-        </div>
+            )
+          })}
+        </nav>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
@@ -88,12 +94,15 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {/* Desktop search bar */}
         <div className="hidden md:block relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
           <Input
             type="text"
             placeholder="Search..."
-            className="pl-10 w-64"
+            className="pl-9 pr-16 w-60 h-8 text-sm bg-muted/60 border-transparent focus:border-input focus:bg-background transition-all"
           />
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
+            ⌘K
+          </kbd>
         </div>
 
         <ConnectionStatus />

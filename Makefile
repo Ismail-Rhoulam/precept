@@ -61,4 +61,5 @@ reload-all:
 
 rebuild-all:
 	docker compose -f docker-compose.prod.yml down -v
+	docker builder prune -f
 	docker compose -f docker-compose.prod.yml up -d --build

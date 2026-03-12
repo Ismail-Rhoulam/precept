@@ -6,6 +6,16 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-sans)', 'Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+  		},
+  		boxShadow: {
+  			xs: 'var(--shadow-xs)',
+  			sm: 'var(--shadow-sm)',
+  			DEFAULT: 'var(--shadow-sm)',
+  			md: 'var(--shadow-md)',
+  			lg: 'var(--shadow-lg)',
+  		},
   		colors: {
   			'brand-black': '#010203',
   			'brand-violet': '#7e3bed',

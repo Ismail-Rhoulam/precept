@@ -196,7 +196,8 @@
       "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix python3 -c \"import json; print\\(json.load\\(open\\(''/etc/opendkim/keys/postfix_config.json''\\)\\).get\\(''mail_domain'',''''\\)\\)\")",
       "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix which jq)",
       "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix which sed)",
-      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix ls -la /etc/opendkim/keys/)"
+      "Bash(docker compose -f /opt/frappe_docker/precept/docker-compose.prod.yml exec postfix ls -la /etc/opendkim/keys/)",
+      "--dangerously-skip-permissions"
     ],
     "additionalDirectories": [
       "/etc/nginx/sites-available",

@@ -567,7 +567,7 @@ function MenuItem({
           "rounded-lg cursor-pointer transition-all duration-150 flex items-center select-none",
           isActive
             ? "bg-primary/10 text-primary font-medium"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground hover:shadow-xs",
           isCollapsed
             ? "size-10 min-w-10 justify-center"
             : "w-full h-9 px-3 py-1.5 gap-2.5"

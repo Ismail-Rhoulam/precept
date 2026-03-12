@@ -545,9 +545,9 @@ function MenuItem({
   pathname: string
   navigate: (href: string) => void
 }) {
-  // For active detection, strip the hash
-  const itemPath = item.href?.split("#")[0]
-  const isActive = itemPath ? pathname === itemPath : false
+  // Items with a hash (e.g. /leads#new) are actions, not views — never mark them active
+  const hasHash = item.href?.includes("#")
+  const isActive = !hasHash && item.href ? pathname === item.href : false
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()

@@ -25,8 +25,10 @@ from apps.integrations.api.schemas import (
     EmailTemplateOut,
     EmailTemplatePreviewIn,
     EmailTemplateUpdate,
+    MailDomainCreate,
+    MailDomainOut,
 )
-from apps.integrations.models import EmailAccount, EmailAttachment, EmailMessage
+from apps.integrations.models import EmailAccount, EmailAttachment, EmailMessage, MailDomain
 
 logger = logging.getLogger(__name__)
 
@@ -260,22 +262,66 @@ def _sync_postfix_config_for_domain(domain: str):
     return _write_postfix_config(domain)
 
 
-@router.post("/provision-domain")
-def provision_domain(request, payload: dict):
-    """Write the mail domain to Postfix config so DKIM keys get generated.
+def _generate_dkim_keys(mail_domain: str, selectors: list[str] | None = None):
+    """Generate DKIM key pairs and write them in opendkim format.
 
-    Call this when the user enters a mail domain, before saving the account.
-    Postfix polls the config file every 10s and generates keys automatically.
+    Uses Python's cryptography library so keys are available instantly
+    without depending on the Postfix container's entrypoint.
     """
-    domain = (payload.get("mail_domain") or "").strip().lower()
-    if not domain:
-        return {"error": "No mail_domain provided."}
+    import base64
+    import textwrap
 
-    ok = _sync_postfix_config_for_domain(domain)
-    if not ok:
-        return {"error": "Could not write config. Volume may not be mounted."}
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
 
-    return {"status": "ok", "mail_domain": domain, "message": "Postfix will generate DKIM keys within ~10 seconds."}
+    if selectors is None:
+        selectors = ["mail", "mail2"]
+
+    key_dir = f"/etc/opendkim/keys/{mail_domain}"
+    os.makedirs(key_dir, mode=0o755, exist_ok=True)
+
+    for selector in selectors:
+        private_path = os.path.join(key_dir, f"{selector}.private")
+        txt_path = os.path.join(key_dir, f"{selector}.txt")
+
+        # Skip if keys already exist for this selector
+        if os.path.exists(private_path) and os.path.exists(txt_path):
+            continue
+
+        # Generate 2048-bit RSA key pair
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+        # Write private key in PEM format (what opendkim expects)
+        private_pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        with open(private_path, "wb") as f:
+            f.write(private_pem)
+        os.chmod(private_path, 0o600)
+
+        # Extract public key in DER format and base64-encode for DNS TXT record
+        public_der = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        pub_b64 = base64.b64encode(public_der).decode()
+
+        # Write .txt file in opendkim-genkey format
+        # Split into 250-char chunks for DNS TXT compatibility
+        record_value = f"v=DKIM1; k=rsa; p={pub_b64}"
+        chunks = textwrap.wrap(record_value, 250)
+        quoted = " ".join(f'"{chunk}"' for chunk in chunks)
+        txt_content = (
+            f"{selector}._domainkey\tIN\tTXT\t( {quoted}\n"
+            f")  ; ----- DKIM key {selector} for {mail_domain}\n"
+        )
+        with open(txt_path, "w") as f:
+            f.write(txt_content)
+        os.chmod(txt_path, 0o644)
+
+    logger.info("DKIM keys generated for %s (selectors: %s)", mail_domain, selectors)
 
 
 def _read_dkim_record(mail_domain: str, selector: str) -> dict:
@@ -314,60 +360,137 @@ def _read_dkim_record(mail_domain: str, selector: str) -> dict:
         }
 
 
-@router.get("/dkim-record")
-def get_dkim_record(request):
-    """Return both DKIM DNS TXT records for the configured mail domain."""
-    mail_domain = _get_builtin_mail_domain()
-    if not mail_domain:
-        return {
-            "records": [],
-            "error": "Set a mail domain on a Built-in email account first.",
-        }
-
-    selectors = ["mail", "mail2"]
-    records = [_read_dkim_record(mail_domain, s) for s in selectors]
-    return {"records": records}
-
-
-@router.get("/verify-dns")
-def verify_dns(request):
-    """Check SPF, DKIM (x2), and DMARC DNS records for the configured mail domain."""
+def _check_dns_txt(name: str, must_contain: str) -> str:
+    """Return 'verified' if a TXT record containing must_contain exists, else 'pending'."""
     import dns.resolver
 
-    mail_domain = _get_builtin_mail_domain()
-    if not mail_domain:
-        return {"error": "No mail domain configured.", "spf": "error", "dkim1": "error", "dkim2": "error", "dmarc": "error"}
+    try:
+        answers = dns.resolver.resolve(name, "TXT")
+        for rdata in answers:
+            txt = b"".join(rdata.strings).decode()
+            if must_contain in txt:
+                return "verified"
+        return "pending"
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers):
+        return "pending"
+    except Exception:
+        return "error"
 
-    def _check_txt(name: str, must_contain: str) -> str:
-        """Return 'verified' if a TXT record containing must_contain exists, else 'pending'."""
-        try:
-            answers = dns.resolver.resolve(name, "TXT")
-            for rdata in answers:
-                txt = b"".join(rdata.strings).decode()
-                if must_contain in txt:
-                    return "verified"
-            return "pending"
-        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers):
-            return "pending"
-        except Exception:
-            return "error"
 
-    # SPF — check for include:precept.online
-    spf_status = _check_txt(mail_domain, "include:precept.online")
+# ---------------------------------------------------------------------------
+# Mail Domains — register domain, generate DKIM, verify DNS
+# ---------------------------------------------------------------------------
 
-    # DKIM selectors
-    dkim1_status = _check_txt(f"mail._domainkey.{mail_domain}", "v=DKIM1")
-    dkim2_status = _check_txt(f"mail2._domainkey.{mail_domain}", "v=DKIM1")
 
-    # DMARC
-    dmarc_status = _check_txt(f"_dmarc.{mail_domain}", "v=DMARC1")
+@router.get("/domains", response=List[MailDomainOut])
+def list_domains(request):
+    """List all registered mail domains for the current tenant."""
+    return list(MailDomain.objects.filter(company=request.company))
+
+
+@router.post("/domains", response={201: MailDomainOut})
+def add_domain(request, payload: MailDomainCreate):
+    """Register a new mail domain and generate DKIM keys instantly."""
+    domain = payload.domain.strip().lower()
+    if not domain:
+        return 400, {"error": "Domain is required."}
+
+    if MailDomain.objects.filter(company=request.company, domain=domain).exists():
+        return 409, {"error": "Domain already registered."}
+
+    # Generate DKIM keys on the shared volume
+    try:
+        _generate_dkim_keys(domain)
+    except Exception:
+        logger.exception("Failed to generate DKIM keys for %s", domain)
+        return 500, {"error": "Could not generate DKIM keys."}
+
+    # Write postfix config so it knows about this domain
+    _sync_postfix_config_for_domain(domain)
+
+    mail_domain = MailDomain.objects.create(
+        company=request.company,
+        domain=domain,
+    )
+    return 201, mail_domain
+
+
+@router.delete("/domains/{domain_id}", response={204: None})
+def delete_domain(request, domain_id: int):
+    """Remove a registered mail domain."""
+    domain_obj = get_object_or_404(MailDomain, pk=domain_id, company=request.company)
+    domain_obj.delete()
+    return 204, None
+
+
+@router.get("/domains/{domain_id}/dns-records")
+def get_domain_dns_records(request, domain_id: int):
+    """Return DKIM records and expected SPF/DMARC values for a domain."""
+    domain_obj = get_object_or_404(MailDomain, pk=domain_id, company=request.company)
+    d = domain_obj.domain
+
+    dkim1 = _read_dkim_record(d, "mail")
+    dkim2 = _read_dkim_record(d, "mail2")
 
     return {
-        "spf": spf_status,
-        "dkim1": dkim1_status,
-        "dkim2": dkim2_status,
-        "dmarc": dmarc_status,
-        "mail_domain": mail_domain,
+        "domain": d,
+        "records": [
+            {
+                "label": "SPF",
+                "type": "TXT",
+                "name": "@",
+                "value": "v=spf1 include:precept.online ~all",
+                "status": "verified" if domain_obj.spf_verified else "pending",
+            },
+            {
+                "label": "DKIM 1",
+                "type": "TXT",
+                "name": dkim1["dns_name"],
+                "value": dkim1["record"],
+                "status": "verified" if domain_obj.dkim_verified else dkim1["status"],
+            },
+            {
+                "label": "DKIM 2",
+                "type": "TXT",
+                "name": dkim2["dns_name"],
+                "value": dkim2["record"],
+                "status": "verified" if domain_obj.dkim_verified else dkim2["status"],
+            },
+            {
+                "label": "DMARC",
+                "type": "TXT",
+                "name": f"_dmarc.{d}",
+                "value": f"v=DMARC1; p=quarantine; rua=mailto:dmarc@{d}",
+                "status": "verified" if domain_obj.dmarc_verified else "pending",
+                "hint": "Any existing DMARC record (v=DMARC1) is accepted.",
+            },
+        ],
+    }
+
+
+@router.post("/domains/{domain_id}/verify")
+def verify_domain_dns(request, domain_id: int):
+    """Check and update DNS verification status for a domain."""
+    domain_obj = get_object_or_404(MailDomain, pk=domain_id, company=request.company)
+    d = domain_obj.domain
+
+    spf = _check_dns_txt(d, "include:precept.online")
+    dkim1 = _check_dns_txt(f"mail._domainkey.{d}", "v=DKIM1")
+    dkim2 = _check_dns_txt(f"mail2._domainkey.{d}", "v=DKIM1")
+    # Any valid DMARC record is sufficient for deliverability
+    dmarc = _check_dns_txt(f"_dmarc.{d}", "v=DMARC1")
+
+    domain_obj.spf_verified = spf == "verified"
+    domain_obj.dkim_verified = dkim1 == "verified" and dkim2 == "verified"
+    domain_obj.dmarc_verified = dmarc == "verified"
+    domain_obj.save(update_fields=["spf_verified", "dkim_verified", "dmarc_verified"])
+
+    return {
+        "spf": spf,
+        "dkim1": dkim1,
+        "dkim2": dkim2,
+        "dmarc": dmarc,
+        "is_verified": domain_obj.is_verified,
     }
 
 

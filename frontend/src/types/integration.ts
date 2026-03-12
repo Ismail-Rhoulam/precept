@@ -1,3 +1,21 @@
+export interface MailDomain {
+  id: number
+  domain: string
+  spf_verified: boolean
+  dkim_verified: boolean
+  dmarc_verified: boolean
+  is_verified: boolean
+  created_at: string
+}
+
+export interface DnsRecord {
+  label: string
+  type: string
+  name: string
+  value: string
+  status: "verified" | "pending" | "error"
+}
+
 export interface TwilioSettings {
   id: number
   enabled: boolean

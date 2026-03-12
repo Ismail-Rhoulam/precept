@@ -19,6 +19,10 @@ import {
   XCircle,
   Copy,
   Check,
+  Globe,
+  ChevronDown,
+  ChevronUp,
+  Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -27,12 +31,13 @@ import {
   useUpdateEmailAccount,
   useDeleteEmailAccount,
   useTestEmailConnection,
-  useBuiltinSmtpStatus,
-  useDkimRecord,
-  useVerifyDns,
-  useProvisionDomain,
+  useMailDomains,
+  useAddMailDomain,
+  useDeleteMailDomain,
+  useDomainDnsRecords,
+  useVerifyDomainDns,
 } from "@/hooks/useIntegrations"
-import type { EmailAccount } from "@/types/integration"
+import type { EmailAccount, MailDomain } from "@/types/integration"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -174,232 +179,236 @@ function DnsStatusBadge({ status }: { status?: "verified" | "pending" | "error" 
   return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Pending</Badge>
 }
 
-function BuiltinSmtpInfo({
-  mailDomain,
-  onMailDomainChange,
-}: {
-  mailDomain: string
-  onMailDomainChange: (v: string) => void
-}) {
-  const { data: status } = useBuiltinSmtpStatus()
-  const { data: dkim, refetch: refetchDkim } = useDkimRecord()
-  const [showDns, setShowDns] = useState(false)
-  const [dnsCheckActive, setDnsCheckActive] = useState(false)
-  const { data: dnsStatus, isFetching: dnsChecking, refetch: recheckDns } = useVerifyDns(dnsCheckActive)
-  const provisionDomain = useProvisionDomain()
-  const [provisioning, setProvisioning] = useState(false)
-  const displayDomain = mailDomain || "yourdomain.com"
+function DomainCard({ domain }: { domain: MailDomain }) {
+  const [expanded, setExpanded] = useState(false)
+  const { data: dnsData } = useDomainDnsRecords(expanded ? domain.id : null)
+  const verifyMutation = useVerifyDomainDns()
+  const deleteMutation = useDeleteMailDomain()
 
-  const handleProvisionDomain = async () => {
-    const domain = mailDomain.trim().toLowerCase()
-    if (!domain) return
-    setProvisioning(true)
+  return (
+    <Card className={cn(!domain.is_verified && "border-yellow-200/60")}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <Globe className="size-4 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{domain.domain}</span>
+                {domain.is_verified ? (
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-[10px] px-1.5 py-0">
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    DNS Pending
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                <span className={domain.spf_verified ? "text-green-600" : ""}>
+                  SPF {domain.spf_verified ? "✓" : "○"}
+                </span>
+                <span className={domain.dkim_verified ? "text-green-600" : ""}>
+                  DKIM {domain.dkim_verified ? "✓" : "○"}
+                </span>
+                <span className={domain.dmarc_verified ? "text-green-600" : ""}>
+                  DMARC {domain.dmarc_verified ? "✓" : "○"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => verifyMutation.mutate(domain.id)}
+              disabled={verifyMutation.isPending}
+            >
+              {verifyMutation.isPending ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Shield className="size-3" />
+              )}
+              Verify DNS
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? (
+                <ChevronUp className="size-3.5" />
+              ) : (
+                <ChevronDown className="size-3.5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 text-destructive hover:text-destructive"
+              onClick={() => {
+                if (confirm(`Delete domain "${domain.domain}"? Email accounts using this domain will stop working.`))
+                  deleteMutation.mutate(domain.id)
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="mt-4 space-y-3 text-xs">
+            <p className="font-medium text-foreground">
+              Add these DNS records to your domain registrar:
+            </p>
+
+            {domain.is_verified && (
+              <Alert className="border-green-200 bg-green-50 text-green-700">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>All DNS records verified. This domain is ready to send email.</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Record</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Type</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Name</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Value</th>
+                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(dnsData?.records || []).map((row) => (
+                    <tr key={row.label} className="border-b border-border last:border-0">
+                      <td className="px-3 py-2 font-medium whitespace-nowrap">{row.label}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono">{row.name}</span>
+                          <CopyButton text={row.name} label="name" />
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 max-w-[300px]">
+                        {row.value ? (
+                          <div className="flex items-start gap-1">
+                            <code className="bg-muted rounded px-1.5 py-0.5 break-all leading-relaxed">
+                              {row.value}
+                            </code>
+                            <CopyButton text={row.value} label="value" />
+                          </div>
+                        ) : (
+                          <span className="italic text-muted-foreground">
+                            Key not yet generated
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <DnsStatusBadge status={row.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function DomainsSection() {
+  const { data: domains, isLoading } = useMailDomains()
+  const addMutation = useAddMailDomain()
+  const [newDomain, setNewDomain] = useState("")
+  const [adding, setAdding] = useState(false)
+
+  const handleAdd = async () => {
+    const d = newDomain.trim().toLowerCase()
+    if (!d) return
+    setAdding(true)
     try {
-      await provisionDomain.mutateAsync(domain)
-      // Wait for Postfix to generate keys (~12s), then refetch
-      setTimeout(() => {
-        refetchDkim()
-        setProvisioning(false)
-      }, 15_000)
+      await addMutation.mutateAsync(d)
+      setNewDomain("")
     } catch {
-      setProvisioning(false)
+      // error handled by mutation
+    } finally {
+      setAdding(false)
     }
   }
 
-  const dkimRecords = dkim?.records || []
-  const dkim1 = dkimRecords[0]
-  const dkim2 = dkimRecords[1]
-
-  const allVerified =
-    dnsStatus?.spf === "verified" &&
-    dnsStatus?.dkim1 === "verified" &&
-    dnsStatus?.dkim2 === "verified" &&
-    dnsStatus?.dmarc === "verified"
-
-  const dnsRows = [
-    {
-      label: "SPF",
-      type: "TXT",
-      name: "@",
-      value: "v=spf1 include:precept.online ~all",
-      status: dnsStatus?.spf,
-      keyStatus: "ready" as const,
-    },
-    {
-      label: "DKIM 1",
-      type: "TXT",
-      name: dkim1?.dns_name || `mail._domainkey.${displayDomain}`,
-      value: dkim1?.record || "",
-      error: dkim1?.error,
-      status: dnsStatus?.dkim1,
-      keyStatus: (dkim1?.status || "pending") as "ready" | "pending" | "error",
-    },
-    {
-      label: "DKIM 2",
-      type: "TXT",
-      name: dkim2?.dns_name || `mail2._domainkey.${displayDomain}`,
-      value: dkim2?.record || "",
-      error: dkim2?.error,
-      status: dnsStatus?.dkim2,
-      keyStatus: (dkim2?.status || "pending") as "ready" | "pending" | "error",
-    },
-    {
-      label: "DMARC",
-      type: "TXT",
-      name: `_dmarc.${displayDomain}`,
-      value: `v=DMARC1; p=none; rua=mailto:rua@${displayDomain}`,
-      status: dnsStatus?.dmarc,
-      keyStatus: "ready" as const,
-    },
-  ]
-
   return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
-      <div className="flex items-center gap-2">
-        <div
-          className={cn(
-            "size-2 rounded-full",
-            status?.available ? "bg-green-500" : "bg-yellow-500"
-          )}
+    <div className="space-y-3 max-w-6xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold">Sending Domains</h2>
+          <p className="text-xs text-muted-foreground">
+            Register your domain and configure DNS records before creating email accounts
+          </p>
+        </div>
+      </div>
+
+      {/* Add domain */}
+      <div className="flex gap-2">
+        <Input
+          value={newDomain}
+          onChange={(e) => setNewDomain(e.target.value)}
+          placeholder="example.com"
+          className="max-w-xs"
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
-        <span className="font-medium">
-          {status?.available
-            ? "Postfix server is running"
-            : "Postfix server not detected"}
-        </span>
+        <Button
+          onClick={handleAdd}
+          disabled={!newDomain.trim() || adding}
+          size="sm"
+        >
+          {adding ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <Plus className="size-3" />
+          )}
+          Add Domain
+        </Button>
       </div>
 
-      <div className="space-y-2">
-        <Label>Mail Domain</Label>
-        <div className="flex gap-2">
-          <Input
-            value={mailDomain}
-            onChange={(e) => onMailDomainChange(e.target.value)}
-            placeholder="example.com"
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleProvisionDomain}
-            disabled={!mailDomain.trim() || provisioning}
-            className="shrink-0"
-          >
-            {provisioning ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : (
-              <Mail className="size-3" />
-            )}
-            {provisioning ? "Generating..." : "Generate DKIM Keys"}
-          </Button>
+      {addMutation.error && (
+        <Alert variant="destructive" className="max-w-xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {addMutation.error instanceof Error ? addMutation.error.message : "Failed to add domain"}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          Loading domains...
         </div>
-        <p className="text-xs text-muted-foreground">
-          Your sending domain. Emails will be sent as <span className="font-mono">you@{displayDomain}</span>
-        </p>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        Emails are sent directly from your server with DKIM signing.
-        No external SMTP credentials needed.
-      </p>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setShowDns(!showDns)}
-      >
-        {showDns ? "Hide" : "View"} DNS Setup
-      </Button>
-      {showDns && (
-        <div className="space-y-3 pt-2 text-xs">
-          <div className="flex items-center justify-between">
-            <p className="font-medium text-foreground">
-              Add these DNS records to your domain:
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setDnsCheckActive(true)
-                recheckDns()
-              }}
-              disabled={dnsChecking}
-              className="h-7 text-xs"
-            >
-              {dnsChecking ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <CheckCircle2 className="size-3" />
-              )}
-              {dnsChecking ? "Checking..." : "Re-check DNS"}
-            </Button>
-          </div>
-
-          {allVerified && (
-            <Alert className="border-green-200 bg-green-50 text-green-700">
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>All DNS records are verified. Your domain is ready to send email.</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="rounded-lg border border-border overflow-hidden">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Record</th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Type</th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Value</th>
-                  <th className="text-center px-3 py-2 font-medium text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dnsRows.map((row) => (
-                  <tr key={row.label} className="border-b border-border last:border-0">
-                    <td className="px-3 py-2 font-medium whitespace-nowrap">{row.label}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono">{row.name}</span>
-                        <CopyButton text={row.name} label="name" />
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 max-w-[300px]">
-                      {row.value ? (
-                        <div className="flex items-start gap-1">
-                          <code className="bg-muted rounded px-1.5 py-0.5 break-all leading-relaxed">
-                            {row.value}
-                          </code>
-                          <CopyButton text={row.value} label="value" />
-                        </div>
-                      ) : row.keyStatus === "pending" ? (
-                        <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Loader2 className="size-3 animate-spin" />
-                          Waiting for key generation...
-                        </span>
-                      ) : (
-                        <span className="italic text-muted-foreground">
-                          {row.error || "Click \"Generate DKIM Keys\" to create keys"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <DnsStatusBadge status={row.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {dnsCheckActive && !allVerified && dnsStatus && !dnsChecking && (
-            <p className="text-muted-foreground">
-              Polling every 10 seconds until all records are verified...
-            </p>
-          )}
+      ) : domains && domains.length > 0 ? (
+        <div className="space-y-2">
+          {domains.map((domain) => (
+            <DomainCard key={domain.id} domain={domain} />
+          ))}
         </div>
+      ) : (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Globe className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              No domains registered yet
+            </p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              Add a domain to start sending emails via Postfix with DKIM signing
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
@@ -414,6 +423,7 @@ function AccountForm({
   error,
   isNew,
   accountId,
+  domains,
 }: {
   form: FormData
   setForm: (fn: (prev: FormData) => FormData) => void
@@ -423,6 +433,7 @@ function AccountForm({
   error: string | null
   isNew: boolean
   accountId?: number
+  domains?: MailDomain[]
 }) {
   const testConnection = useTestEmailConnection()
   const [testResult, setTestResult] = useState<{
@@ -547,12 +558,36 @@ function AccountForm({
           </div>
 
           {form.smtp_mode === "builtin" ? (
-            <BuiltinSmtpInfo
-              mailDomain={form.mail_domain}
-              onMailDomainChange={(v) =>
-                setForm((prev) => ({ ...prev, mail_domain: v }))
-              }
-            />
+            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <div className="space-y-2">
+                <Label>Sending Domain</Label>
+                {domains && domains.length > 0 ? (
+                  <select
+                    value={form.mail_domain}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, mail_domain: e.target.value }))
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">Select a domain...</option>
+                    {domains.map((d) => (
+                      <option key={d.id} value={d.domain}>
+                        {d.domain} {d.is_verified ? "✓" : "(DNS pending)"}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">
+                    No domains registered yet. Add a domain in the <strong>Sending Domains</strong> section above first.
+                  </p>
+                )}
+              </div>
+              {form.mail_domain && (
+                <p className="text-xs text-muted-foreground">
+                  Emails will be sent as <span className="font-mono">you@{form.mail_domain}</span> via the built-in Postfix server with DKIM signing.
+                </p>
+              )}
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4">
@@ -657,7 +692,8 @@ function AccountForm({
           )}
         </div>
 
-        {/* IMAP Section */}
+        {/* IMAP Section — only for external SMTP */}
+        {form.smtp_mode !== "builtin" && (
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -797,6 +833,7 @@ function AccountForm({
             </>
           )}
         </div>
+        )}
 
         {/* Test result */}
         {testResult && (
@@ -854,6 +891,7 @@ function AccountForm({
 
 export default function EmailSettingsPage() {
   const { data: accounts, isLoading, isError } = useEmailAccounts()
+  const { data: domains } = useMailDomains()
   const createMutation = useCreateEmailAccount()
   const updateMutation = useUpdateEmailAccount()
   const deleteMutation = useDeleteEmailAccount()
@@ -981,7 +1019,7 @@ export default function EmailSettingsPage() {
             <div>
               <h1 className="text-2xl font-bold">Email Settings</h1>
               <p className="text-sm text-muted-foreground">
-                Configure SMTP/IMAP email accounts
+                Register your domains and configure email accounts
               </p>
             </div>
           </div>
@@ -1013,11 +1051,23 @@ export default function EmailSettingsPage() {
             error={mutationError}
             isNew={editingId === "new"}
             accountId={typeof editingId === "number" ? editingId : undefined}
+            domains={domains}
           />
         </div>
       )}
 
+      {/* Sending Domains */}
+      <div className="mb-8">
+        <DomainsSection />
+      </div>
+
       {/* Accounts list */}
+      <div className="mb-3 max-w-6xl">
+        <h2 className="text-base font-semibold">Email Accounts</h2>
+        <p className="text-xs text-muted-foreground">
+          Configure sending and receiving email accounts
+        </p>
+      </div>
       {accounts && accounts.length > 0 ? (
         <div className="space-y-3 max-w-6xl">
           {accounts.map((account) => (

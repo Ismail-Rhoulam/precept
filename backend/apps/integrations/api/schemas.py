@@ -118,6 +118,25 @@ class WhatsAppSettingsUpdate(Schema):
 
 
 # ---------------------------------------------------------------------------
+# Mail Domain
+# ---------------------------------------------------------------------------
+
+
+class MailDomainOut(Schema):
+    id: int
+    domain: str
+    spf_verified: bool
+    dkim_verified: bool
+    dmarc_verified: bool
+    is_verified: bool
+    created_at: datetime
+
+
+class MailDomainCreate(Schema):
+    domain: str
+
+
+# ---------------------------------------------------------------------------
 # Email Account
 # ---------------------------------------------------------------------------
 

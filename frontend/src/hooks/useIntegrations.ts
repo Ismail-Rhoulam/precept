@@ -244,6 +244,54 @@ export function useDeleteAgent() {
   })
 }
 
+// --- Mail Domains ---
+
+export function useMailDomains() {
+  return useQuery({
+    queryKey: ["mail-domains"],
+    queryFn: () => integrationsApi.getMailDomains(),
+  })
+}
+
+export function useAddMailDomain() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (domain: string) => integrationsApi.addMailDomain(domain),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mail-domains"] })
+    },
+  })
+}
+
+export function useDeleteMailDomain() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => integrationsApi.deleteMailDomain(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mail-domains"] })
+    },
+  })
+}
+
+export function useDomainDnsRecords(domainId: number | null) {
+  return useQuery({
+    queryKey: ["domain-dns-records", domainId],
+    queryFn: () => integrationsApi.getDomainDnsRecords(domainId!),
+    enabled: !!domainId,
+  })
+}
+
+export function useVerifyDomainDns() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => integrationsApi.verifyDomainDns(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["mail-domains"] })
+      queryClient.invalidateQueries({ queryKey: ["domain-dns-records", id] })
+    },
+  })
+}
+
 // --- Email ---
 
 export function useEmailAccounts() {
@@ -261,11 +309,6 @@ export function useCreateEmailAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
       queryClient.invalidateQueries({ queryKey: ["integration-status"] })
-      // Refetch DKIM records after a delay (Postfix needs ~10s to pick up config and generate keys)
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
-        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
-      }, 15_000)
     },
   })
 }
@@ -278,10 +321,6 @@ export function useUpdateEmailAccount() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-accounts"] })
       queryClient.invalidateQueries({ queryKey: ["integration-status"] })
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
-        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
-      }, 15_000)
     },
   })
 }
@@ -368,58 +407,6 @@ export function useTriggerEmailSync() {
     mutationFn: (accountId: number) => integrationsApi.triggerEmailSync(accountId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-threads"] })
-    },
-  })
-}
-
-export function useBuiltinSmtpStatus() {
-  return useQuery({
-    queryKey: ["builtin-smtp-status"],
-    queryFn: () => integrationsApi.getBuiltinSmtpStatus(),
-  })
-}
-
-export function useDkimRecord() {
-  return useQuery({
-    queryKey: ["dkim-record"],
-    queryFn: () => integrationsApi.getDkimRecord(),
-    refetchInterval: (query) => {
-      const records = query.state.data?.records
-      if (!records || records.length === 0) return false
-      const hasPending = records.some((r) => r.status === "pending")
-      return hasPending ? 5_000 : false
-    },
-  })
-}
-
-export function useProvisionDomain() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (mailDomain: string) =>
-      integrationsApi.provisionDomain(mailDomain),
-    onSuccess: () => {
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["dkim-record"] })
-        queryClient.invalidateQueries({ queryKey: ["builtin-smtp-status"] })
-      }, 15_000)
-    },
-  })
-}
-
-export function useVerifyDns(enabled: boolean = false) {
-  return useQuery({
-    queryKey: ["verify-dns"],
-    queryFn: () => integrationsApi.verifyDns(),
-    enabled,
-    refetchInterval: (query) => {
-      const data = query.state.data
-      if (!data) return false
-      const allVerified =
-        data.spf === "verified" &&
-        data.dkim1 === "verified" &&
-        data.dkim2 === "verified" &&
-        data.dmarc === "verified"
-      return allVerified ? false : 10_000
     },
   })
 }

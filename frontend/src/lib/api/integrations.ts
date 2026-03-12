@@ -9,6 +9,8 @@ import type {
   LeadSyncSource,
   FacebookPage,
   FacebookForm,
+  MailDomain,
+  DnsRecord,
   EmailAccount,
   EmailMessage,
   EmailThread,
@@ -146,6 +148,30 @@ export const integrationsApi = {
   getIntegrationStatus: () =>
     api.get<IntegrationStatus>("/integrations/telephony/status"),
 
+  // Mail Domains
+  getMailDomains: () =>
+    api.get<MailDomain[]>("/integrations/email/domains"),
+
+  addMailDomain: (domain: string) =>
+    api.post<MailDomain>("/integrations/email/domains", { domain }),
+
+  deleteMailDomain: (id: number) =>
+    api.delete(`/integrations/email/domains/${id}`),
+
+  getDomainDnsRecords: (id: number) =>
+    api.get<{ domain: string; records: DnsRecord[] }>(
+      `/integrations/email/domains/${id}/dns-records`
+    ),
+
+  verifyDomainDns: (id: number) =>
+    api.post<{
+      spf: string
+      dkim1: string
+      dkim2: string
+      dmarc: string
+      is_verified: boolean
+    }>(`/integrations/email/domains/${id}/verify`),
+
   // Email
   getEmailAccounts: () =>
     api.get<EmailAccount[]>("/integrations/email/settings"),
@@ -230,28 +256,6 @@ export const integrationsApi = {
     api.get<{ available: boolean; mail_domain: string }>(
       "/integrations/email/builtin-smtp-status"
     ),
-
-  getDkimRecord: () =>
-    api.get<{
-      records: { selector: string; domain: string; dns_name: string; record: string; status: "ready" | "pending" | "error"; error?: string }[]
-      error?: string
-    }>("/integrations/email/dkim-record"),
-
-  provisionDomain: (mailDomain: string) =>
-    api.post<{ status?: string; mail_domain?: string; error?: string }>(
-      "/integrations/email/provision-domain",
-      { mail_domain: mailDomain }
-    ),
-
-  verifyDns: () =>
-    api.get<{
-      spf: "verified" | "pending" | "error"
-      dkim1: "verified" | "pending" | "error"
-      dkim2: "verified" | "pending" | "error"
-      dmarc: "verified" | "pending" | "error"
-      mail_domain?: string
-      error?: string
-    }>("/integrations/email/verify-dns"),
 
   // CRM Settings
   getCRMSettings: () =>

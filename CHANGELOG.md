@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-03-12 — Domain-first email integration with DKIM key generation
+
+Restructured the self-hosted email flow so users register and verify a sending domain **before** creating email accounts — matching the pattern used by SendGrid, Brevo, and similar providers. Replaces the old inline "Generate DKIM Keys" button (which showed "Waiting for key generation..." indefinitely) with an instant key generation flow at the domain level.
+
+### Backend — New Model
+
+- **`apps/integrations/models/mail_domain.py`** — New `MailDomain` model with `domain`, `spf_verified`, `dkim_verified`, `dmarc_verified` fields, `(company, domain)` unique constraint, and `is_verified` property. Uses `TenantMixin` + `TimestampMixin`.
+- **`apps/integrations/models/__init__.py`** — Exports `MailDomain`.
+
+### Backend — API Endpoints
+
+- **`apps/integrations/api/email.py`** — Five new domain management endpoints:
+  - `GET /domains` — List all registered mail domains for the tenant.
+  - `POST /domains` — Register a domain and generate DKIM keys instantly via Python `cryptography` library (no Postfix dependency, no waiting).
+  - `DELETE /domains/{id}` — Remove a registered domain.
+  - `GET /domains/{id}/dns-records` — Return DKIM records, expected SPF value (`include:precept.online`), and suggested DMARC record with per-record verification status.
+  - `POST /domains/{id}/verify` — Live DNS lookup for SPF, DKIM (both selectors), and DMARC; updates model verification flags.
+  - Extracted `_check_dns_txt()` helper from the old `verify_dns` endpoint. DMARC check accepts any valid `v=DMARC1` record (hosting provider records are fine).
+  - Removed old endpoints: `POST /provision-domain`, `GET /dkim-record`, `GET /verify-dns`.
+- **`apps/integrations/api/schemas.py`** — Added `MailDomainOut` and `MailDomainCreate` schemas.
+
+### Frontend — Email Settings Page
+
+- **`app/(dashboard)/settings/integrations/email/page.tsx`** — Redesigned into two sections:
+  - **Sending Domains** (new) — Add domain input, domain cards with SPF/DKIM/DMARC status indicators, expandable DNS records table with copy buttons and verification badges, "Verify DNS" and delete actions.
+  - **Email Accounts** — When "Built-in (Self-Hosted)" SMTP mode is selected, shows a domain dropdown (populated from registered domains) instead of the old `BuiltinSmtpInfo` component with its broken inline DKIM generation. IMAP section is hidden for built-in mode since Postfix is send-only.
+  - Removed `BuiltinSmtpInfo` component entirely.
+
+### Frontend — Types, API & Hooks
+
+- **`types/integration.ts`** — Added `MailDomain` and `DnsRecord` interfaces.
+- **`lib/api/integrations.ts`** — Added `getMailDomains`, `addMailDomain`, `deleteMailDomain`, `getDomainDnsRecords`, `verifyDomainDns` methods. Removed `getDkimRecord`, `provisionDomain`, `verifyDns`.
+- **`hooks/useIntegrations.ts`** — Added `useMailDomains`, `useAddMailDomain`, `useDeleteMailDomain`, `useDomainDnsRecords`, `useVerifyDomainDns` hooks. Removed `useBuiltinSmtpStatus`, `useDkimRecord`, `useProvisionDomain`, `useVerifyDns`. Cleaned up stale DKIM/builtin query invalidations from email account mutations.
+
+---
+
 ## 2026-03-11 — Consolidate to single-schema database layout
 
 Removed the separate `infra` PostgreSQL schema and database router. All tables (Django internals + business models) now live in the `precept` schema, simplifying migrations and eliminating cross-schema FK issues (e.g. `django_admin_log` → `core_user`).

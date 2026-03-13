@@ -24,6 +24,7 @@ dependencies = [
     "twilio>=8.5,<9",
     "gunicorn>=22,<23",
     "dnspython>=2.6,<3",
+    "dkimpy>=1.1,<2",
 ]
 
 [project.optional-dependencies]

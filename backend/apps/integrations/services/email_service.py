@@ -15,6 +15,31 @@ from channels.layers import get_channel_layer
 
 logger = logging.getLogger(__name__)
 
+DKIM_SELECTOR = os.environ.get("DKIM_SELECTOR", "mail")
+DKIM_KEY_DIR = "/etc/opendkim/keys"
+
+
+def _dkim_sign(msg_bytes: bytes, mail_domain: str) -> bytes:
+    """Add a DKIM-Signature header using the domain's private key."""
+    try:
+        import dkim
+
+        key_path = os.path.join(DKIM_KEY_DIR, mail_domain, f"{DKIM_SELECTOR}.private")
+        with open(key_path, "rb") as f:
+            private_key = f.read()
+
+        sig = dkim.sign(
+            msg_bytes,
+            DKIM_SELECTOR.encode(),
+            mail_domain.encode(),
+            private_key,
+            canonicalize=(b"relaxed", b"relaxed"),
+        )
+        return sig + msg_bytes
+    except Exception:
+        logger.exception("DKIM signing failed for %s — sending unsigned", mail_domain)
+        return msg_bytes
+
 
 # ---------------------------------------------------------------------------
 # Connection testing
@@ -148,7 +173,8 @@ def send_email(email_account, email_message):
     all_recipients.extend(email_message.bcc_emails or [])
 
     # Send — branch on smtp_mode
-    if getattr(email_account, "smtp_mode", "external") == "builtin":
+    is_builtin = getattr(email_account, "smtp_mode", "external") == "builtin"
+    if is_builtin:
         host = os.environ.get("POSTFIX_HOST", "postfix")
         port = int(os.environ.get("POSTFIX_PORT", "25"))
         server = smtplib.SMTP(host, port, timeout=30)
@@ -169,7 +195,13 @@ def send_email(email_account, email_message):
         if email_account.smtp_username and email_account.smtp_password:
             server.login(email_account.smtp_username, email_account.smtp_password)
 
-    server.sendmail(email_account.email_address, all_recipients, msg.as_string())
+    msg_data = msg.as_bytes()
+
+    # DKIM-sign for built-in Postfix delivery
+    if is_builtin and email_account.mail_domain:
+        msg_data = _dkim_sign(msg_data, email_account.mail_domain)
+
+    server.sendmail(email_account.email_address, all_recipients, msg_data)
     server.quit()
 
     # Update message ID on the record

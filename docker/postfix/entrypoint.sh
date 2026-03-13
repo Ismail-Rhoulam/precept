@@ -48,29 +48,10 @@ for sel in "$DKIM_SELECTOR" "$DKIM_SELECTOR2"; do
         opendkim-genkey -b 2048 -d "$MAIL_DOMAIN" -D "$DKIM_KEY_DIR" -s "$sel" -v
     fi
 done
-chown -R opendkim:opendkim "$DKIM_KEY_DIR"
+# Make keys readable by backend (they share the /etc/opendkim/keys volume)
+chmod 644 "${DKIM_KEY_DIR}"/*.private 2>/dev/null || true
 chmod 644 "${DKIM_KEY_DIR}"/*.txt 2>/dev/null || true
 
-# ── OpenDKIM tables (both selectors, primary used for signing) ──
-cat > /etc/opendkim/KeyTable <<EOF
-${DKIM_SELECTOR}._domainkey.${MAIL_DOMAIN} ${MAIL_DOMAIN}:${DKIM_SELECTOR}:${DKIM_KEY_DIR}/${DKIM_SELECTOR}.private
-${DKIM_SELECTOR2}._domainkey.${MAIL_DOMAIN} ${MAIL_DOMAIN}:${DKIM_SELECTOR2}:${DKIM_KEY_DIR}/${DKIM_SELECTOR2}.private
-EOF
-
-cat > /etc/opendkim/SigningTable <<EOF
-*@${MAIL_DOMAIN} ${DKIM_SELECTOR}._domainkey.${MAIL_DOMAIN}
-EOF
-
-cat > /etc/opendkim/TrustedHosts <<EOF
-127.0.0.1
-localhost
-10.0.0.0/8
-172.16.0.0/12
-192.168.0.0/16
-*.${MAIL_DOMAIN}
-EOF
-
-chown -R opendkim:opendkim /etc/opendkim
 
 # ── Postfix main.cf ──
 cat > /etc/postfix/main.cf <<EOF
@@ -101,19 +82,14 @@ smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 # Size limit (25 MB)
 message_size_limit = 26214400
 
-# DKIM via OpenDKIM milter
-milter_protocol = 6
-milter_default_action = accept
-smtpd_milters = inet:localhost:8891
-non_smtpd_milters = inet:localhost:8891
+# DKIM signing is handled by the backend (dkimpy) before submission
+# No milter needed — OpenDKIM milter on Ubuntu 22.04 is beta software
 EOF
 
-# ── Disable chroot for smtpd (avoids broken DNS resolution inside the jail) ──
-sed -i 's/^smtp      inet  n       -       y/smtp      inet  n       -       n/' /etc/postfix/master.cf
+# ── Disable chroot for all Postfix services (unnecessary inside Docker) ──
+sed -i 's/^\([a-z].*\)  y  /\1  n  /g' /etc/postfix/master.cf
 
 # ── Start services ──
-echo "Starting OpenDKIM..."
-service opendkim start
 
 echo "Starting Postfix for domain: ${MAIL_DOMAIN}"
 exec postfix start-fg

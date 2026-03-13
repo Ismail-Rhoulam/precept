@@ -332,7 +332,21 @@ function ThreadList({
   )
 }
 
-/* -- Chat panel ---------------------------------------------------------- */
+/* -- Email detail helpers ------------------------------------------------- */
+
+function formatFullDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+}
+
+/* -- Email panel --------------------------------------------------------- */
 
 function EmailPanel({
   threadId,
@@ -355,13 +369,9 @@ function EmailPanel({
   const [to, setTo] = useState("")
   const [composeSubject, setComposeSubject] = useState("")
   const [body, setBody] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [collapsedMessages, setCollapsedMessages] = useState<Set<number>>(new Set())
 
   const messages = data?.results ?? []
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
 
   useEffect(() => {
     if (participants?.length) {
@@ -371,6 +381,23 @@ function EmailPanel({
       setComposeSubject(subject.startsWith("Re:") ? subject : `Re: ${subject}`)
     }
   }, [participants, subject])
+
+  // Auto-collapse all but the last message when multiple
+  useEffect(() => {
+    if (messages.length > 1) {
+      const ids = new Set(messages.slice(0, -1).map((m) => m.id))
+      setCollapsedMessages(ids)
+    }
+  }, [messages.length])
+
+  function toggleCollapse(id: number) {
+    setCollapsedMessages((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function handleSend() {
     if (!to.trim()) return
@@ -404,18 +431,15 @@ function EmailPanel({
         >
           <ArrowLeft className="size-4" />
         </Button>
-        <Avatar className="size-9">
-          <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-medium">
-            {participants?.[0] ? getInitials(participants[0]) : "?"}
-          </AvatarFallback>
-        </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate leading-none">
+          <h2 className="text-sm font-semibold truncate">
             {subject || "(no subject)"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {participants?.join(", ") || ""}
-          </p>
+          </h2>
+          {messages.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              {messages.length} messages
+            </p>
+          )}
         </div>
         <Button
           size="sm"
@@ -429,12 +453,12 @@ function EmailPanel({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 bg-muted/30">
+      <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Loading emails...</span>
+              <span className="text-xs text-muted-foreground">Loading...</span>
             </div>
           </div>
         ) : isError ? (
@@ -446,130 +470,109 @@ function EmailPanel({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full">
-            <div className="size-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Mail className="size-8 text-muted-foreground/40" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">No messages</p>
+            <Mail className="size-8 text-muted-foreground/30 mb-2" />
+            <p className="text-sm text-muted-foreground">No messages</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {messages.map((msg, idx) => {
+          <div className="divide-y">
+            {messages.map((msg) => {
               const isOutgoing = msg.direction === "Outgoing"
-              const showDateSep =
-                idx === 0 ||
-                !isSameDay(messages[idx - 1].created_at, msg.created_at)
+              const isCollapsed = collapsedMessages.has(msg.id)
 
               return (
-                <div key={msg.id}>
-                  {showDateSep && (
-                    <div className="flex items-center justify-center py-3">
-                      <span className="text-[11px] font-medium text-muted-foreground bg-background/80 backdrop-blur px-3 py-1 rounded-full shadow-sm border">
-                        {formatDateSeparator(msg.created_at)}
-                      </span>
+                <div key={msg.id} className="bg-background">
+                  {/* Email header — always visible */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapse(msg.id)}
+                    className="w-full text-left px-5 py-3 hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="size-9 shrink-0 mt-0.5">
+                        <AvatarFallback className={cn(
+                          "text-xs font-medium",
+                          isOutgoing
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-violet-100 text-violet-700"
+                        )}>
+                          {getInitials(isOutgoing ? (msg.to_emails[0] || "?") : msg.from_email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm font-medium truncate">
+                              {isOutgoing ? "Me" : msg.from_email}
+                            </span>
+                            {isOutgoing && (
+                              <EmailStatusIcon status={msg.status} />
+                            )}
+                            {msg.error_message && (
+                              <span className="text-[10px] text-destructive truncate">
+                                {msg.error_message}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {formatFullDate(msg.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          To: {msg.to_emails.join(", ")}
+                          {msg.cc_emails.length > 0 && (
+                            <span> · CC: {msg.cc_emails.join(", ")}</span>
+                          )}
+                        </p>
+                        {isCollapsed && (
+                          <p className="text-xs text-muted-foreground/70 mt-1 truncate">
+                            {stripHtml(msg.body_html || msg.body_text)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Email body — only when expanded */}
+                  {!isCollapsed && (
+                    <div className="px-5 pb-4">
+                      <div className="pl-12">
+                        {/* Body */}
+                        <div
+                          className="text-sm leading-relaxed break-words prose prose-sm max-w-none dark:prose-invert [&_img]:max-w-full [&_a]:text-primary"
+                          dangerouslySetInnerHTML={{
+                            __html: msg.body_html || msg.body_text.replace(/\n/g, "<br>"),
+                          }}
+                        />
+                        {/* Attachments */}
+                        {msg.attachments.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {msg.attachments.map((att) => (
+                              <div
+                                key={att.id}
+                                className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border bg-muted/50"
+                              >
+                                <Paperclip className="size-3.5 text-muted-foreground shrink-0" />
+                                <span className="truncate max-w-[200px]">{att.filename}</span>
+                                <span className="text-muted-foreground shrink-0">
+                                  {(att.file_size / 1024).toFixed(0)} KB
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div
-                    className={cn(
-                      "flex mb-1",
-                      isOutgoing ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[80%] rounded-2xl px-4 py-3",
-                        isOutgoing
-                          ? "bg-blue-600 dark:bg-blue-700 text-white rounded-br-sm"
-                          : "bg-background text-foreground border shadow-xs rounded-bl-sm"
-                      )}
-                    >
-                      {/* From/To header */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={cn(
-                            "text-[11px] font-medium",
-                            isOutgoing ? "text-white/80" : "text-muted-foreground"
-                          )}
-                        >
-                          {isOutgoing ? `To: ${msg.to_emails.join(", ")}` : `From: ${msg.from_email}`}
-                        </span>
-                      </div>
-                      {/* Subject */}
-                      {msg.subject && (
-                        <p
-                          className={cn(
-                            "text-xs font-semibold mb-1",
-                            isOutgoing ? "text-white/90" : "text-foreground/80"
-                          )}
-                        >
-                          {msg.subject}
-                        </p>
-                      )}
-                      {/* Body */}
-                      <div
-                        className={cn(
-                          "text-[13px] leading-relaxed break-words",
-                          isOutgoing ? "text-white" : "text-foreground"
-                        )}
-                        dangerouslySetInnerHTML={{
-                          __html: msg.body_html || msg.body_text.replace(/\n/g, "<br>"),
-                        }}
-                      />
-                      {/* Attachments */}
-                      {msg.attachments.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {msg.attachments.map((att) => (
-                            <div
-                              key={att.id}
-                              className={cn(
-                                "flex items-center gap-2 text-[11px] px-2 py-1 rounded",
-                                isOutgoing ? "bg-blue-500/30" : "bg-muted"
-                              )}
-                            >
-                              <Paperclip className="size-3 shrink-0" />
-                              <span className="truncate">{att.filename}</span>
-                              <span className="shrink-0">
-                                {(att.file_size / 1024).toFixed(0)} KB
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {/* Footer */}
-                      <div
-                        className={cn(
-                          "flex items-center gap-1 mt-1.5",
-                          isOutgoing ? "justify-end" : "justify-start"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "text-[10px]",
-                            isOutgoing ? "text-white/60" : "text-muted-foreground"
-                          )}
-                        >
-                          {formatTime(msg.created_at)}
-                        </span>
-                        {isOutgoing && <EmailStatusIcon status={msg.status} />}
-                      </div>
-                      {/* Error */}
-                      {msg.error_message && (
-                        <p className="text-[10px] text-red-300 mt-1">
-                          {msg.error_message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )
             })}
-            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
       {/* Compose area */}
       {showCompose && (
-        <div className="border-t bg-background px-4 py-3 space-y-2">
+        <div className="border-t bg-background px-5 py-4 space-y-3">
           {composeEmail.isError && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs">
               <AlertCircle className="size-3.5 shrink-0" />
@@ -580,23 +583,29 @@ function EmailPanel({
               </span>
             </div>
           )}
-          <Input
-            placeholder="To"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="h-8 text-sm"
-          />
-          <Input
-            placeholder="Subject"
-            value={composeSubject}
-            onChange={(e) => setComposeSubject(e.target.value)}
-            className="h-8 text-sm"
-          />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground w-16 shrink-0">To</span>
+              <Input
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="h-8 text-sm border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground w-16 shrink-0">Subject</span>
+              <Input
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                className="h-8 text-sm border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+              />
+            </div>
+          </div>
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Write your email..."
-            rows={4}
+            placeholder="Write your reply..."
+            rows={6}
             className="text-sm resize-none"
           />
           <div className="flex items-center justify-between">
@@ -611,7 +620,7 @@ function EmailPanel({
               size="sm"
               onClick={handleSend}
               disabled={composeEmail.isPending || !to.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+              className="gap-1.5"
             >
               {composeEmail.isPending ? (
                 <Loader2 className="size-3.5 animate-spin" />
